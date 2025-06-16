@@ -6,12 +6,13 @@ from typing import final, Self
 @final
 class SdkRunResult(ctypes.Structure):
     _fields_ = [
-        ('algorithm', ctypes.c_char_p),
-        ('request_id', ctypes.c_char_p),
-        ('result_uri', ctypes.c_char_p),
-        ('run_error_message', ctypes.c_char_p),
-        ('status', ctypes.c_char_p),
+        ("algorithm", ctypes.c_char_p),
+        ("request_id", ctypes.c_char_p),
+        ("result_uri", ctypes.c_char_p),
+        ("run_error_message", ctypes.c_char_p),
+        ("status", ctypes.c_char_p),
     ]
+
 
 @dataclass
 class RunResult:
