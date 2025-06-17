@@ -1,5 +1,6 @@
 import ctypes
 import os
+import pathlib
 
 from ctypes import *
 from typing import final, Callable, Self, Iterator
@@ -12,11 +13,13 @@ from nexus_sdk.models.scheduler import SdkRunResult, RunResult
 class NexusSchedulerClient:
     """Nexus client"""
 
+    _lib_default_location = os.path.join(pathlib.Path(__file__).parent.resolve(), ".extensions", "nexus_sdk.so")
+
     def __init__(
         self,
         url: str,
         token_provider: Callable[[], AccessToken] | None = None,
-        sdk_location=os.getenv("NEXUS__SDK_LOCATION"),
+        sdk_location=os.getenv("NEXUS__SDK_LOCATION") or _lib_default_location,
     ):
         self._sdk = cdll.LoadLibrary(sdk_location)
         self._url = url
@@ -29,6 +32,8 @@ class NexusSchedulerClient:
         self._get_run_results = self._sdk.GetRunResults
         self._get_run_results.restype = ctypes.POINTER(ctypes.POINTER(SdkRunResult))
 
+        self._update_token = self._sdk.UpdateToken
+
     def __del__(self):
         pass
 
@@ -40,9 +45,8 @@ class NexusSchedulerClient:
             )
 
         if not self._current_token.is_valid():
-            self._client = self._sdk.CreateSchedulerClient(
-                bytes(self._url, encoding="utf-8"), bytes(self._current_token.value, encoding="utf-8")
-            )
+            self._current_token = self._token_provider() if self._token_provider is not None else AccessToken.empty()
+            self._update_token(bytes(self._current_token.value, encoding="utf-8"))
 
     def get_run_results(self, tag: str) -> Iterator[RunResult]:
         self._init_client()
