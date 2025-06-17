@@ -1,0 +1,38 @@
+name: Release a new version
+
+on: workflow_dispatch
+
+jobs:
+  base_release:
+    name: Create MacOS Release
+    runs-on: macos-13
+    if: ${{ github.ref == 'refs/heads/main' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install and Configure Poetry and Prepare Build
+        run: |
+          set -e
+
+          curl -sSL https://install.python-poetry.org | python3 -
+
+          version=$(git describe --tags --abbrev=7)
+          sed -i "s/version = \"0.0.0\"/version = \"${version:1}\"/" pyproject.toml
+          echo "__version__ = '${version:1}'" > ./nexus_sdk/_version.py
+          
+          poetry build --format wheel \
+          && poetry run wheel tags \
+          --platform-tag=cp311-cp311-macosx_13_0_arm64.cp311-cp311-macosx_14_0_arm64.cp312-cp312-macosx_13_0_arm64.cp312-cp312-macosx_14_0_arm64 \
+           dist/nexus_sdk-"${version:1}"-py3-none-any.whl
+          
+          rm dist/nexus_sdk-"${version:1}"-py3-none-any.whl
+
+      - name: Create Release
+        uses: SneaksAndData/github-actions/semver_release@v0.1.11
+        with:
+          major_v: 3
+          minor_v: 4
+
