@@ -38,9 +38,11 @@ jobs:
           curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_darwin_arm64.tar.gz > nexus_sdk_darwin_arm64.tar.gz
           mkdir cext && tar -xvzf nexus_sdk_darwin_arm64.tar.gz -C cext && mv cext/dist/nexus_sdk_darwin_arm64.so nexus_sdk/.extensions/nexus_sdk.so
           
+          echo wheeling
+          
           poetry build --format wheel \
-          && poetry run wheel tags \
-          --platform-tag=cp311-cp311-macosx_13_0_arm64.cp311-cp311-macosx_14_0_arm64.cp312-cp312-macosx_13_0_arm64.cp312-cp312-macosx_14_0_arm64 \
+           && poetry run wheel tags \
+            --platform-tag=cp311-cp311-macosx_13_0_arm64.cp311-cp311-macosx_14_0_arm64.cp312-cp312-macosx_13_0_arm64.cp312-cp312-macosx_14_0_arm64 \
            dist/nexus_sdk-"${version:1}"-py3-none-any.whl
           
           rm dist/nexus_sdk-"${version:1}"-py3-none-any.whl
@@ -52,7 +54,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload ${{needs.base_release.outputs.version}} release/*.*
+          gh release upload v0.1.0 release/*.*
 
   linux_arm64:
     name: Create ARM64 Release
@@ -148,4 +150,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload ${{needs.base_release.outputs.version}} release/*.*          
+          gh release upload v0.1.0 release/*.*          
