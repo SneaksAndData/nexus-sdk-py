@@ -28,7 +28,7 @@ jobs:
 
       - name: Lint
         env:
-          PROJECT_NAME: adapta
+          PROJECT_NAME: nexus_sdk
         run: |
           set -euxo pipefail
           find "$PROJECT_NAME" -type f -name "*.py" | xargs poetry run pylint

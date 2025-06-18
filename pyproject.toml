@@ -13,12 +13,6 @@ include = [
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.13"
-#nexus-sdk = [
-#    { url = "https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v0.1.2/nexus_sdk_darwin_arm64.tar.gz", platform = "darwin" },
-#    { url = "https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v0.1.2/nexus_sdk_linux_arm64.tar.gz", platform = "linux", markers = "platform_machine == 'arm64'" },
-#    { url = "https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v0.1.2/nexus_sdk_linux_amd64.tar.gz", platform = "linux", markers = "platform_machine == 'amd64'" }
-#]
-
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1"
