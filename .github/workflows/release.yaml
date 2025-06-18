@@ -1,0 +1,130 @@
+name: Release a new version
+
+on: workflow_dispatch
+
+jobs:
+  base_release:
+    name: Create a Base Release
+    runs-on: macos-13
+    if: ${{ github.ref == 'refs/heads/main' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install, Configure Poetry and Build
+        run: |
+          set -e
+
+          curl -sSL https://install.python-poetry.org | python3 -
+
+          version=$(git describe --tags --abbrev=7)
+          sed -i "s/version = \"0.0.0\"/version = \"${version:1}\"/" pyproject.toml
+          echo "__version__ = '${version:1}'" > ./nexus_sdk/_version.py
+          
+          cext_version=$(cat nexus_sdk/.extensions/cext_version)
+          
+          curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_darwin_arm64.tar.gz > nexus_sdk_darwin_arm64.tar.gz
+          mkdir cext && tar -xvzf nexus_sdk_darwin_arm64.tar.gz -C cext && mv cext/dist/nexus_sdk_darwin_arm64.so nexus_sdk/nexus_sdk.so
+          
+          poetry build --format wheel \
+          && poetry run wheel tags \
+          --platform-tag=cp311-cp311-macosx_13_0_arm64.cp311-cp311-macosx_14_0_arm64.cp312-cp312-macosx_13_0_arm64.cp312-cp312-macosx_14_0_arm64 \
+           dist/nexus_sdk-"${version:1}"-py3-none-any.whl
+          
+          rm dist/nexus_sdk-"${version:1}"-py3-none-any.whl
+          
+          tar -czf wheel_macosx_13_0_arm64.tar.gz dist/
+          mkdir release && mv wheel_macosx_13_0_arm64.tar.gz release/
+
+      - name: Create Release
+        uses: SneaksAndData/github-actions/semver_release@v0.1.11
+        with:
+          major_v: 0
+          minor_v: 1
+          assets_path: release
+
+  linux_arm64:
+    name: Create ARM64 Release
+    needs: [ base_release ]
+    runs-on: ubuntu-24.04-arm
+    if: ${{ github.ref == 'refs/heads/main' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install, Configure Poetry and Build
+        run: |
+          set -e
+
+          curl -sSL https://install.python-poetry.org | python3 -
+
+          version=$(git describe --tags --abbrev=7)
+          sed -i "s/version = \"0.0.0\"/version = \"${version:1}\"/" pyproject.toml
+          echo "__version__ = '${version:1}'" > ./nexus_sdk/_version.py
+          
+          cext_version=$(cat nexus_sdk/.extensions/cext_version)
+          
+          curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_linux_arm64.tar.gz > nexus_sdk_linux_arm64.tar.gz
+          mkdir cext && tar -xvzf nexus_sdk_linux_arm64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_arm64.so nexus_sdk/nexus_sdk.so          
+          
+          poetry build --format wheel \
+          && poetry run wheel tags \
+          --platform-tag=cp311-cp311-manylinux_2_28_aarch64.cp311-cp311-manylinux_2_28_aarch64.cp312-cp312-manylinux_2_28_aarch64.cp312-cp312-manylinux_2_28_aarch64 \
+           dist/nexus_sdk-"${version:1}"-py3-none-any.whl
+          
+          rm dist/nexus_sdk-"${version:1}"-py3-none-any.whl
+          
+          tar -czf wheel_manylinux_2_28_aarch64.tar.gz dist/
+          mkdir release && mv wheel_manylinux_2_28_aarch64.tar.gz release/
+
+      - name: Upload asset to Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload ${{needs.base_release.outputs.version}} release/*.*
+
+  linux_amd64:
+    name: Create AMD64 Release
+    needs: [ base_release ]
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install, Configure Poetry and Build
+        run: |
+          set -e
+
+          curl -sSL https://install.python-poetry.org | python3 -
+
+          version=$(git describe --tags --abbrev=7)
+          sed -i "s/version = \"0.0.0\"/version = \"${version:1}\"/" pyproject.toml
+          echo "__version__ = '${version:1}'" > ./nexus_sdk/_version.py
+          
+          cext_version=$(cat nexus_sdk/.extensions/cext_version)
+          
+          curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_linux_amd64.tar.gz > nexus_sdk_linux_amd64.tar.gz
+          mkdir cext && tar -xvzf nexus_sdk_linux_amd64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_amd64.so nexus_sdk/nexus_sdk.so             
+          
+          poetry build --format wheel \
+          && poetry run wheel tags \
+          --platform-tag=cp311-cp311-manylinux_2_28_x86_64.cp311-cp311-manylinux_2_28_x86_64.cp312-cp312-manylinux_2_28_x86_64.cp312-cp312-manylinux_2_28_x86_64 \
+           dist/nexus_sdk-"${version:1}"-py3-none-any.whl
+          
+          rm dist/nexus_sdk-"${version:1}"-py3-none-any.whl
+          
+          tar -czf wheel_manylinux_2_28_x86_64.tar.gz dist/
+          mkdir release && mv wheel_manylinux_2_28_x86_64.tar.gz release/
+
+      - name: Upload asset to Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload ${{needs.base_release.outputs.version}} release/*.*          

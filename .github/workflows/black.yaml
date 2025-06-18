@@ -1,0 +1,39 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  codestyle:
+    name: codestyle
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11.x'
+          architecture: 'x64'
+
+      - name: Install Poetry and dependencies
+        uses: SneaksAndData/github-actions/install_poetry@v0.1.7
+        with:
+          install_extras: all
+
+      - name: Lint
+        env:
+          PROJECT_NAME: nexus_sdk
+        run: |
+          set -euxo pipefail
+          find "$PROJECT_NAME" -type f -name "*.py" | xargs poetry run pylint
+
+      - name: Black
+        run: |
+          set -euxo pipefail
+          poetry run black . --check --diff
