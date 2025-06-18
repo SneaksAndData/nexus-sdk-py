@@ -1,4 +1,5 @@
-name: Release a new version
+name: Release wheels
+run-name: Release CPython wheels from ${{github.ref_name}} by @${{ github.actor }}
 
 on: workflow_dispatch
 
