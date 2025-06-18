@@ -26,9 +26,9 @@ jobs:
           sed -i "s/version = \"0.0.0\"/version = \"${version:1}\"/" pyproject.toml
           echo "__version__ = '${version:1}'" > ./nexus_sdk/_version.py
           
-          curl -L https://github.com/SneaksAndData/nexus-sdk-py/releases/download/v$version/wheel_manylinux_2_28_x86_64.tar.gz > wheel_manylinux_2_28_x86_64.tar.gz
-          curl -L https://github.com/SneaksAndData/nexus-sdk-py/releases/download/v$version/wheel_manylinux_2_28_aarch64.tar.gz > wheel_manylinux_2_28_aarch64.tar.gz
-          curl -L https://github.com/SneaksAndData/nexus-sdk-py/releases/download/v$version/wheel_macosx_13_0_arm64.tar.gz > wheel_macosx_13_0_arm64.tar.gz
+          curl -L https://github.com/SneaksAndData/nexus-sdk-py/releases/download/$version/wheel_manylinux_2_28_x86_64.tar.gz > wheel_manylinux_2_28_x86_64.tar.gz
+          curl -L https://github.com/SneaksAndData/nexus-sdk-py/releases/download/$version/wheel_manylinux_2_28_aarch64.tar.gz > wheel_manylinux_2_28_aarch64.tar.gz
+          curl -L https://github.com/SneaksAndData/nexus-sdk-py/releases/download/$version/wheel_macosx_13_0_arm64.tar.gz > wheel_macosx_13_0_arm64.tar.gz
           
           mkdir macos && tar -xvzf wheel_macosx_13_0_arm64.tar.gz -C macos
           mkdir linux_arm64 && tar -xvzf wheel_manylinux_2_28_aarch64.tar.gz -C linux_arm64
