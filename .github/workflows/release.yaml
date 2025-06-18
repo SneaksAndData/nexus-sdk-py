@@ -7,20 +7,27 @@ jobs:
   macos:
     name: Create a MacOS Release
     runs-on: macos-13
-    if: startsWith(github.ref, 'refs/tags')
+    #if: startsWith(github.ref, 'refs/tags')
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
+
       - name: Install, Configure Poetry and Build
         run: |
           set -e
 
           curl -sSL https://install.python-poetry.org | python3 -
+          
+          poetry install --all-extras
 
-          version=$(git describe --tags --abbrev=7)
+          version="v0.1.0"
           sed -i '' "s/version = \"0.0.0\"/version = \"${version:1}\"/" pyproject.toml
           echo "__version__ = '${version:1}'" > ./nexus_sdk/_version.py
           
@@ -55,13 +62,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
+
       - name: Install, Configure Poetry and Build
         run: |
           set -e
 
           curl -sSL https://install.python-poetry.org | python3 -
+          
+          poetry install --all-extras
 
-          version=$(git describe --tags --abbrev=7)
+          version="v0.1.0"
           sed -i "s/version = \"0.0.0\"/version = \"${version:1}\"/" pyproject.toml
           echo "__version__ = '${version:1}'" > ./nexus_sdk/_version.py
           
@@ -96,13 +110,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
+
       - name: Install, Configure Poetry and Build
         run: |
           set -e
 
           curl -sSL https://install.python-poetry.org | python3 -
+          
+          poetry install --all-extras
 
-          version=$(git describe --tags --abbrev=7)
+          version="v0.1.0"
           sed -i "s/version = \"0.0.0\"/version = \"${version:1}\"/" pyproject.toml
           echo "__version__ = '${version:1}'" > ./nexus_sdk/_version.py
           
