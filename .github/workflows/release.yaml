@@ -20,7 +20,7 @@ jobs:
           curl -sSL https://install.python-poetry.org | python3 -
 
           version=$(git describe --tags --abbrev=7)
-          sed -i "s/version = \"0.0.0\"/version = \"${version:1}\"/" pyproject.toml
+          sed -i '' "s/version = \"0.0.0\"/version = \"${version:1}\"/" pyproject.toml
           echo "__version__ = '${version:1}'" > ./nexus_sdk/_version.py
           
           cext_version=$(cat nexus_sdk/.extensions/cext_version)
