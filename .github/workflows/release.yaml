@@ -25,7 +25,7 @@ jobs:
 
           curl -sSL https://install.python-poetry.org | python3 -
           
-          export PATH="/Users/runner/.local/bin:$PATH
+          export PATH="/Users/runner/.local/bin:$PATH"
           
           poetry install --all-extras
 
@@ -37,8 +37,6 @@ jobs:
           
           curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_darwin_arm64.tar.gz > nexus_sdk_darwin_arm64.tar.gz
           mkdir cext && tar -xvzf nexus_sdk_darwin_arm64.tar.gz -C cext && mv cext/dist/nexus_sdk_darwin_arm64.so nexus_sdk/.extensions/nexus_sdk.so
-          
-          echo wheeling
           
           poetry build --format wheel \
            && poetry run wheel tags \
