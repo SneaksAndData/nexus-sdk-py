@@ -5,6 +5,10 @@ from typing import final, Self
 
 @final
 class SdkRunResult(ctypes.Structure):
+    """
+    Golang sister data structure for RunResult.
+    """
+
     _fields_ = [
         ("algorithm", ctypes.c_char_p),
         ("request_id", ctypes.c_char_p),
@@ -16,6 +20,10 @@ class SdkRunResult(ctypes.Structure):
 
 @dataclass
 class RunResult:
+    """
+    Python SDK data structure for RunResult.
+    """
+
     algorithm: str
     request_id: str
     result_uri: str
@@ -24,6 +32,11 @@ class RunResult:
 
     @classmethod
     def from_sdk_result(cls, result: SdkRunResult) -> Self | None:
+        """
+         Create a RunResult from an SDKRunResult.
+        :param result: SdkRunResult object returned from a CGO compiled function.
+        :return:
+        """
         if not result:
             return None
         contents = result.contents

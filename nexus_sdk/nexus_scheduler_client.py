@@ -1,3 +1,5 @@
+"""Scheduler"""
+
 import ctypes
 import os
 import pathlib
@@ -11,7 +13,10 @@ from nexus_sdk.models.scheduler import SdkRunResult, RunResult
 
 @final
 class NexusSchedulerClient:
-    """Nexus client"""
+    """
+    Nexus Scheduler client. Wraps Golang functionality.
+    You can override the source C library location using NEXUS__SDK_LOCATION
+    """
 
     _lib_default_location = os.path.join(pathlib.Path(__file__).parent.resolve(), ".extensions", "nexus_sdk.so")
 
@@ -49,6 +54,11 @@ class NexusSchedulerClient:
             self._update_token(bytes(self._current_token.value, encoding="utf-8"))
 
     def get_run_results(self, tag: str) -> Iterator[RunResult]:
+        """
+         Retrieves run results for a given tag.
+        :param tag: Client-side assigned run tag.
+        :return: Run result collection.
+        """
         self._init_client()
         results: Iterator[SdkRunResult] = self._get_run_results(bytes(tag, encoding="utf-8"))
         for result in results:
@@ -59,4 +69,11 @@ class NexusSchedulerClient:
 
     @classmethod
     def create(cls, url: str, token_provider: Callable[[], AccessToken] | None = None) -> Self:
+        """
+         Initializes the client.
+
+        :param url: Nexus scheduler URL.
+        :param token_provider: Auth token provider.
+        :return:
+        """
         return cls(url, token_provider)
