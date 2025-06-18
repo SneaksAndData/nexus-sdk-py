@@ -3,6 +3,8 @@ import ctypes
 from dataclasses import dataclass
 from typing import final, Self
 
+from nexus_sdk.cwrapper import CLIB
+
 
 @final
 class SdkRunResult(ctypes.Structure):
@@ -17,6 +19,9 @@ class SdkRunResult(ctypes.Structure):
         ("run_error_message", ctypes.c_char_p),
         ("status", ctypes.c_char_p),
     ]
+
+    def __del__(self):
+        CLIB.FreeRunResult(self)
 
 
 @dataclass
