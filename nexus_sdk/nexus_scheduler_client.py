@@ -4,7 +4,7 @@ import ctypes
 import os
 import pathlib
 
-from ctypes import *
+from ctypes import cdll
 from typing import final, Callable, Self, Iterator
 
 from nexus_sdk.models.access_token import AccessToken

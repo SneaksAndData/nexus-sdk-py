@@ -1,3 +1,4 @@
+"""Scheduler CGO-Python models"""
 import ctypes
 from dataclasses import dataclass
 from typing import final, Self
