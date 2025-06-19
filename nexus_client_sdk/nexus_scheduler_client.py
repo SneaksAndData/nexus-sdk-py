@@ -4,9 +4,9 @@ import ctypes
 
 from typing import final, Callable, Self, Iterator
 
-from nexus_sdk.cwrapper import CLIB
-from nexus_sdk.models.access_token import AccessToken
-from nexus_sdk.models.scheduler import SdkRunResult, RunResult
+from nexus_client_sdk.cwrapper import CLIB
+from nexus_client_sdk.models.access_token import AccessToken
+from nexus_client_sdk.models.scheduler import SdkRunResult, RunResult
 
 
 @final

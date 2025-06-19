@@ -9,8 +9,8 @@ SDK is tested against a Nexus stack deployed to a `kind` cluster (WIP).
 Initialize a client and retrieve results for a tagged submission:
 
 ```python
-from nexus_sdk.models.access_token import AccessToken
-from nexus_sdk.nexus_scheduler_client import NexusSchedulerClient
+from nexus_client_sdk.models.access_token import AccessToken
+from nexus_client_sdk.nexus_scheduler_client import NexusSchedulerClient
 
 token = "..."
 client = NexusSchedulerClient.create("https://localhost:8080", lambda: AccessToken.empty())

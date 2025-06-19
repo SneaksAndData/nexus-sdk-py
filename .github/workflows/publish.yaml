@@ -4,7 +4,7 @@ run-name: Publish ${{github.ref_name}} to PyPi by @${{ github.actor }}
 on: workflow_dispatch
 jobs:
   release_to_pypi:
-    name: Release distribution to Pypi
+    name: Release distribution to PyPi
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags')
 
