@@ -75,6 +75,10 @@ jobs:
           python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
           architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
 
+      - name: Get project version
+        uses: SneaksAndData/github-actions/generate_version@v0.1.11
+        id: version
+
       - name: Install, Configure Poetry and Build
         env:
           VERSION: ${{steps.version.outputs.version}}
@@ -124,6 +128,10 @@ jobs:
         with:
           python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
           architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
+
+      - name: Get project version
+        uses: SneaksAndData/github-actions/generate_version@v0.1.11
+        id: version
 
       - name: Install, Configure Poetry and Build
         env:
