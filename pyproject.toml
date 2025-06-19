@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "nexus-sdk"
+name = "nexus-client-sdk"
 version = "0.0.0"
 description = "Nexus SDK library for Python."
 authors = ["ECCO Sneaks & Data <esdsupport@ecco.com>"]
@@ -8,7 +8,7 @@ license = 'Apache 2.0'
 readme = "README.md"
 repository = 'https://github.com/SneaksAndData/nexus-sdk-py'
 include = [
-    { path = "nexus_sdk/.extensions/nexus_sdk.so", format = ["wheel"] }
+    { path = "nexus_client_sdk/.extensions/nexus_sdk.so", format = ["wheel"] }
 ]
 
 [tool.poetry.dependencies]

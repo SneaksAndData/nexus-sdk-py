@@ -36,12 +36,12 @@ jobs:
           poetry install --all-extras
 
           sed -i '' "s/version = \"0.0.0\"/version = \"${VERSION:1}\"/" pyproject.toml
-          echo "__version__ = '${VERSION:1}'" > ./nexus_sdk/_version.py
+          echo "__version__ = '${VERSION:1}'" > ./nexus_client_sdk/_version.py
           
-          cext_version=$(cat nexus_sdk/.extensions/cext_version)
+          cext_version=$(cat nexus_client_sdk/.extensions/cext_version)
           
           curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_darwin_arm64.tar.gz > nexus_sdk_darwin_arm64.tar.gz
-          mkdir cext && tar -xvzf nexus_sdk_darwin_arm64.tar.gz -C cext && mv cext/dist/nexus_sdk_darwin_arm64.so nexus_sdk/.extensions/nexus_sdk.so
+          mkdir cext && tar -xvzf nexus_sdk_darwin_arm64.tar.gz -C cext && mv cext/dist/nexus_sdk_darwin_arm64.so nexus_client_sdk/.extensions/nexus_sdk.so
           
           poetry build --format wheel \
            && poetry run wheel tags \
@@ -90,12 +90,12 @@ jobs:
           poetry install --all-extras
 
           sed -i "s/version = \"0.0.0\"/version = \"${VERSION:1}\"/" pyproject.toml
-          echo "__version__ = '${VERSION:1}'" > ./nexus_sdk/_version.py
+          echo "__version__ = '${VERSION:1}'" > ./nexus_client_sdk/_version.py
           
-          cext_version=$(cat nexus_sdk/.extensions/cext_version)
+          cext_version=$(cat nexus_client_sdk/.extensions/cext_version)
           
           curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_linux_arm64.tar.gz > nexus_sdk_linux_arm64.tar.gz
-          mkdir cext && tar -xvzf nexus_sdk_linux_arm64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_arm64.so nexus_sdk/.extensions/nexus_sdk.so          
+          mkdir cext && tar -xvzf nexus_sdk_linux_arm64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_arm64.so nexus_client_sdk/.extensions/nexus_sdk.so          
           
           poetry build --format wheel \
           && poetry run wheel tags \
@@ -144,12 +144,12 @@ jobs:
           poetry install --all-extras
 
           sed -i "s/version = \"0.0.0\"/version = \"${VERSION:1}\"/" pyproject.toml
-          echo "__version__ = '${VERSION:1}'" > ./nexus_sdk/_version.py
+          echo "__version__ = '${VERSION:1}'" > ./nexus_client_sdk/_version.py
           
-          cext_version=$(cat nexus_sdk/.extensions/cext_version)
+          cext_version=$(cat nexus_client_sdk/.extensions/cext_version)
           
           curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_linux_amd64.tar.gz > nexus_sdk_linux_amd64.tar.gz
-          mkdir cext && tar -xvzf nexus_sdk_linux_amd64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_amd64.so nexus_sdk/.extensions/nexus_sdk.so             
+          mkdir cext && tar -xvzf nexus_sdk_linux_amd64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_amd64.so nexus_client_sdk/.extensions/nexus_sdk.so             
           
           poetry build --format wheel \
           && poetry run wheel tags \
