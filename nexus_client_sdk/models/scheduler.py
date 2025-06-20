@@ -3,7 +3,11 @@ import ctypes
 from dataclasses import dataclass
 from typing import final, Self
 
+from _pytest.pytester import RunResult
+
 from nexus_client_sdk.cwrapper import CLIB
+from nexus_client_sdk.models.client_errors.sdk_error import SdkError
+from nexus_client_sdk.models.client_errors.unauthorized_error import UnauthorizedError
 
 
 @final
@@ -17,6 +21,8 @@ class SdkRunResult(ctypes.Structure):
         ("request_id", ctypes.c_char_p),
         ("result_uri", ctypes.c_char_p),
         ("run_error_message", ctypes.c_char_p),
+        ("client_error_type", ctypes.c_char_p),
+        ("client_error_message", ctypes.c_char_p),
         ("status", ctypes.c_char_p),
     ]
 
@@ -30,11 +36,13 @@ class RunResult:
     Python SDK data structure for RunResult.
     """
 
-    algorithm: str
-    request_id: str
-    result_uri: str
-    run_error_message: str
-    status: str
+    algorithm: str | None
+    request_id: str | None
+    result_uri: str | None
+    run_error_message: str | None
+    client_error_type: str | None
+    client_error_message: str | None
+    status: str | None
 
     @classmethod
     def from_sdk_result(cls, result: SdkRunResult) -> Self | None:
@@ -48,9 +56,19 @@ class RunResult:
         contents = result.contents
 
         return cls(
-            algorithm=contents.algorithm.decode(),
-            request_id=contents.request_id.decode(),
-            result_uri=contents.result_uri.decode(),
-            run_error_message=contents.run_error_message.decode(),
-            status=contents.status.decode(),
+            algorithm=contents.algorithm.decode() if contents.algorithm else None,
+            request_id=contents.request_id.decode() if contents.request_id else None,
+            result_uri=contents.result_uri.decode() if contents.result_uri else None,
+            run_error_message=contents.run_error_message.decode() if contents.run_error_message else None,
+            client_error_type=contents.client_error_type.decode() if contents.client_error_type else None,
+            client_error_message=contents.client_error_message.decode() if contents.client_error_message else None,
+            status=contents.status.decode() if contents.status else None,
         )
+
+    def error(self) -> RuntimeError | None:
+        match self.client_error_type:
+            case "*models.SdkErr":
+                return SdkError(self.client_error_message)
+            case "*models.UnauthorizedError":
+                return UnauthorizedError(self.client_error_message)
+        return None

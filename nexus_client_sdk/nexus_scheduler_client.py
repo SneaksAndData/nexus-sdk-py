@@ -6,6 +6,7 @@ from typing import final, Callable, Self, Iterator
 
 from nexus_client_sdk.cwrapper import CLIB
 from nexus_client_sdk.models.access_token import AccessToken
+from nexus_client_sdk.models.client_errors.unauthorized_error import UnauthorizedError
 from nexus_client_sdk.models.scheduler import SdkRunResult, RunResult
 
 
@@ -53,10 +54,14 @@ class NexusSchedulerClient:
         """
         self._init_client()
         results: Iterator[SdkRunResult] = self._get_run_results(bytes(tag, encoding="utf-8"))
+        if not results:
+            raise RuntimeError("Unmapped SDK error: Go client failed to return coherent result. This is a bug and must be reported to the maintainer team.")
         for result in results:
             maybe_result = RunResult.from_sdk_result(result)
             if maybe_result is None:
                 break
+            if maybe_result.error() is not None:
+                raise maybe_result.error()
             yield maybe_result
 
     @classmethod
