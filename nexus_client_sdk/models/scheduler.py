@@ -101,6 +101,9 @@ class SdkAlgorithmRun(ctypes.Structure):
         ("client_error_message", ctypes.c_char_p),
     ]
 
+    def __del__(self):
+        CLIB.FreeAlgorithmRun(self)
+
 
 @dataclass
 class AlgorithmRun(PySdkType):
@@ -119,10 +122,25 @@ class AlgorithmRun(PySdkType):
         """
         if not algorithm_run:
             return None
-        contents = algorithm_run.contents
 
         return cls(
-            request_id=contents.request_id.decode() if contents.request_id else None,
-            client_error_type=contents.client_error_type.decode() if contents.client_error_type else None,
-            client_error_message=contents.client_error_message.decode() if contents.client_error_message else None,
+            request_id=algorithm_run.request_id.decode() if algorithm_run.request_id else None,
+            client_error_type=algorithm_run.client_error_type.decode() if algorithm_run.client_error_type else None,
+            client_error_message=algorithm_run.client_error_message.decode()
+            if algorithm_run.client_error_message
+            else None,
         )
+
+
+# Args                       []string                              `json:"args"`
+# Command                    OptString                             `json:"command"`
+# ComputeResources           OptV1NexusAlgorithmResources          `json:"computeResources"`
+# Container                  OptV1NexusAlgorithmContainer          `json:"container"`
+# DatadogIntegrationSettings OptV1NexusDatadogIntegrationSettings  `json:"datadogIntegrationSettings"`
+# ErrorHandlingBehaviour     OptV1NexusErrorHandlingBehaviour      `json:"errorHandlingBehaviour"`
+# RuntimeEnvironment         OptV1NexusAlgorithmRuntimeEnvironment `json:"runtimeEnvironment"`
+# WorkgroupRef               OptV1NexusAlgorithmWorkgroupRef       `json:"workgroupRef"`
+
+
+# AlgorithmName string `json:"algorithmName"`
+# RequestId     string `json:"requestId"`
