@@ -69,6 +69,10 @@ class RunResult:
         )
 
     def error(self) -> RuntimeError | None:
+        """
+         Parse Go client error into a corresponding Python error.
+        :return:
+        """
         match self.client_error_type:
             case "*models.SdkErr":
                 return SdkError(self.client_error_message)
