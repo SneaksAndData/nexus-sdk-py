@@ -3,11 +3,14 @@ import ctypes
 from dataclasses import dataclass
 from typing import final, Self
 
-from _pytest.pytester import RunResult
 
 from nexus_client_sdk.cwrapper import CLIB
-from nexus_client_sdk.models.client_errors.sdk_error import SdkError
-from nexus_client_sdk.models.client_errors.unauthorized_error import UnauthorizedError
+from nexus_client_sdk.models.client_errors.go_http_errors import (
+    SdkError,
+    UnauthorizedError,
+    BadRequestError,
+    NotFoundError,
+)
 
 
 @final
@@ -71,4 +74,8 @@ class RunResult:
                 return SdkError(self.client_error_message)
             case "*models.UnauthorizedError":
                 return UnauthorizedError(self.client_error_message)
+            case "*models.BadRequestError":
+                return BadRequestError(self.client_error_message)
+            case "*models.NotFoundError":
+                return NotFoundError(self.client_error_message)
         return None
