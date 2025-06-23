@@ -34,7 +34,29 @@ class SdkRunResult(ctypes.Structure):
 
 
 @dataclass
-class RunResult:
+class PySdkType:
+    client_error_type: str | None
+    client_error_message: str | None
+
+    def error(self) -> RuntimeError | None:
+        """
+         Parse Go client error into a corresponding Python error.
+        :return:
+        """
+        match self.client_error_type:
+            case "*models.SdkErr":
+                return SdkError(self.client_error_message)
+            case "*models.UnauthorizedError":
+                return UnauthorizedError(self.client_error_message)
+            case "*models.BadRequestError":
+                return BadRequestError(self.client_error_message)
+            case "*models.NotFoundError":
+                return NotFoundError(self.client_error_message)
+        return None
+
+
+@dataclass
+class RunResult(PySdkType):
     """
     Python SDK data structure for RunResult.
     """
@@ -43,8 +65,6 @@ class RunResult:
     request_id: str | None
     result_uri: str | None
     run_error_message: str | None
-    client_error_type: str | None
-    client_error_message: str | None
     status: str | None
 
     @classmethod
@@ -68,18 +88,41 @@ class RunResult:
             status=contents.status.decode() if contents.status else None,
         )
 
-    def error(self) -> RuntimeError | None:
+
+@final
+class SdkAlgorithmRun(ctypes.Structure):
+    """
+    Golang sister data structure for AlgorithmRun.
+    """
+
+    _fields_ = [
+        ("request_id", ctypes.c_char_p),
+        ("client_error_type", ctypes.c_char_p),
+        ("client_error_message", ctypes.c_char_p),
+    ]
+
+
+@dataclass
+class AlgorithmRun(PySdkType):
+    """
+    Python SDK data structure for SdkAlgorithmRun.
+    """
+
+    request_id: str | None
+
+    @classmethod
+    def from_sdk_run(cls, algorithm_run: SdkAlgorithmRun) -> Self | None:
         """
-         Parse Go client error into a corresponding Python error.
+         Create a RunResult from an SDKRunResult.
+        :param algorithm_run: SdkAlgorithmRun object returned from a CGO compiled function.
         :return:
         """
-        match self.client_error_type:
-            case "*models.SdkErr":
-                return SdkError(self.client_error_message)
-            case "*models.UnauthorizedError":
-                return UnauthorizedError(self.client_error_message)
-            case "*models.BadRequestError":
-                return BadRequestError(self.client_error_message)
-            case "*models.NotFoundError":
-                return NotFoundError(self.client_error_message)
-        return None
+        if not algorithm_run:
+            return None
+        contents = algorithm_run.contents
+
+        return cls(
+            request_id=contents.request_id.decode() if contents.request_id else None,
+            client_error_type=contents.client_error_type.decode() if contents.client_error_type else None,
+            client_error_message=contents.client_error_message.decode() if contents.client_error_message else None,
+        )
