@@ -1,13 +1,21 @@
 """Scheduler"""
 
 import ctypes
+import json
 
-from typing import final, Callable, Self, Iterator
+from typing import final, Callable, Self, Iterator, Any
 
 from nexus_client_sdk.cwrapper import CLIB
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.client_errors.go_http_errors import NotFoundError
-from nexus_client_sdk.models.scheduler import SdkRunResult, RunResult
+from nexus_client_sdk.models.scheduler import (
+    SdkRunResult,
+    RunResult,
+    SdkAlgorithmRun,
+    AlgorithmRun,
+    SdkCustomRunConfiguration,
+    SdkParentRequest,
+)
 
 
 @final
@@ -28,12 +36,15 @@ class NexusSchedulerClient:
 
         # setup functions
         self._get_run_results = CLIB.GetRunResults
-        self._get_run_results.restype = ctypes.POINTER(ctypes.POINTER(SdkRunResult))
+        self._get_run_results.restype = ctypes.POINTER(SdkRunResult)
 
         self._update_token = CLIB.UpdateToken
 
+        self._create_run = CLIB.CreateRun
+        self._create_run.restype = SdkAlgorithmRun
+
     def __del__(self):
-        pass
+        CLIB.FreeClient(self._client)
 
     def _init_client(self):
         if self._client is None:
@@ -70,6 +81,43 @@ class NexusSchedulerClient:
                     break
                 case _:
                     raise maybe_result.error()
+
+    def create_run(
+        self,
+        algorithm_parameters: dict[str, Any],
+        algorithm_name: str,
+        custom_configuration: SdkCustomRunConfiguration | None = None,
+        parent_request: SdkParentRequest | None = None,
+        tag: str | None = None,
+        payload_valid_for: str = "24h",
+    ) -> str:
+        """
+         Creates a new run for a given algorithm.
+        :param algorithm_parameters: Algorithm parameters.
+        :param algorithm_name: Algorithm name.
+        :param custom_configuration: Optional custom run configuration.
+        :param parent_request: Optional Parent request reference, if applicable. Specifying a parent request allows indirect cancellation of the submission - via cancellation of a parent.
+        :param tag: Client side assigned run tag.
+        :param payload_valid_for: Payload pre-signed URL validity period.
+        :return:
+        """
+        self._init_client()
+        maybe_result = self._create_run(
+            bytes(algorithm_name, encoding="utf-8"),
+            bytes(json.dumps(algorithm_parameters), encoding="utf-8"),
+            custom_configuration.as_pointer() if custom_configuration else None,
+            parent_request.as_pointer() if parent_request is not None else None,
+            bytes(payload_valid_for, encoding="utf-8"),
+            bytes(tag, encoding="utf-8") if tag else None,
+        )
+
+        converted = AlgorithmRun.from_sdk_run(maybe_result)
+
+        match converted.error():
+            case None:
+                return converted.request_id
+            case _:
+                raise converted.error()
 
     @classmethod
     def create(cls, url: str, token_provider: Callable[[], AccessToken] | None = None) -> Self:
