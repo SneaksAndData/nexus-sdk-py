@@ -3,8 +3,6 @@ import ctypes
 from dataclasses import dataclass
 from typing import final, Self
 
-from dataclasses_json import DataClassJsonMixin, dataclass_json, LetterCase
-
 from nexus_client_sdk.cwrapper import CLIB
 from nexus_client_sdk.models.client_errors.go_http_errors import (
     SdkError,
@@ -98,6 +96,10 @@ class RunResult(PySdkType):
         return obj
 
     def is_empty(self) -> bool:
+        """
+         Checks if this object is empty (end of the response)
+        :return:
+        """
         return (
             self.algorithm is None
             or self.request_id is None
