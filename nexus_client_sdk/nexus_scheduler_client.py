@@ -1,10 +1,12 @@
 """Scheduler"""
-import asyncio
 import ctypes
 import json
-from array import array
+import threading
+import time
 
 from typing import final, Callable, Self, Iterator, Any
+
+from adapta.utils.concurrent_task_runner import ConcurrentTaskRunner, Executable
 
 from nexus_client_sdk.cwrapper import CLIB
 from nexus_client_sdk.models.access_token import AccessToken
@@ -177,7 +179,7 @@ class NexusSchedulerClient:
         """
         progress_counter = ctypes.pointer(ctypes.c_int32(0))
 
-        def _await_tagged():
+        def _await_tagged(*_, **__) -> Iterator[RunResult]:
             return self._iterate_results(
                 self._await_tagged_runs(
                     tags_array_ptr,
@@ -187,32 +189,36 @@ class NexusSchedulerClient:
                 )
             )
 
-        async def _await_tagged_async():
-            return _await_tagged()
+        def _report_progress(*_, **__) -> None:
+            prev_progress = progress_counter.contents.value
+            while prev_progress < len(tags):
+                # check progress and report if there is any
+                if (
+                        progress_counter.contents.value != prev_progress
+                        and progress_counter.contents.value / len(tags) - prev_progress / len(tags) > 0.05
+                ):
+                    print(
+                        f"Total tagged runs: {len(tags)}, completed {progress_counter.contents.value}, remaining {len(tags) - progress_counter.contents.value}"
+                    )
+                    prev_progress = progress_counter.contents.value
+                time.sleep(1)
+
+                # TODO: fix completion
+                # TODO: logs instead of prints
+
 
         self._init_client()
         tags_array_ptr = self._c_string_array(tags)
         if not report_progress:
             return _await_tagged()
 
-        loop = asyncio.get_event_loop()
-        task = loop.create_task(_await_tagged_async())
-        while True:
-            if task.done() and task.exception() is None:
-                return task.result()
-            if task.exception() is not None:
-                raise task.exception()
+        awaitable = [Executable(func=_await_tagged, alias="result", args=[], kwargs={})]
+        runner = ConcurrentTaskRunner(awaitable, 1, False)
+        report_thread = threading.Thread(target=_report_progress, daemon=True)
+        report_thread.start()
 
-            prev_progress = progress_counter.contents.value
-            asyncio.sleep(1)
-            # check progress and report if there is any
-            if (
-                progress_counter.contents.value != prev_progress
-                and progress_counter.contents.value / len(tags) - prev_progress / len(tags) > 0.05
-            ):
-                print(
-                    f"Total tagged runs: {len(tags)}, completed {progress_counter.contents.value}, remaining {len(tags) - progress_counter.contents.value}"
-                )
+        return runner.eager()["result"]
+
 
     @classmethod
     def create(cls, url: str, token_provider: Callable[[], AccessToken] | None = None) -> Self:
