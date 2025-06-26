@@ -47,7 +47,7 @@ class NexusSchedulerClient:
         self._await_run = CLIB.AwaitRun
         self._await_run.restype = SdkRunResult
 
-        self._await_tagged_runs = CLIB.AwaitTaggedRuns
+        self._await_tagged_runs = CLIB.AwaitRuns
         self._await_tagged_runs.restype = ctypes.POINTER(SdkRunResult)
 
         self._free_results_array = CLIB.FreeRunResultsPointer
@@ -80,8 +80,6 @@ class NexusSchedulerClient:
                 case _:
                     raise maybe_result.error()
 
-        self._free_results_array(results)
-
     def get_run_results(self, tag: str, algorithm: str | None = None) -> Iterator[RunResult]:
         """
          Retrieves run results for a given tag.
@@ -90,12 +88,17 @@ class NexusSchedulerClient:
         :return: Run result collection.
         """
         self._init_client()
-        results: Iterator[SdkRunResult] = self._get_run_results(bytes(tag, encoding="utf-8"), bytes(algorithm, encoding="utf-8") if algorithm else None)
+        results: Iterator[SdkRunResult] = self._get_run_results(
+            bytes(tag, encoding="utf-8"), bytes(algorithm, encoding="utf-8") if algorithm else None
+        )
         if not results:
             raise RuntimeError(
                 "Unmapped SDK error: Go client failed to return coherent result. This is a bug and must be reported to the maintainer team."
             )
-        return self._iterate_results(results)
+        for result in self._iterate_results(results):
+            yield result
+
+        self._free_results_array(results)
 
     def create_run(
         self,
@@ -134,7 +137,7 @@ class NexusSchedulerClient:
             case _:
                 raise converted.error()
 
-    def await_run(self, request_id: str, algorithm: str, poll_interval_seconds = 5) -> RunResult:
+    def await_run(self, request_id: str, algorithm: str, poll_interval_seconds=5) -> RunResult:
         """
           Awaits result for a given run for a given algorithm.
         :param request_id: Run request ID.
@@ -157,8 +160,7 @@ class NexusSchedulerClient:
             case _:
                 raise converted.error()
 
-
-    def await_tagged(self, tags: list[str], algorithm: str | None, poll_interval_seconds = 5, report_progress = True):
+    def await_tagged(self, tags: list[str], algorithm: str | None, poll_interval_seconds=5, report_progress=True):
         """
          Awaits all runs with matching tags.
         :param tags: Tags to use when filtering runs
@@ -167,8 +169,17 @@ class NexusSchedulerClient:
         :param report_progress: Whether to report overall progress.
         :return:
         """
+        progress_counter = ctypes.pointer(ctypes.c_int32(0))
+
         def _await_tagged():
-            return self._iterate_results(self._await_tagged_runs(tags_array_ptr, bytes(algorithm, encoding="utf-8") if algorithm else None, ctypes.c_int32(poll_interval_seconds)))
+            return self._iterate_results(
+                self._await_tagged_runs(
+                    tags_array_ptr,
+                    bytes(algorithm, encoding="utf-8") if algorithm else None,
+                    ctypes.c_int32(poll_interval_seconds),
+                    None if not report_progress else progress_counter,
+                )
+            )
 
         async def _await_tagged_async():
             return _await_tagged()
@@ -187,9 +198,16 @@ class NexusSchedulerClient:
             if task.exception() is not None:
                 raise task.exception()
 
+            prev_progress = progress_counter.contents.value
             asyncio.sleep(1)
             # check progress and report if there is any
-
+            if (
+                progress_counter.contents.value != prev_progress
+                and progress_counter.contents.value / len(tags) - prev_progress / len(tags) > 0.05
+            ):
+                print(
+                    f"Total tagged runs: {len(tags)}, completed {progress_counter.contents.value}, remaining {len(tags) - progress_counter.contents.value}"
+                )
 
     @classmethod
     def create(cls, url: str, token_provider: Callable[[], AccessToken] | None = None) -> Self:
