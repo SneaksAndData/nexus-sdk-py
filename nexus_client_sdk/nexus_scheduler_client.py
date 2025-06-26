@@ -55,6 +55,12 @@ class NexusSchedulerClient:
     def __del__(self):
         CLIB.FreeClient(self._client)
 
+    def _c_string_array(self, strings: list[str]) -> ctypes.pointer:
+        ptr = (ctypes.c_char_p * (len(strings) + 1))()
+        ptr[:-1] = [string.encode("utf-8") for string in strings]
+        ptr[-1] = None  # Terminate with null.
+        return ptr
+
     def _init_client(self):
         if self._client is None:
             self._current_token = self._token_provider() if self._token_provider is not None else AccessToken.empty()
@@ -185,8 +191,7 @@ class NexusSchedulerClient:
             return _await_tagged()
 
         self._init_client()
-        tags_array = array("u", tags)
-        tags_array_ptr = (ctypes.c_char_p * len(tags_array)).from_buffer(tags_array)
+        tags_array_ptr = self._c_string_array(tags)
         if not report_progress:
             return _await_tagged()
 
