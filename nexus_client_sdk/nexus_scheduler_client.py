@@ -6,6 +6,7 @@ import time
 
 from typing import final, Callable, Self, Iterator, Any
 
+from adapta.logs import LoggerInterface
 from adapta.utils.concurrent_task_runner import ConcurrentTaskRunner, Executable
 
 from nexus_client_sdk.cwrapper import CLIB
@@ -26,14 +27,15 @@ class NexusSchedulerClient:
     """
     Nexus Scheduler client. Wraps Golang functionality.
     """
-
     def __init__(
         self,
         url: str,
+        logger: LoggerInterface,
         token_provider: Callable[[], AccessToken] | None = None,
     ):
         self._url = url
         self._token_provider = token_provider
+        self._logger = logger
         self._client = None
         self._current_token: AccessToken | None = None
 
@@ -128,6 +130,7 @@ class NexusSchedulerClient:
         :return:
         """
         self._init_client()
+        self._logger.info("Creating a new run for {algorithm} with tag '{tag}'", algorithm=algorithm_name, tag=tag or "tag not provided")
         maybe_result = self._create_run(
             bytes(algorithm_name, encoding="utf-8"),
             bytes(json.dumps(algorithm_parameters), encoding="utf-8"),
@@ -154,6 +157,7 @@ class NexusSchedulerClient:
         :return:
         """
         self._init_client()
+        self._logger.info("Awaiting run for {algorithm}/{request_id}", algorithm=algorithm, request_id=request_id)
         maybe_result = self._await_run(
             bytes(request_id, encoding="utf-8"),
             bytes(algorithm, encoding="utf-8"),
@@ -197,14 +201,16 @@ class NexusSchedulerClient:
                         progress_counter.contents.value != prev_progress
                         and progress_counter.contents.value / len(tags) - prev_progress / len(tags) > 0.05
                 ):
-                    print(
-                        f"Total tagged runs: {len(tags)}, completed {progress_counter.contents.value}, remaining {len(tags) - progress_counter.contents.value}"
+                    self._logger.info(
+                        "Total tagged runs: {total}, completed {completed}, remaining {remaining}",
+                        total=len(tags),
+                        completed=progress_counter.contents.value,
+                        remaining=len(tags) - progress_counter.contents.value,
                     )
                     prev_progress = progress_counter.contents.value
                 time.sleep(1)
 
-                # TODO: fix completion
-                # TODO: logs instead of prints
+            self._logger.info("All runs have completed")
 
 
         self._init_client()
@@ -217,16 +223,20 @@ class NexusSchedulerClient:
         report_thread = threading.Thread(target=_report_progress, daemon=True)
         report_thread.start()
 
-        return runner.eager()["result"]
+        completed_results =  runner.eager()
+        report_thread.join()
+
+        return completed_results["result"]
 
 
     @classmethod
-    def create(cls, url: str, token_provider: Callable[[], AccessToken] | None = None) -> Self:
+    def create(cls, url: str, logger: LoggerInterface, token_provider: Callable[[], AccessToken] | None = None) -> Self:
         """
          Initializes the client.
 
         :param url: Nexus scheduler URL.
+        :param logger: Logger to use.
         :param token_provider: Auth token provider.
         :return:
         """
-        return cls(url, token_provider)
+        return cls(url, logger, token_provider)
