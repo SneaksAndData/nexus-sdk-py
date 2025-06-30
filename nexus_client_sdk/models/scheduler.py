@@ -300,6 +300,11 @@ class RequestMetadata(PySdkType):
 
     @classmethod
     def from_sdk_result(cls, result: SdkRequestMetadata) -> Self | None:
+        """
+         Create an instance of this class from a SdkRequestMetadata
+        :param result: An instance of SdkRequestMetadata
+        :return:
+        """
         if not result:
             return None
 
