@@ -1,9 +1,13 @@
 """Scheduler"""
-
 import ctypes
 import json
+import threading
+import time
 
 from typing import final, Callable, Self, Iterator, Any
+
+from adapta.logs import LoggerInterface
+from adapta.utils.concurrent_task_runner import ConcurrentTaskRunner, Executable
 
 from nexus_client_sdk.cwrapper import CLIB
 from nexus_client_sdk.models.access_token import AccessToken
@@ -27,10 +31,12 @@ class NexusSchedulerClient:
     def __init__(
         self,
         url: str,
+        logger: LoggerInterface,
         token_provider: Callable[[], AccessToken] | None = None,
     ):
         self._url = url
         self._token_provider = token_provider
+        self._logger = logger
         self._client = None
         self._current_token: AccessToken | None = None
 
@@ -43,8 +49,22 @@ class NexusSchedulerClient:
         self._create_run = CLIB.CreateRun
         self._create_run.restype = SdkAlgorithmRun
 
+        self._await_run = CLIB.AwaitRun
+        self._await_run.restype = SdkRunResult
+
+        self._await_tagged_runs = CLIB.AwaitRuns
+        self._await_tagged_runs.restype = ctypes.POINTER(SdkRunResult)
+
+        self._free_results_array = CLIB.FreeRunResultsPointer
+
     def __del__(self):
         CLIB.FreeClient(self._client)
+
+    def _c_string_array(self, strings: list[str]) -> ctypes.pointer:
+        ptr = (ctypes.c_char_p * (len(strings) + 1))()
+        ptr[:-1] = [string.encode("utf-8") for string in strings]
+        ptr[-1] = None  # Terminate with null.
+        return ptr
 
     def _init_client(self):
         if self._client is None:
@@ -57,18 +77,7 @@ class NexusSchedulerClient:
             self._current_token = self._token_provider() if self._token_provider is not None else AccessToken.empty()
             self._update_token(bytes(self._current_token.value, encoding="utf-8"))
 
-    def get_run_results(self, tag: str) -> Iterator[RunResult]:
-        """
-         Retrieves run results for a given tag.
-        :param tag: Client-side assigned run tag.
-        :return: Run result collection.
-        """
-        self._init_client()
-        results: Iterator[SdkRunResult] = self._get_run_results(bytes(tag, encoding="utf-8"))
-        if not results:
-            raise RuntimeError(
-                "Unmapped SDK error: Go client failed to return coherent result. This is a bug and must be reported to the maintainer team."
-            )
+    def _iterate_results(self, results: Iterator[SdkRunResult]) -> Iterator[RunResult]:
         for result in results:
             maybe_result = RunResult.from_sdk_result(result)
             if maybe_result is None:
@@ -81,6 +90,25 @@ class NexusSchedulerClient:
                     break
                 case _:
                     raise maybe_result.error()
+
+    def get_run_results(self, tag: str, algorithm: str | None = None) -> Iterator[RunResult]:
+        """
+         Retrieves run results for a given tag.
+        :param tag: Client-side assigned run tag.
+        :param algorithm: Optional algorithm to filter returned results by.
+        :return: Run result collection.
+        """
+        self._init_client()
+        results: Iterator[SdkRunResult] = self._get_run_results(
+            bytes(tag, encoding="utf-8"), bytes(algorithm, encoding="utf-8") if algorithm else None
+        )
+        if not results:
+            raise RuntimeError(
+                "Unmapped SDK error: Go client failed to return coherent result. This is a bug and must be reported to the maintainer team."
+            )
+        yield from self._iterate_results(results)
+
+        self._free_results_array(results)
 
     def create_run(
         self,
@@ -102,11 +130,16 @@ class NexusSchedulerClient:
         :return:
         """
         self._init_client()
+        self._logger.info(
+            "Creating a new run for {algorithm} with tag '{tag}'",
+            algorithm=algorithm_name,
+            tag=tag or "tag not provided",
+        )
         maybe_result = self._create_run(
             bytes(algorithm_name, encoding="utf-8"),
             bytes(json.dumps(algorithm_parameters), encoding="utf-8"),
             custom_configuration.as_pointer() if custom_configuration else None,
-            parent_request.as_pointer() if parent_request is not None else None,
+            parent_request.as_pointer() if parent_request else None,
             bytes(payload_valid_for, encoding="utf-8"),
             bytes(tag, encoding="utf-8") if tag else None,
         )
@@ -119,13 +152,95 @@ class NexusSchedulerClient:
             case _:
                 raise converted.error()
 
+    def await_run(self, request_id: str, algorithm: str, poll_interval_seconds=5) -> RunResult:
+        """
+          Awaits result for a given run for a given algorithm.
+        :param request_id: Run request ID.
+        :param algorithm: Algorithm name.
+        :param poll_interval_seconds: Time between status checks
+        :return:
+        """
+        self._init_client()
+        self._logger.info("Awaiting run for {algorithm}/{request_id}", algorithm=algorithm, request_id=request_id)
+        maybe_result = self._await_run(
+            bytes(request_id, encoding="utf-8"),
+            bytes(algorithm, encoding="utf-8"),
+            ctypes.c_int32(poll_interval_seconds),
+        )
+
+        converted = RunResult.from_sdk_result(maybe_result)
+
+        match converted.error():
+            case None:
+                return converted
+            case _:
+                raise converted.error()
+
+    def await_tagged(self, tags: list[str], algorithm: str | None, poll_interval_seconds=5, report_progress=True):
+        """
+         Awaits all runs with matching tags.
+        :param tags: Tags to use when filtering runs
+        :param algorithm: Optional algorithm name to filter tagged runs by. Only set this if client might use the same tag for multiple algorithms.
+        :param poll_interval_seconds: Time between status checks
+        :param report_progress: Whether to report overall progress.
+        :return:
+        """
+        progress_counter = ctypes.pointer(ctypes.c_int32(0))
+        terminate_report_thread = False
+
+        def _await_tagged(*_, **__) -> Iterator[RunResult]:
+            return self._iterate_results(
+                self._await_tagged_runs(
+                    tags_array_ptr,
+                    bytes(algorithm, encoding="utf-8") if algorithm else None,
+                    ctypes.c_int32(poll_interval_seconds),
+                    None if not report_progress else progress_counter,
+                )
+            )
+
+        def _report_progress(*_, **__) -> None:
+            prev_progress = progress_counter.contents.value
+            while prev_progress < len(tags) and not terminate_report_thread:
+                # check progress and report if there is any
+                if (
+                    progress_counter.contents.value != prev_progress
+                    and progress_counter.contents.value / len(tags) - prev_progress / len(tags) > 0.05
+                ):
+                    self._logger.info(
+                        "Total tagged runs: {total}, completed {completed}, remaining {remaining}",
+                        total=len(tags),
+                        completed=progress_counter.contents.value,
+                        remaining=len(tags) - progress_counter.contents.value,
+                    )
+                    prev_progress = progress_counter.contents.value
+                time.sleep(1)
+
+            self._logger.info("All runs have completed")
+
+        self._init_client()
+        tags_array_ptr = self._c_string_array(tags)
+        if not report_progress:
+            return _await_tagged()
+
+        awaitable = [Executable(func=_await_tagged, alias="result", args=[], kwargs={})]
+        runner = ConcurrentTaskRunner(awaitable, 1, False)
+        report_thread = threading.Thread(target=_report_progress, daemon=True)
+        report_thread.start()
+
+        completed_results = runner.eager()
+        terminate_report_thread = True
+        report_thread.join()
+
+        return completed_results["result"]
+
     @classmethod
-    def create(cls, url: str, token_provider: Callable[[], AccessToken] | None = None) -> Self:
+    def create(cls, url: str, logger: LoggerInterface, token_provider: Callable[[], AccessToken] | None = None) -> Self:
         """
          Initializes the client.
 
         :param url: Nexus scheduler URL.
+        :param logger: Logger to use.
         :param token_provider: Auth token provider.
         :return:
         """
-        return cls(url, token_provider)
+        return cls(url, logger, token_provider)
