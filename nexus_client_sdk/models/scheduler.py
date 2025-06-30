@@ -102,8 +102,8 @@ class RunResult(PySdkType):
         """
         return (
             self.algorithm is None
-            or self.request_id is None
-            or self.result_uri is None
+            and self.request_id is None
+            and self.result_uri is None
             and self.run_error_message is None
             and self.status is None
             and self.client_error_type is None

@@ -27,6 +27,7 @@ class NexusSchedulerClient:
     """
     Nexus Scheduler client. Wraps Golang functionality.
     """
+
     def __init__(
         self,
         url: str,
@@ -105,8 +106,7 @@ class NexusSchedulerClient:
             raise RuntimeError(
                 "Unmapped SDK error: Go client failed to return coherent result. This is a bug and must be reported to the maintainer team."
             )
-        for result in self._iterate_results(results):
-            yield result
+        yield from self._iterate_results(results)
 
         self._free_results_array(results)
 
@@ -130,7 +130,11 @@ class NexusSchedulerClient:
         :return:
         """
         self._init_client()
-        self._logger.info("Creating a new run for {algorithm} with tag '{tag}'", algorithm=algorithm_name, tag=tag or "tag not provided")
+        self._logger.info(
+            "Creating a new run for {algorithm} with tag '{tag}'",
+            algorithm=algorithm_name,
+            tag=tag or "tag not provided",
+        )
         maybe_result = self._create_run(
             bytes(algorithm_name, encoding="utf-8"),
             bytes(json.dumps(algorithm_parameters), encoding="utf-8"),
@@ -198,8 +202,8 @@ class NexusSchedulerClient:
             while prev_progress < len(tags):
                 # check progress and report if there is any
                 if (
-                        progress_counter.contents.value != prev_progress
-                        and progress_counter.contents.value / len(tags) - prev_progress / len(tags) > 0.05
+                    progress_counter.contents.value != prev_progress
+                    and progress_counter.contents.value / len(tags) - prev_progress / len(tags) > 0.05
                 ):
                     self._logger.info(
                         "Total tagged runs: {total}, completed {completed}, remaining {remaining}",
@@ -212,7 +216,6 @@ class NexusSchedulerClient:
 
             self._logger.info("All runs have completed")
 
-
         self._init_client()
         tags_array_ptr = self._c_string_array(tags)
         if not report_progress:
@@ -223,11 +226,10 @@ class NexusSchedulerClient:
         report_thread = threading.Thread(target=_report_progress, daemon=True)
         report_thread.start()
 
-        completed_results =  runner.eager()
+        completed_results = runner.eager()
         report_thread.join()
 
         return completed_results["result"]
-
 
     @classmethod
     def create(cls, url: str, logger: LoggerInterface, token_provider: Callable[[], AccessToken] | None = None) -> Self:
