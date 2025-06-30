@@ -19,6 +19,8 @@ from nexus_client_sdk.models.scheduler import (
     AlgorithmRun,
     SdkCustomRunConfiguration,
     SdkParentRequest,
+    RequestMetadata,
+    SdkRequestMetadata,
 )
 
 
@@ -54,6 +56,9 @@ class NexusSchedulerClient:
 
         self._await_tagged_runs = CLIB.AwaitRuns
         self._await_tagged_runs.restype = ctypes.POINTER(SdkRunResult)
+
+        self._get_request_metadata = CLIB.GetRequestMetadata
+        self._get_request_metadata.restype = SdkRequestMetadata
 
         self._free_results_array = CLIB.FreeRunResultsPointer
 
@@ -232,6 +237,26 @@ class NexusSchedulerClient:
         report_thread.join()
 
         return completed_results["result"]
+
+    def get_request_metadata(self, request_id: str, algorithm: str) -> RequestMetadata | None:
+        """
+         Returns metadata and full runtime configuration for the request container.
+        :return:
+        """
+        self._init_client()
+        sdk_meta = self._get_request_metadata(bytes(request_id, encoding="utf-8"), bytes(algorithm, encoding="utf-8"))
+        maybe_meta = RequestMetadata.from_sdk_result(sdk_meta)
+
+        if maybe_meta is None:
+            return None
+
+        match maybe_meta.error():
+            case None:
+                return maybe_meta
+            case err if err is NotFoundError:
+                return None
+            case _:
+                raise maybe_meta.error()
 
     @classmethod
     def create(cls, url: str, logger: LoggerInterface, token_provider: Callable[[], AccessToken] | None = None) -> Self:

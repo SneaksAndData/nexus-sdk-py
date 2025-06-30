@@ -236,3 +236,95 @@ class SdkParentRequest(ctypes.Structure):
         :return:
         """
         return ctypes.pointer(self)
+
+
+@final
+class SdkRequestMetadata(ctypes.Structure):
+    """
+    Request metadata response model
+    """
+
+    _fields_ = [
+        ("algorithm", ctypes.c_char_p),
+        ("id", ctypes.c_char_p),
+        ("algorithm_failure_cause", ctypes.c_char_p),
+        ("algorithm_failure_details", ctypes.c_char_p),
+        ("api_version", ctypes.c_char_p),
+        ("applied_configuration", ctypes.c_char_p),
+        ("configuration_overrides", ctypes.c_char_p),
+        ("content_hash", ctypes.c_char_p),
+        ("job_uid", ctypes.c_char_p),
+        ("last_modified", ctypes.c_char_p),
+        ("lifecycle_stage", ctypes.c_char_p),
+        ("parent_job", ctypes.c_char_p),
+        ("payload_uri", ctypes.c_char_p),
+        ("payload_valid_for", ctypes.c_char_p),
+        ("received_at", ctypes.c_char_p),
+        ("received_by_host", ctypes.c_char_p),
+        ("result_uri", ctypes.c_char_p),
+        ("sent_at", ctypes.c_char_p),
+        ("tag", ctypes.c_char_p),
+        ("client_error_type", ctypes.c_char_p),
+        ("client_error_message", ctypes.c_char_p),
+    ]
+
+    def __del__(self):
+        CLIB.FreeRequestMetadata(self)
+
+
+@dataclass
+class RequestMetadata(PySdkType):
+    """
+    Python counterpart for SdkRequestMetadata
+    """
+
+    algorithm: str | None
+    id: str | None
+    algorithm_failure_cause: str | None
+    algorithm_failure_details: str | None
+    api_version: str | None
+    applied_configuration: dict[str, str] | None
+    configuration_overrides: dict[str, str] | None
+    content_hash: str | None
+    job_uid: str | None
+    last_modified: str | None
+    lifecycle_stage: str | None
+    parent_job: dict[str, str] | None
+    payload_uri: str | None
+    payload_valid_for: str | None
+    received_at: str | None
+    received_by_host: str | None
+    result_uri: str | None
+    sent_at: str | None
+    tag: str | None
+
+    @classmethod
+    def from_sdk_result(cls, result: SdkRequestMetadata) -> Self | None:
+        if not result:
+            return None
+
+        return cls(
+            algorithm=result.algorithm.decode() if result.algorithm else None,
+            id=result.id.decode() if result.id else None,
+            algorithm_failure_cause=result.algorithm_failure_cause.decode() if result.algorithm_failure_cause else None,
+            algorithm_failure_details=result.algorithm_failure_details.decode()
+            if result.algorithm_failure_details
+            else None,
+            api_version=result.api_version,
+            applied_configuration=result.applied_configuration.decode() if result.applied_configuration else None,
+            configuration_overrides=result.configuration_overrides.decode() if result.configuration_overrides else None,
+            content_hash=result.content_hash.decode() if result.content_hash else None,
+            job_uid=result.job_uid.decode() if result.job_uid else None,
+            last_modified=result.last_modified.decode() if result.last_modified else None,
+            lifecycle_stage=result.lifecycle_stage,
+            parent_job=result.parent_job.decode() if result.parent_job else None,
+            payload_uri=result.payload_uri.decode() if result.payload_uri else None,
+            payload_valid_for=result.payload_valid_for.decode() if result.payload_valid_for else None,
+            received_at=result.received_at.decode() if result.received_at else None,
+            received_by_host=result.received_by_host.decode() if result.received_by_host else None,
+            result_uri=result.result_uri.decode() if result.result_uri else None,
+            sent_at=result.sent_at.decode() if result.sent_at else None,
+            tag=result.tag.decode() if result.tag else None,
+            client_error_type=result.client_error_type.decode() if result.client_error_type else None,
+            client_error_message=result.client_error_message.decode() if result.client_error_message else None,
+        )
