@@ -186,6 +186,7 @@ class NexusSchedulerClient:
         :return:
         """
         progress_counter = ctypes.pointer(ctypes.c_int32(0))
+        terminate_report_thread = False
 
         def _await_tagged(*_, **__) -> Iterator[RunResult]:
             return self._iterate_results(
@@ -199,7 +200,7 @@ class NexusSchedulerClient:
 
         def _report_progress(*_, **__) -> None:
             prev_progress = progress_counter.contents.value
-            while prev_progress < len(tags):
+            while prev_progress < len(tags) and not terminate_report_thread:
                 # check progress and report if there is any
                 if (
                     progress_counter.contents.value != prev_progress
@@ -227,6 +228,7 @@ class NexusSchedulerClient:
         report_thread.start()
 
         completed_results = runner.eager()
+        terminate_report_thread = True
         report_thread.join()
 
         return completed_results["result"]
