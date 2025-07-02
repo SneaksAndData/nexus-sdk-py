@@ -1,0 +1,49 @@
+"""
+ Cache module exceptions.
+"""
+
+#  Copyright (c) 2023-2024. ECCO Sneaks & Data
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+from nexus_client_sdk.nexus.exceptions._nexus_error import (
+    FatalNexusError,
+    TransientNexusError,
+)
+
+
+class FatalCachingError(FatalNexusError):
+    """
+    Cache-level exception that shuts down the Nexus.
+    """
+
+    def __init__(self, failed_object: str):
+        super().__init__()
+        self._failed_object = failed_object
+
+    def __str__(self) -> str:
+        return f"Nexus object with alias '{self._failed_object}' failed the caching operation that cannot be retried. Review traceback for more information"
+
+
+class TransientCachingError(TransientNexusError):
+    """
+    Cache-level exception that will initiate a retry with the Nexus re-activation.
+    """
+
+    def __init__(self, failed_object):
+        super().__init__()
+        self._failed_object = failed_object
+
+    def __str__(self) -> str:
+        return f"Nexus object with alias '{self._failed_object}' failed the caching operation and it will be retried. Review traceback for more information"
