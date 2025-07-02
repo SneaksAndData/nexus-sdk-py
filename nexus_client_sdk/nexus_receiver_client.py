@@ -1,3 +1,4 @@
+"""Receiver"""
 from typing import final, Callable
 
 from adapta.logs import LoggerInterface

@@ -14,6 +14,11 @@ class ErrorResponse(PySdkType):
 
     @classmethod
     def from_sdk_response(cls, response: SdkErrorResponse) -> Self | None:
+        """
+         Create an ErrorResponse from a SdkErrorResponse.
+        :param response:
+        :return:
+        """
         if not response:
             return None
 
@@ -28,6 +33,10 @@ class ErrorResponse(PySdkType):
 
 @final
 class SdkCompletedRunResult(ctypes.Structure):
+    """
+    Golang-side struct for completed run result.
+    """
+
     _fields_ = [
         ("result_uri", ctypes.c_char_p),
         ("error_cause", ctypes.c_char_p),
