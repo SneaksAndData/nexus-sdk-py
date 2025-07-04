@@ -1,5 +1,5 @@
 """Cli helpers for Nexus inputs"""
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser
 from dataclasses import dataclass
 from typing import Self
 

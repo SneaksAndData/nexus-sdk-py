@@ -34,9 +34,23 @@ class NexusReceiverAsyncClient(NexusCoreObject):
 
     @classmethod
     def create(cls, url: str, token_provider: Callable[[], AccessToken] | None = None) -> Self:
+        """
+         Create a NexusReceiverAsyncClient.
+        :param url: A url to connect to.
+        :param token_provider: Optional token provider.
+        :return:
+        """
+
         @inject
         def _from_di(metrics_provider: MetricsProvider, logger_factory: LoggerFactory) -> Self:
             return cls(url, metrics_provider, logger_factory, token_provider)
 
     async def complete_run(self, result: SdkCompletedRunResult, algorithm: str, request_id: str):
+        """
+         Async wrapper for NexusReceiverClient.complete_run.
+        :param result: Run result metadata
+        :param algorithm: Algorithm name
+        :param request_id: Run request identifier
+        :return:
+        """
         return self._sync_client.complete_run(result=result, algorithm=algorithm, request_id=request_id)

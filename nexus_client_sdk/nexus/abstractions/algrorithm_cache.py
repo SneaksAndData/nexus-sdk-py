@@ -18,10 +18,10 @@
 #
 
 import asyncio
-from typing import final, Type
+from typing import final, Type, Any
 
-import azure.core.exceptions
 import deltalake.exceptions
+import cassandra
 
 from nexus_client_sdk.nexus.abstractions.input_object import InputObject
 from nexus_client_sdk.nexus.abstractions.nexus_object import TResult, TPayload
@@ -38,7 +38,7 @@ class InputCache:
     """
 
     def __init__(self):
-        self._cache: dict[str, TResult] = {}
+        self._cache: dict[str, Any] = {}
 
     def _resolve_exc_type(self, ex: BaseException) -> Type[FatalCachingError] | Type[TransientCachingError]:
         """
@@ -47,16 +47,17 @@ class InputCache:
 
         match type(ex):
             case (
-                azure.core.exceptions.HttpResponseError
-                | deltalake.exceptions.TableNotFoundError
+                deltalake.exceptions.TableNotFoundError
                 | deltalake.exceptions.DeltaProtocolError
                 | deltalake.exceptions.CommitFailedError
                 | deltalake.exceptions.DeltaProtocolError
                 | deltalake.exceptions.SchemaMismatchError
             ):
                 return TransientCachingError
-            case azure.core.exceptions.AzureError | azure.core.exceptions.ClientAuthenticationError:
-                return FatalCachingError
+            case cassandra.Unauthorized, cassandra.RequestValidationException, cassandra.AuthenticationFailed:
+                return TransientCachingError
+            case cassandra.Timeout, cassandra.Unavailable, cassandra.ReadTimeout, cassandra.WriteTimeout, cassandra.OperationTimedOut, cassandra.ReadFailure, cassandra.ReadFailure, cassandra.CoordinationFailure:
+                return TransientCachingError
             case _:
                 return FatalCachingError
 
