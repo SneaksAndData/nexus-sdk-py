@@ -11,14 +11,14 @@ Initialize a client and retrieve results for a tagged submission:
 ```python
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.scheduler import SdkCustomRunConfiguration
-from nexus_client_sdk.nexus_scheduler_client import NexusSchedulerClient
+from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 
 token = "..."
 client = NexusSchedulerClient.create("https://localhost:8080", lambda: AccessToken.empty())
 
 alg_params = {"field1": {"field2": 1, "field3": "abc"}, "field4": "cde"}
 
-#create a run
+# create a run
 new_run = client.create_run(
     algorithm_parameters=alg_params,
     algorithm_name="test-algorithm",

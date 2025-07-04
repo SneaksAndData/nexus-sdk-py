@@ -26,7 +26,6 @@ from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from injector import Module, singleton, provider
 
-from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import (
     BootstrapLoggerFactory,
@@ -47,7 +46,6 @@ from nexus_client_sdk.nexus.core.serializers import (
     TelemetrySerializer,
     ResultSerializer,
 )
-from nexus_client_sdk.nexus_receiver_client import NexusReceiverClient
 
 
 @final
@@ -63,25 +61,6 @@ class BootstrapLoggerFactoryModule(Module):
         DI factory method.
         """
         return BootstrapLoggerFactory()
-
-
-@final
-class NexusReceiverClientModule(Module):
-    """
-    Crystal receiver module.
-    """
-
-    @singleton
-    @provider
-    def provide(self) -> NexusReceiverClient:
-        """
-        DI factory method.
-        """
-        return NexusReceiverClient(
-            url=os.getenv("NEXUS__RECEIVER_URL"),
-            logger=None,  # TODO: move this client to bootstrap stage
-            token_provider=lambda: AccessToken.empty(),
-        )
 
 
 @final
@@ -204,7 +183,6 @@ class ServiceConfigurator:
     def __init__(self):
         self._injection_binds = [
             BootstrapLoggerFactoryModule(),
-            NexusReceiverClientModule(),
             QueryEnabledStoreModule(),
             StorageClientModule(),
             ExternalSocketsModule(),

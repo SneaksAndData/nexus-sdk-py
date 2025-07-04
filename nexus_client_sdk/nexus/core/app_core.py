@@ -22,7 +22,6 @@ import os
 import platform
 import signal
 import sys
-import traceback
 from typing import final, Type, Optional, Callable, Self
 
 import backoff
@@ -48,6 +47,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.algorithms import (
     BaselineAlgorithm,
 )
+from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.configurations.algorithm_configuration import (
     NexusConfiguration,
 )
@@ -69,7 +69,6 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
 )
 from nexus_client_sdk import __version__
-from nexus_client_sdk.nexus_receiver_client import NexusReceiverClient
 
 
 def is_transient_exception(exception: Optional[BaseException]) -> Optional[bool]:
@@ -286,11 +285,11 @@ class Nexus:
             )
             return storage_client.get_blob_uri(blob_path=blob_path)
 
-        receiver = self._injector.get(NexusReceiverClient)
+        receiver = self._injector.get(NexusReceiverAsyncClient)
 
         match is_transient_exception(ex):
             case None:
-                receiver.complete_run(
+                await receiver.complete_run(
                     result=SdkCompletedRunResult.create(
                         result_uri=save_result(result),
                         error=None,
@@ -301,7 +300,7 @@ class Nexus:
             case True:
                 sys.exit(1)
             case False:
-                receiver.complete_run(
+                await receiver.complete_run(
                     result=SdkCompletedRunResult.create(
                         result_uri=None,
                         error=ex,
@@ -365,6 +364,18 @@ class Nexus:
             self._injector.binder.bind(
                 MetricsProvider,
                 to=metrics_provider,
+                scope=singleton,
+            )
+
+            # create and bind receiver and scheduler clients
+            receiver_client = NexusReceiverAsyncClient.create(
+                url=os.getenv("NEXUS__RECEIVER_URL"),
+                token_provider=None,
+            )
+
+            self._injector.binder.bind(
+                NexusReceiverAsyncClient,
+                to=receiver_client,
                 scope=singleton,
             )
 
