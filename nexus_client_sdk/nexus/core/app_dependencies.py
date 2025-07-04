@@ -79,7 +79,7 @@ class NexusReceiverClientModule(Module):
         """
         return NexusReceiverClient(
             url=os.getenv("NEXUS__RECEIVER_URL"),
-            logger=None, # TODO: move this client to bootstrap stage
+            logger=None,  # TODO: move this client to bootstrap stage
             token_provider=lambda: AccessToken.empty(),
         )
 
@@ -96,9 +96,7 @@ class QueryEnabledStoreModule(Module):
         """
         DI factory method.
         """
-        return QueryEnabledStore.from_string(
-            os.getenv("NEXUS__QES_CONNECTION_STRING"), lazy_init=False
-        )
+        return QueryEnabledStore.from_string(os.getenv("NEXUS__QES_CONNECTION_STRING"), lazy_init=False)
 
 
 @final
@@ -123,9 +121,7 @@ class StorageClientModule(Module):
         if "NEXUS__ALGORITHM_OUTPUT_PATH" not in os.environ:
             raise FatalStartupConfigurationError("NEXUS__ALGORITHM_OUTPUT_PATH")
 
-        return storage_client_class.for_storage_path(
-            path=os.getenv("NEXUS__ALGORITHM_OUTPUT_PATH")
-        )
+        return storage_client_class.for_storage_path(path=os.getenv("NEXUS__ALGORITHM_OUTPUT_PATH"))
 
 
 @final
@@ -141,13 +137,9 @@ class ExternalSocketsModule(Module):
         Dependency provider.
         """
         if "NEXUS__ALGORITHM_INPUT_EXTERNAL_DATA_SOCKETS" not in os.environ:
-            raise FatalStartupConfigurationError(
-                "NEXUS__ALGORITHM_INPUT_EXTERNAL_DATA_SOCKETS"
-            )
+            raise FatalStartupConfigurationError("NEXUS__ALGORITHM_INPUT_EXTERNAL_DATA_SOCKETS")
 
-        return ExternalSocketProvider.from_serialized(
-            os.getenv("NEXUS__ALGORITHM_INPUT_EXTERNAL_DATA_SOCKETS")
-        )
+        return ExternalSocketProvider.from_serialized(os.getenv("NEXUS__ALGORITHM_INPUT_EXTERNAL_DATA_SOCKETS"))
 
 
 @final
@@ -163,9 +155,7 @@ class ResultSerializerModule(Module):
         DI factory method.
         """
         serializer = ResultSerializer()
-        for serialization_format in locate_classes(
-            re.compile(r"NEXUS__RESULT_SERIALIZATION_FORMAT_(.+)_CLASS")
-        ):
+        for serialization_format in locate_classes(re.compile(r"NEXUS__RESULT_SERIALIZATION_FORMAT_(.+)_CLASS")):
             serializer = serializer.with_format(serialization_format)
 
         return serializer
@@ -184,9 +174,7 @@ class TelemetrySerializerModule(Module):
         DI factory method.
         """
         serializer = TelemetrySerializer()
-        for serialization_format in locate_classes(
-            re.compile(r"NEXUS__TELEMETRY_SERIALIZATION_FORMAT_(.+)_CLASS")
-        ):
+        for serialization_format in locate_classes(re.compile(r"NEXUS__TELEMETRY_SERIALIZATION_FORMAT_(.+)_CLASS")):
             serializer = serializer.with_format(serialization_format)
 
         return serializer
@@ -255,24 +243,18 @@ class ServiceConfigurator:
         self._injection_binds.append(type(f"{reader.__name__}Module", (Module,), {})())
         return self
 
-    def with_input_processor(
-        self, input_processor: Type[InputProcessor]
-    ) -> "ServiceConfigurator":
+    def with_input_processor(self, input_processor: Type[InputProcessor]) -> "ServiceConfigurator":
         """
         Adds the input processor implementation
         """
-        self._injection_binds.append(
-            type(f"{input_processor.__name__}Module", (Module,), {})()
-        )
+        self._injection_binds.append(type(f"{input_processor.__name__}Module", (Module,), {})())
         return self
 
     def with_configuration(self, config: NexusConfiguration) -> "ServiceConfigurator":
         """
         Adds the specified payload instance to the DI container.
         """
-        self._injection_binds.append(
-            lambda binder: binder.bind(config.__class__, to=config, scope=singleton)
-        )
+        self._injection_binds.append(lambda binder: binder.bind(config.__class__, to=config, scope=singleton))
         return self
 
 
@@ -286,12 +268,8 @@ def locate_classes(pattern: re.Pattern) -> list[Type[Any]]:
         if pattern.match(var_name)
     }
 
-    non_located_classes = [
-        name_and_path for name_and_path, class_ in classes.items() if class_ is None
-    ]
+    non_located_classes = [name_and_path for name_and_path, class_ in classes.items() if class_ is None]
     if non_located_classes:
-        raise FatalStartupConfigurationError(
-            f"Failed to locate classes: {non_located_classes}"
-        )
+        raise FatalStartupConfigurationError(f"Failed to locate classes: {non_located_classes}")
 
     return list(classes.values())

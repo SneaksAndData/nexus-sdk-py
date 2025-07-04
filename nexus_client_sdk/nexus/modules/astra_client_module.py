@@ -58,6 +58,4 @@ class AstraClientModule(Module):
                 client_secret=os.getenv("NEXUS__ASTRA_CLIENT_SECRET"),
             )
 
-        raise FatalStartupConfigurationError(
-            f"Astra client requires these environment variables: {required_env_vars}"
-        )
+        raise FatalStartupConfigurationError(f"Astra client requires these environment variables: {required_env_vars}")

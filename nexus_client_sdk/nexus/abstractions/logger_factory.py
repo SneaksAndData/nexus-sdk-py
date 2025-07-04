@@ -49,11 +49,7 @@ class BootstrapLoggerFactory:
             StreamHandler(),
         ]
         if "NEXUS__DATADOG_LOGGER_CONFIGURATION" in os.environ:
-            self._log_handlers.append(
-                DataDogApiHandler(
-                    **json.loads(os.getenv("NEXUS__DATADOG_LOGGER_CONFIGURATION"))
-                )
-            )
+            self._log_handlers.append(DataDogApiHandler(**json.loads(os.getenv("NEXUS__DATADOG_LOGGER_CONFIGURATION"))))
 
     def create_logger(self, request_id: str, algorithm_name: str) -> LoggerInterface:
         """
@@ -89,21 +85,12 @@ class LoggerFactory:
             StreamHandler(),
         ]
         if "NEXUS__DATADOG_LOGGER_CONFIGURATION" in os.environ:
-            self._log_handlers.append(
-                DataDogApiHandler(
-                    **json.loads(os.getenv("NEXUS__DATADOG_LOGGER_CONFIGURATION"))
-                )
-            )
+            self._log_handlers.append(DataDogApiHandler(**json.loads(os.getenv("NEXUS__DATADOG_LOGGER_CONFIGURATION"))))
         if "NEXUS__LOGGER_FIXED_TEMPLATE" in os.environ:
-            self._fixed_template = self._fixed_template | json.loads(
-                os.getenv("NEXUS__LOGGER_FIXED_TEMPLATE")
-            )
+            self._fixed_template = self._fixed_template | json.loads(os.getenv("NEXUS__LOGGER_FIXED_TEMPLATE"))
 
         if "NEXUS__LOGGER_FIXED_TEMPLATE_DELIMITER" in os.environ:
-            self._fixed_template_delimiter = (
-                self._fixed_template_delimiter
-                or os.getenv("NEXUS__LOGGER_FIXED_TEMPLATE")
-            )
+            self._fixed_template_delimiter = self._fixed_template_delimiter or os.getenv("NEXUS__LOGGER_FIXED_TEMPLATE")
 
     def create_logger(
         self,

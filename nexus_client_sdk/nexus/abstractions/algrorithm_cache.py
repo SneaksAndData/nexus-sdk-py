@@ -40,9 +40,7 @@ class InputCache:
     def __init__(self):
         self._cache: dict[str, TResult] = {}
 
-    def _resolve_exc_type(
-        self, ex: BaseException
-    ) -> Type[FatalCachingError] | Type[TransientCachingError]:
+    def _resolve_exc_type(self, ex: BaseException) -> Type[FatalCachingError] | Type[TransientCachingError]:
         """
         Resolve base exception into a specific Nexus exception.
         """
@@ -103,6 +101,4 @@ class InputCache:
         if len(read_tasks) > 0:
             await asyncio.wait(fs=read_tasks.values())
 
-        return {
-            alias: get_result(alias, task) for alias, task in read_tasks.items()
-        } | cached
+        return {alias: get_result(alias, task) for alias, task in read_tasks.items()} | cached

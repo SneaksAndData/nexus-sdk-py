@@ -76,10 +76,8 @@ class MetricsProviderFactory:
                 "NEXUS__METRICS_PROVIDER_CONFIGURATION is not provided, cannot initialize a metrics provider instance"
             )
 
-        self._metrics_settings: MetricsProviderSettings = (
-            MetricsProviderSettings.from_json(
-                os.getenv("NEXUS__METRICS_PROVIDER_CONFIGURATION")
-            )
+        self._metrics_settings: MetricsProviderSettings = MetricsProviderSettings.from_json(
+            os.getenv("NEXUS__METRICS_PROVIDER_CONFIGURATION")
         )
 
     def create_provider(

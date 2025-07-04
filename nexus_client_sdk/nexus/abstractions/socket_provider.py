@@ -43,18 +43,11 @@ class ExternalSocketProvider:
         if name in self._sockets:
             return self._sockets[name]
 
-        raise FatalStartupConfigurationError(
-            missing_entry=f"socket with alias `{name}`"
-        )
+        raise FatalStartupConfigurationError(missing_entry=f"socket with alias `{name}`")
 
     @classmethod
     def from_serialized(cls, socket_list_ser: str) -> "ExternalSocketProvider":
         """
         Creates a SocketProvider from a list of serialized sockets
         """
-        return cls(
-            *[
-                DataSocket.from_dict(socket_dict)
-                for socket_dict in json.loads(socket_list_ser)
-            ]
-        )
+        return cls(*[DataSocket.from_dict(socket_dict) for socket_dict in json.loads(socket_list_ser)])

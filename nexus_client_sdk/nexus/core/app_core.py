@@ -57,6 +57,7 @@ from nexus_client_sdk.nexus.core.app_dependencies import (
 from nexus_client_sdk.nexus.core.serializers import (
     ResultSerializer,
 )
+from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.input.input_processor import InputProcessor
 from nexus_client_sdk.nexus.input.input_reader import InputReader
 from nexus_client_sdk.nexus.input.payload_reader import (
@@ -102,9 +103,7 @@ def attach_signal_handlers():
     Signal handlers for the event loop graceful shutdown.
     """
     if platform.system() != "Windows":
-        asyncio.get_event_loop().add_signal_handler(
-            signal.SIGTERM, lambda: asyncio.create_task(graceful_shutdown())
-        )
+        asyncio.get_event_loop().add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(graceful_shutdown()))
 
 
 @final
@@ -114,7 +113,7 @@ class Nexus:
     It takes care of result submission, signal handling, result recording, post-processing, metrics, logging etc.
     """
 
-    def __init__(self, args: CrystalEntrypointArguments):
+    def __init__(self, args: NexusDefaultArguments):
         self._configurator = ServiceConfigurator()
         self._injector: Optional[Injector] = None
         self._algorithm_class: Optional[Type[BaselineAlgorithm]] = None
@@ -125,14 +124,14 @@ class Nexus:
         self._log_enricher: Callable[
             [
                 AlgorithmPayload,
-                CrystalEntrypointArguments,
+                NexusDefaultArguments,
             ],
             dict[str, dict[str, str]],
         ] | None = None
         self._log_tagger: Callable[
             [
                 AlgorithmPayload,
-                CrystalEntrypointArguments,
+                NexusDefaultArguments,
             ],
             dict[str, str],
         ] | None = None
@@ -141,7 +140,7 @@ class Nexus:
         self._metric_tagger: Callable[
             [
                 AlgorithmPayload,
-                CrystalEntrypointArguments,
+                NexusDefaultArguments,
             ],
             dict[str, str],
         ] | None = None
@@ -190,16 +189,12 @@ class Nexus:
         self._payload_types = payload_types
         return self
 
-    def inject_configuration(
-        self, *configuration_types: Type[NexusConfiguration]
-    ) -> "Nexus":
+    def inject_configuration(self, *configuration_types: Type[NexusConfiguration]) -> "Nexus":
         """
         Adds custom configuration class instances to the DI container.
         """
         for config_type in configuration_types:
-            self._configurator = self._configurator.with_configuration(
-                config_type.from_environment()
-            )
+            self._configurator = self._configurator.with_configuration(config_type.from_environment())
 
         return self
 
@@ -208,7 +203,7 @@ class Nexus:
         tagger: Callable[
             [
                 AlgorithmPayload,
-                CrystalEntrypointArguments,
+                NexusDefaultArguments,
             ],
             dict[str, str],
         ]
@@ -216,7 +211,7 @@ class Nexus:
         enricher: Callable[
             [
                 AlgorithmPayload,
-                CrystalEntrypointArguments,
+                NexusDefaultArguments,
             ],
             dict[str, dict[str, str]],
         ]
@@ -238,7 +233,7 @@ class Nexus:
         tagger: Callable[
             [
                 AlgorithmPayload,
-                CrystalEntrypointArguments,
+                NexusDefaultArguments,
             ],
             dict[str, str],
         ]
@@ -282,9 +277,7 @@ class Nexus:
             serializer = self._injector.get(ResultSerializer)
             storage_client = self._injector.get(StorageClient)
             output_path = f"{os.getenv('NEXUS__ALGORITHM_OUTPUT_PATH')}/{self._run_args.request_id}.json"
-            blob_path = DataSocket(
-                data_path=output_path, alias="output", data_format="null"
-            ).parse_data_path()
+            blob_path = DataSocket(data_path=output_path, alias="output", data_format="null").parse_data_path()
             storage_client.save_data_as_blob(
                 data=result_,
                 blob_path=blob_path,
@@ -319,9 +312,7 @@ class Nexus:
             case _:
                 sys.exit(1)
 
-    async def _get_payload(
-        self, payload_type: type[AlgorithmPayload]
-    ) -> AlgorithmPayload:
+    async def _get_payload(self, payload_type: type[AlgorithmPayload]) -> AlgorithmPayload:
         async with AlgorithmPayloadReader(
             payload_uri=self._run_args.sas_uri,
             payload_type=payload_type,
@@ -335,9 +326,7 @@ class Nexus:
 
         self._injector = Injector(self._configurator.injection_binds)
 
-        bootstrap_logger: LoggerInterface = self._injector.get(
-            BootstrapLoggerFactory
-        ).create_logger(
+        bootstrap_logger: LoggerInterface = self._injector.get(BootstrapLoggerFactory).create_logger(
             request_id=self._run_args.request_id,
             algorithm_name=os.getenv("CRYSTAL__ALGORITHM_NAME"),
         )
@@ -351,24 +340,10 @@ class Nexus:
 
             for payload_type in self._payload_types:
                 payload = await self._get_payload(payload_type=payload_type)
-                self._injector.binder.bind(
-                    payload.__class__, to=payload, scope=singleton
-                )
-                logger_fixed_template |= (
-                    self._log_enricher(payload, self._run_args)
-                    if self._log_enricher
-                    else {}
-                )
-                logger_tags |= (
-                    self._log_tagger(payload, self._run_args)
-                    if self._log_tagger
-                    else {}
-                )
-                metric_tags |= (
-                    self._metric_tagger(payload, self._run_args)
-                    if self._metric_tagger
-                    else {}
-                )
+                self._injector.binder.bind(payload.__class__, to=payload, scope=singleton)
+                logger_fixed_template |= self._log_enricher(payload, self._run_args) if self._log_enricher else {}
+                logger_tags |= self._log_tagger(payload, self._run_args) if self._log_tagger else {}
+                metric_tags |= self._metric_tagger(payload, self._run_args) if self._metric_tagger else {}
 
             logger_factory = LoggerFactory(
                 fixed_template=logger_fixed_template,
@@ -418,14 +393,10 @@ class Nexus:
         )
 
         async with algorithm as instance:
-            self._algorithm_run_task = asyncio.create_task(
-                instance.run(**self._run_args.__dict__)
-            )
+            self._algorithm_run_task = asyncio.create_task(instance.run(**self._run_args.__dict__))
 
             # avoid exception propagation to main thread, since we need to handle it later
-            await asyncio.wait(
-                [self._algorithm_run_task], return_when=asyncio.FIRST_EXCEPTION
-            )
+            await asyncio.wait([self._algorithm_run_task], return_when=asyncio.FIRST_EXCEPTION)
             ex = self._algorithm_run_task.exception()
 
             if ex is not None:
@@ -452,9 +423,7 @@ class Nexus:
                 run_id=self._run_args.request_id,
             )
             async with telemetry_recorder as recorder:
-                await recorder.record(
-                    run_id=self._run_args.request_id, **algorithm.inputs
-                )
+                await recorder.record(run_id=self._run_args.request_id, **algorithm.inputs)
                 on_complete_tasks = [
                     recorder.record_user_telemetry(
                         user_recorder=self._injector.get(on_complete_task_class),
@@ -465,9 +434,7 @@ class Nexus:
                     for on_complete_task_class in self._on_complete_tasks
                 ]
                 if len(on_complete_tasks) > 0:
-                    done, pending = await asyncio.wait(
-                        on_complete_tasks, return_when=asyncio.FIRST_EXCEPTION
-                    )
+                    done, pending = await asyncio.wait(on_complete_tasks, return_when=asyncio.FIRST_EXCEPTION)
                     if len(pending) > 0:
                         metrics_provider.gauge("telemetry_reports_incomplete", 1)
                         root_logger.warning(
@@ -487,9 +454,7 @@ class Nexus:
                         else:
                             metrics_provider.increment("telemetry_reports_succeeded")
                 else:
-                    root_logger.info(
-                        "No post processing tasks were defined for this run."
-                    )
+                    root_logger.info("No post processing tasks were defined for this run.")
 
             # dispose of QES instance gracefully as it might hold open connections
             qes = self._injector.get(QueryEnabledStore)
@@ -500,7 +465,6 @@ class Nexus:
     @classmethod
     def create(cls) -> Self:
         """
-        Creates a Nexus instance with Crystal CLI arguments parsed into input.
+        Creates a Nexus instance with command-line arguments parsed into input.
         """
-        parser = add_crystal_args()
-        return Nexus(extract_crystal_args(parser.parse_args()))
+        return Nexus(NexusDefaultArguments.from_args())

@@ -140,9 +140,7 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         )()
 
         if telemetry is None:
-            self._logger.info(
-                f"No telemetry to record for UserTelemetryRecorder {self.__class__.alias()}"
-            )
+            self._logger.info(f"No telemetry to record for UserTelemetryRecorder {self.__class__.alias()}")
             return
 
         serializer = self._serializer.get_serialization_format(telemetry.telemetry)

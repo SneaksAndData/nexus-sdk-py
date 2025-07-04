@@ -1,0 +1,1 @@
+from nexus_client_sdk._version import __version__

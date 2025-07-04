@@ -69,9 +69,7 @@ class TelemetryRecorder(NexusCoreObject):
             )
 
             try:
-                serialization_format = self._serializer.get_serialization_format(
-                    entity_to_record
-                )
+                serialization_format = self._serializer.get_serialization_format(entity_to_record)
             except KeyError:
                 self._logger.warning(
                     "No telemetry serialization format injected for data type: {telemetry_entity_type}. Telemetry recording skipped.",
@@ -117,9 +115,7 @@ class TelemetryRecorder(NexusCoreObject):
         for done_telemetry_task in done:
             telemetry_exc = done_telemetry_task.exception()
             if telemetry_exc:
-                self._logger.warning(
-                    "Telemetry recoding failed", exception=telemetry_exc
-                )
+                self._logger.warning("Telemetry recoding failed", exception=telemetry_exc)
 
     def record_user_telemetry(
         self,

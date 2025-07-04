@@ -47,7 +47,9 @@ class InputObject(NexusObject[TPayload, TResult], ABC):
         """
         Unique identifier for this Nexus object, can be used to in-memory or external caching.
         """
-        return f"{base64.b64encode(hex(id(self)).encode('utf-8')).decode('utf-8')}_{os.getpid()}_{self.__class__.__name__}"
+        return (
+            f"{base64.b64encode(hex(id(self)).encode('utf-8')).decode('utf-8')}_{os.getpid()}_{self.__class__.__name__}"
+        )
 
     @property
     def data(self) -> TResult | None:

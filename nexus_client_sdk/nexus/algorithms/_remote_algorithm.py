@@ -70,9 +70,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         """
 
     @abstractmethod
-    def _transform_submission_result(
-        self, request_id: str, tag: str
-    ) -> AlgorithmResult:
+    def _transform_submission_result(self, request_id: str, tag: str) -> AlgorithmResult:
         """
         Called after submitting a remote run. Use this to enrich your output with remote run id and tag.
         """

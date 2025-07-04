@@ -149,9 +149,7 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             self._inputs = await self._main_inputs(**kwargs)
 
         # evaluate if additional forks will be spawned
-        forks: list[RemoteAlgorithm] = await partial(
-            self._get_forks, **self._inputs, **kwargs
-        )()
+        forks: list[RemoteAlgorithm] = await partial(self._get_forks, **self._inputs, **kwargs)()
 
         run_result = await partial(
             _measured_run,
@@ -167,9 +165,7 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
                 "Forking node with: {forks}, after the node run",
                 forks=",".join([fork.alias() for fork in forks]),
             )
-            await asyncio.wait(
-                [asyncio.create_task(fork.run(**kwargs)) for fork in forks]
-            )
+            await asyncio.wait([asyncio.create_task(fork.run(**kwargs)) for fork in forks])
         else:
             self._logger.info("Leaf algorithm node: proceeding with this node run only")
 
