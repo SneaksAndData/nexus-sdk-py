@@ -9,7 +9,7 @@ from typing import final, Callable, Self, Iterator, Any
 from adapta.logs import LoggerInterface
 from adapta.utils.concurrent_task_runner import ConcurrentTaskRunner, Executable
 
-from nexus_client_sdk.cwrapper import CLIB
+from nexus_client_sdk.clients.cwrapper import CLIB
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.client_errors.go_http_errors import NotFoundError
 from nexus_client_sdk.models.scheduler import (

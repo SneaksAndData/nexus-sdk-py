@@ -1,15 +1,14 @@
 """Receiver"""
-from typing import final, Callable
+from typing import Callable
 
 from adapta.logs import LoggerInterface
 
-from nexus_client_sdk.cwrapper import CLIB
+from nexus_client_sdk.clients.cwrapper import CLIB
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.common import SdkErrorResponse
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult, ErrorResponse
 
 
-@final
 class NexusReceiverClient:
     """
     Nexus Receiver client. Wraps Golang functionality.
