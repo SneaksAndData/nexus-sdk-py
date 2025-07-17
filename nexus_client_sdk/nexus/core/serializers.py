@@ -8,7 +8,7 @@ from adapta.storage.models.formatters import (
     DictJsonSerializationFormat,
 )
 
-T = TypeVar("T")  # pylint: disable=C0103
+T = TypeVar("T")
 
 
 class Serializer:
@@ -37,7 +37,7 @@ class Serializer:
 
         return self
 
-    def serialize(self, data) -> bytes:
+    def serialize(self, data: Any) -> bytes:
         """
         Serialize data.
         """

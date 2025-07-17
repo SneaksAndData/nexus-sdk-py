@@ -47,8 +47,8 @@ class AlgorithmResult(ABC):
         """
 
 
-TPayload = TypeVar("TPayload")  # pylint: disable=C0103
-TResult = TypeVar("TResult", pandas.DataFrame, polars.DataFrame)  # pylint: disable=C0103
+TPayload = TypeVar("TPayload")
+TResult = TypeVar("TResult", pandas.DataFrame, polars.DataFrame)
 
 
 class NexusCoreObject(ABC):

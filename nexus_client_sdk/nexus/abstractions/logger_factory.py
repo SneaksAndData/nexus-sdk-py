@@ -27,7 +27,7 @@ from adapta.logs import LoggerInterface, create_async_logger
 from adapta.logs.handlers.datadog_api_handler import DataDogApiHandler
 from adapta.logs.models import LogLevel
 
-TLogger = TypeVar("TLogger")  # pylint: disable=C0103:
+TLogger = TypeVar("TLogger")
 
 
 @final
