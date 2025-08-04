@@ -19,17 +19,17 @@ class Serializer:
 
     def __init__(
         self,
-        default_serialization_formats: dict[Type[T], Type[SerializationFormat[T]]] = None,
+        default_serialization_formats: dict[type[T], type[SerializationFormat[T]]] = None,
     ):
         self._serialization_formats = {} if default_serialization_formats is None else default_serialization_formats
 
-    def get_serialization_format(self, data: Any) -> Type[SerializationFormat]:
+    def get_serialization_format(self, data: Any) -> type[SerializationFormat]:
         """
         Get the serializer for the data.
         """
         return self._serialization_formats[type(data)]
 
-    def with_format(self, serialization_format: Type[SerializationFormat]) -> "Serializer":
+    def with_format(self, serialization_format: type[SerializationFormat]) -> "Serializer":
         """Add a serialization format to the supported formats. Note that only 1 serialization format is allowed per
         type."""
         serialization_target_type = serialization_format.__orig_bases__[0].__args__[0]

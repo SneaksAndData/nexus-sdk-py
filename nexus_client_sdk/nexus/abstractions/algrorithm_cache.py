@@ -40,7 +40,7 @@ class InputCache:
     def __init__(self):
         self._cache: dict[str, Any] = {}
 
-    def _resolve_exc_type(self, ex: BaseException) -> Type[FatalCachingError] | Type[TransientCachingError]:
+    def _resolve_exc_type(self, ex: BaseException) -> type[FatalCachingError] | type[TransientCachingError]:
         """
         Resolve base exception into a specific Nexus exception.
         """

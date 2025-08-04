@@ -22,7 +22,8 @@ import os
 import platform
 import signal
 import sys
-from typing import final, Type, Optional, Callable, Self
+from typing import final, Type, Optional, Self
+from collections.abc import Callable
 
 import backoff
 import urllib3.exceptions
@@ -71,7 +72,7 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
 from nexus_client_sdk import __version__
 
 
-def is_transient_exception(exception: Optional[BaseException]) -> Optional[bool]:
+def is_transient_exception(exception: BaseException | None) -> bool | None:
     """
     Check if the exception is retryable.
     """
@@ -114,10 +115,10 @@ class Nexus:
 
     def __init__(self, args: NexusDefaultArguments):
         self._configurator = ServiceConfigurator()
-        self._injector: Optional[Injector] = None
-        self._algorithm_class: Optional[Type[BaselineAlgorithm]] = None
+        self._injector: Injector | None = None
+        self._algorithm_class: type[BaselineAlgorithm] | None = None
         self._run_args = args
-        self._algorithm_run_task: Optional[asyncio.Task] = None
+        self._algorithm_run_task: asyncio.Task | None = None
         self._on_complete_tasks: list[type[UserTelemetryRecorder]] = []
         self._payload_types: list[type[AlgorithmPayload]] = []
         self._log_enricher: Callable[
@@ -147,7 +148,7 @@ class Nexus:
         attach_signal_handlers()
 
     @property
-    def algorithm_class(self) -> Type[BaselineAlgorithm]:
+    def algorithm_class(self) -> type[BaselineAlgorithm]:
         """
         Class of the algorithm used by this Nexus instance.
         """
@@ -160,35 +161,35 @@ class Nexus:
         self._on_complete_tasks.extend(post_processors)
         return self
 
-    def add_reader(self, reader: Type[InputReader]) -> "Nexus":
+    def add_reader(self, reader: type[InputReader]) -> "Nexus":
         """
         Adds an input data reader for the algorithm.
         """
         self._configurator = self._configurator.with_input_reader(reader)
         return self
 
-    def use_processor(self, input_processor: Type[InputProcessor]) -> "Nexus":
+    def use_processor(self, input_processor: type[InputProcessor]) -> "Nexus":
         """
         Initialises an input processor for the algorithm.
         """
         self._configurator = self._configurator.with_input_processor(input_processor)
         return self
 
-    def use_algorithm(self, algorithm: Type[BaselineAlgorithm]) -> "Nexus":
+    def use_algorithm(self, algorithm: type[BaselineAlgorithm]) -> "Nexus":
         """
         Algorithm to use for this Nexus instance
         """
         self._algorithm_class = algorithm
         return self
 
-    def inject_payload(self, *payload_types: Type[AlgorithmPayload]) -> "Nexus":
+    def inject_payload(self, *payload_types: type[AlgorithmPayload]) -> "Nexus":
         """
         Adds payload types to inject to the DI container. Payloads will be deserialized at runtime.
         """
         self._payload_types = payload_types
         return self
 
-    def inject_configuration(self, *configuration_types: Type[NexusConfiguration]) -> "Nexus":
+    def inject_configuration(self, *configuration_types: type[NexusConfiguration]) -> "Nexus":
         """
         Adds custom configuration class instances to the DI container.
         """
@@ -244,7 +245,7 @@ class Nexus:
         self._metric_tagger = tagger
         return self
 
-    def with_module(self, module: Type[Module]) -> "Nexus":
+    def with_module(self, module: type[Module]) -> "Nexus":
         """
         Adds a (custom) DI module into the DI container.
         """
@@ -253,8 +254,8 @@ class Nexus:
 
     async def _submit_result(
         self,
-        result: Optional[AlgorithmResult] = None,
-        ex: Optional[BaseException] = None,
+        result: AlgorithmResult | None = None,
+        ex: BaseException | None = None,
     ) -> None:
         @backoff.on_exception(
             wait_gen=backoff.expo,

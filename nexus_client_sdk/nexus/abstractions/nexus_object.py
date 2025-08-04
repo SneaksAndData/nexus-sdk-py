@@ -35,7 +35,7 @@ class AlgorithmResult(ABC):
     """
 
     @abstractmethod
-    def result(self) -> Union[pandas.DataFrame, polars.DataFrame, Dict]:
+    def result(self) -> pandas.DataFrame | polars.DataFrame | dict:
         """
         Returns the main result. This will be written to the linked output storage.
         """

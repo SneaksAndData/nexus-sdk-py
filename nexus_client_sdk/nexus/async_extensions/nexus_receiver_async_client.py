@@ -1,5 +1,6 @@
 """Receiver"""
-from typing import Callable, Self
+from typing import Self
+from collections.abc import Callable
 
 from adapta.metrics import MetricsProvider
 from injector import inject
