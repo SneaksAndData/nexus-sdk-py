@@ -32,6 +32,7 @@ from adapta.process_communication import DataSocket
 from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from injector import Injector, Module, singleton
+from requests import HTTPError
 
 import nexus_client_sdk.nexus.exceptions
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
@@ -378,7 +379,18 @@ class Nexus:
                 to=receiver_client,
                 scope=singleton,
             )
+        except HTTPError as http_error:
+            bootstrap_logger.error("HTTP error reading algorithm payload", http_error)
 
+            # ensure we flush bootstrap logger before we exit
+            bootstrap_logger.stop()
+
+            # non-retryable exceptions like missing auth should cancel the run immediately
+            if http_error.response.status_code in [401, 403, 410, 405, 501, 505]:
+                await self._submit_result(None, http_error)
+                sys.exit(0)
+
+            sys.exit(1)
         except BaseException as ex:  # pylint: disable=broad-except
             bootstrap_logger.error("Error reading algorithm payload", ex)
 
