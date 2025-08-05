@@ -1,5 +1,5 @@
 """Receiver"""
-from typing import Callable, Self
+from typing import Callable, Self, final
 
 from adapta.metrics import MetricsProvider
 from injector import inject
@@ -11,6 +11,7 @@ from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import NexusCoreObject
 
 
+@final
 class NexusReceiverAsyncClient(NexusCoreObject):
     """
     Nexus Receiver client for asyncio-applications.
