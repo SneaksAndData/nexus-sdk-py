@@ -333,6 +333,18 @@ class Nexus:
 
         bootstrap_logger.start()
 
+        # create and bind receiver and scheduler clients
+        receiver_client = NexusReceiverAsyncClient.create(
+            url=os.getenv("NEXUS__RECEIVER_URL"),
+            token_provider=None,
+        )
+
+        self._injector.binder.bind(
+            NexusReceiverAsyncClient,
+            to=receiver_client,
+            scope=singleton,
+        )
+
         try:
             logger_fixed_template = {}
             logger_tags = {}
@@ -365,18 +377,6 @@ class Nexus:
             self._injector.binder.bind(
                 MetricsProvider,
                 to=metrics_provider,
-                scope=singleton,
-            )
-
-            # create and bind receiver and scheduler clients
-            receiver_client = NexusReceiverAsyncClient.create(
-                url=os.getenv("NEXUS__RECEIVER_URL"),
-                token_provider=None,
-            )
-
-            self._injector.binder.bind(
-                NexusReceiverAsyncClient,
-                to=receiver_client,
                 scope=singleton,
             )
         except requests.exceptions.HTTPError as http_error:
