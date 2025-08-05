@@ -50,11 +50,11 @@ class InputProcessor(InputObject[TPayload, TResult]):
         super().__init__(metrics_provider, logger_factory)
         self._readers = readers
         self._payload = payload
-        self._result: Optional[TResult] = None
+        self._result: TResult | None = None
         self._cache = cache
 
     @property
-    def data(self) -> Optional[TResult]:
+    def data(self) -> TResult | None:
         """
         Data returned by this processor
         """

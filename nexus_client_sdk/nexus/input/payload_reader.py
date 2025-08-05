@@ -60,9 +60,9 @@ class AlgorithmPayloadReader:
         self._http.close()
         self._http = None
 
-    def __init__(self, payload_uri: str, payload_type: Type[AlgorithmPayload]):
+    def __init__(self, payload_uri: str, payload_type: type[AlgorithmPayload]):
         self._http = session_with_retries()
-        self._payload: Optional[AlgorithmPayload] = None
+        self._payload: AlgorithmPayload | None = None
         self._payload_uri = payload_uri
         self._payload_type = payload_type
 
@@ -74,7 +74,7 @@ class AlgorithmPayloadReader:
         return self._payload_uri
 
     @property
-    def payload(self) -> Optional[AlgorithmPayload]:
+    def payload(self) -> AlgorithmPayload | None:
         """
         Payload data deserialized into the user class.
         """

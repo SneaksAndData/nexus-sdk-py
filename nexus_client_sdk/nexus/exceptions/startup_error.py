@@ -54,7 +54,7 @@ class FatalAlgorithmConfigurationError(FatalNexusError):
     Service configuration error that shuts down the Nexus.
     """
 
-    def __init__(self, message: str, algorithm_class: Type):
+    def __init__(self, message: str, algorithm_class: type):
         super().__init__()
         self._message = message
         self._type_name = str(algorithm_class)
