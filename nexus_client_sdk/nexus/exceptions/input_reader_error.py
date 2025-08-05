@@ -39,7 +39,7 @@ class FatalInputReaderError(FatalNexusError):
 
 class TransientInputReaderError(TransientNexusError):
     """
-    Input reader exception that will initiate a retry in Crystal.
+    Input reader exception that will initiate a retry in Nexus.
     """
 
     def __init__(self, failed_reader: str, underlying: BaseException):

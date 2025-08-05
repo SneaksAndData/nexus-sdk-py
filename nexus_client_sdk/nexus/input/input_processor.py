@@ -19,7 +19,6 @@
 
 from abc import abstractmethod
 from functools import partial
-from typing import Optional
 
 from adapta.metrics import MetricsProvider
 from adapta.utils.decorators import run_time_metrics_async

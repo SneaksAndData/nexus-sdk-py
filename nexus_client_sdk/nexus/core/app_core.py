@@ -22,7 +22,7 @@ import os
 import platform
 import signal
 import sys
-from typing import final, Type, Optional, Self
+from typing import final, Self
 from collections.abc import Callable
 
 import backoff
@@ -110,7 +110,7 @@ def attach_signal_handlers():
 @final
 class Nexus:
     """
-    Nexus is the object that manages everything related to running algorithms through Crystal.
+    Nexus is the object that manages everything related to running algorithms through Nexus stack.
     It takes care of result submission, signal handling, result recording, post-processing, metrics, logging etc.
     """
 
@@ -329,7 +329,7 @@ class Nexus:
 
         bootstrap_logger: LoggerInterface = self._injector.get(BootstrapLoggerFactory).create_logger(
             request_id=self._run_args.request_id,
-            algorithm_name=os.getenv("CRYSTAL__ALGORITHM_NAME"),
+            algorithm_name=os.getenv("NEXUS__ALGORITHM_NAME"),
         )
 
         bootstrap_logger.start()

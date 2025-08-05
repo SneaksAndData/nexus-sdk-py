@@ -1,5 +1,5 @@
 """Serialization format module."""
-from typing import final, Any, TypeVar, Type
+from typing import final, Any, TypeVar
 
 import pandas
 from adapta.storage.models.format import SerializationFormat

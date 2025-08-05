@@ -30,7 +30,7 @@ from adapta.storage.query_enabled_store import QueryEnabledStore
 from dataclasses_json import DataClassJsonMixin
 from injector import inject
 
-from nexus_client_sdk.crystal import CrystalEntrypointArguments
+from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
@@ -293,16 +293,16 @@ async def main():
      Mock HTTP Server
     :return:
     """
-    def tags_from_payload(payload: MyAlgorithmPayload, _: CrystalEntrypointArguments) -> dict[str, str]:
+    def tags_from_payload(payload: MyAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
         return {
             "test_tag": str(payload.x)
         }
-    def enrich_from_payload(payload: MyAlgorithmPayload2, run_args: CrystalEntrypointArguments) -> dict[str, dict[str, str]]:
+    def enrich_from_payload(payload: MyAlgorithmPayload2, run_args: NexusDefaultArguments) -> dict[str, dict[str, str]]:
         return {
             "(value of y:{y})": {"y": payload.y},
             "(request_id:{request_id})": {"request_id": run_args.request_id}
         }
-    def tag_metrics(payload: MyAlgorithmPayload2, run_args: CrystalEntrypointArguments) -> dict[str, str]:
+    def tag_metrics(payload: MyAlgorithmPayload2, _: NexusDefaultArguments) -> dict[str, str]:
         return {
             "country": payload.y,
         }

@@ -20,7 +20,7 @@
 import os
 import re
 from pydoc import locate
-from typing import final, Type, Any
+from typing import final, Any
 
 from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore

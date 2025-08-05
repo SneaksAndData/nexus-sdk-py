@@ -1,7 +1,6 @@
 """
  App startup exceptions.
 """
-from typing import Type
 
 #  Copyright (c) 2023-2024. ECCO Sneaks & Data
 #

@@ -19,7 +19,6 @@
 
 from abc import abstractmethod
 from functools import partial
-from typing import Optional
 
 from adapta.metrics import MetricsProvider
 from adapta.process_communication import DataSocket

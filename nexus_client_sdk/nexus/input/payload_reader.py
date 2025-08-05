@@ -1,5 +1,5 @@
 """
- Code infrastructure for manipulating payload received from Crystal SAS URI
+ Code infrastructure for manipulating payload received from Nexus
 """
 
 #  Copyright (c) 2023-2024. ECCO Sneaks & Data
@@ -19,7 +19,7 @@
 
 from dataclasses import dataclass
 
-from typing import final, Optional, Type
+from typing import final
 
 from adapta.storage.models.formatters import DictJsonSerializationFormat
 from adapta.utils import session_with_retries
@@ -45,7 +45,7 @@ class AlgorithmPayload(DataClassJsonMixin):
 @final
 class AlgorithmPayloadReader:
     """
-    Crystal Payload Reader - receives the payload from the URI and deserializes it into the specified type
+    Receives the payload from the URI and deserializes it into the specified type
     """
 
     async def __aenter__(self):

@@ -18,7 +18,7 @@
 #
 
 import asyncio
-from typing import final, Type, Any
+from typing import final, Any
 
 import deltalake.exceptions
 import cassandra
