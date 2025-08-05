@@ -26,6 +26,7 @@ locust = "^2.14.2"
 pylint = "^3"
 black = "^23"
 wheel = "^0.42.0"
+pyupgrade = "^3"
 
 [tool.black]
 line-length = 120

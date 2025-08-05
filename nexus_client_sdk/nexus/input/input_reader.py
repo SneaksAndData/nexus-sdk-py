@@ -19,7 +19,6 @@
 
 from abc import abstractmethod
 from functools import partial
-from typing import Optional
 
 from adapta.metrics import MetricsProvider
 from adapta.process_communication import DataSocket
@@ -47,19 +46,19 @@ class InputReader(InputObject[TPayload, TResult]):
         logger_factory: LoggerFactory,
         payload: TPayload,
         *readers: "InputReader",
-        socket: Optional[DataSocket] = None,
+        socket: DataSocket | None = None,
         cache: InputCache
     ):
         super().__init__(metrics_provider, logger_factory)
         self.socket = socket
         self._store = store
-        self._data: Optional[TResult] = None
+        self._data: TResult | None = None
         self._readers = readers
         self._payload = payload
         self._cache = cache
 
     @property
-    def data(self) -> Optional[TResult]:
+    def data(self) -> TResult | None:
         """
         Data returned by this reader
         """

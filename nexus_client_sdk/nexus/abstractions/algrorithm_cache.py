@@ -18,7 +18,7 @@
 #
 
 import asyncio
-from typing import final, Type, Any
+from typing import final, Any
 
 import deltalake.exceptions
 import cassandra
@@ -40,7 +40,7 @@ class InputCache:
     def __init__(self):
         self._cache: dict[str, Any] = {}
 
-    def _resolve_exc_type(self, ex: BaseException) -> Type[FatalCachingError] | Type[TransientCachingError]:
+    def _resolve_exc_type(self, ex: BaseException) -> type[FatalCachingError] | type[TransientCachingError]:
         """
         Resolve base exception into a specific Nexus exception.
         """

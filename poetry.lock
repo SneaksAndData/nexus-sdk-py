@@ -2478,6 +2478,21 @@ files = [
 ]
 
 [[package]]
+name = "pyupgrade"
+version = "3.20.0"
+description = "A tool to automatically upgrade syntax for newer versions."
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "pyupgrade-3.20.0-py2.py3-none-any.whl", hash = "sha256:cd5bf842b863f50adad324a01c30aef60b9f698a9814848094818659c92cd1f4"},
+    {file = "pyupgrade-3.20.0.tar.gz", hash = "sha256:dd6a16c13fc1a7db45796008689a9a35420bd364d681430f640c5e54a3d351ea"},
+]
+
+[package.dependencies]
+tokenize-rt = ">=6.1.0"
+
+[[package]]
 name = "pywin32"
 version = "310"
 description = "Python for Window Extensions"
@@ -2668,6 +2683,18 @@ groups = ["main"]
 files = [
     {file = "six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"},
     {file = "six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81"},
+]
+
+[[package]]
+name = "tokenize-rt"
+version = "6.2.0"
+description = "A wrapper around the stdlib `tokenize` which roundtrips."
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "tokenize_rt-6.2.0-py2.py3-none-any.whl", hash = "sha256:a152bf4f249c847a66497a4a95f63376ed68ac6abf092a2f7cfb29d044ecff44"},
+    {file = "tokenize_rt-6.2.0.tar.gz", hash = "sha256:8439c042b330c553fdbe1758e4a05c0ed460dbbbb24a606f11f0dee75da4cad6"},
 ]
 
 [[package]]
@@ -3013,4 +3040,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11, <3.13"
-content-hash = "39cfbff84bde98bf851cea5a81876159bb29b32ed7a5a781c63581886ad5e0ae"
+content-hash = "25fb6247b5fe0cf95ed29e36d51f535299b1802c8b1972e217c647e7608a1cf4"

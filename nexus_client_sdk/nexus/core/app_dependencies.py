@@ -20,7 +20,7 @@
 import os
 import re
 from pydoc import locate
-from typing import final, Type, Any
+from typing import final, Any
 
 from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
@@ -90,7 +90,7 @@ class StorageClientModule(Module):
         """
         DI factory method.
         """
-        storage_client_class: Type[StorageClient] = locate(
+        storage_client_class: type[StorageClient] = locate(
             os.getenv(
                 "NEXUS__STORAGE_CLIENT_CLASS",
             )
@@ -207,21 +207,21 @@ class ServiceConfigurator:
         """
         return self._runtime_injection_binds
 
-    def with_module(self, module: Type[Module]) -> "ServiceConfigurator":
+    def with_module(self, module: type[Module]) -> "ServiceConfigurator":
         """
         Adds a (custom) module into the DI container.
         """
         self._injection_binds.append(module())
         return self
 
-    def with_input_reader(self, reader: Type[InputReader]) -> "ServiceConfigurator":
+    def with_input_reader(self, reader: type[InputReader]) -> "ServiceConfigurator":
         """
         Adds the input reader implementation to the DI.
         """
         self._injection_binds.append(type(f"{reader.__name__}Module", (Module,), {})())
         return self
 
-    def with_input_processor(self, input_processor: Type[InputProcessor]) -> "ServiceConfigurator":
+    def with_input_processor(self, input_processor: type[InputProcessor]) -> "ServiceConfigurator":
         """
         Adds the input processor implementation
         """
@@ -236,7 +236,7 @@ class ServiceConfigurator:
         return self
 
 
-def locate_classes(pattern: re.Pattern) -> list[Type[Any]]:
+def locate_classes(pattern: re.Pattern) -> list[type[Any]]:
     """
     Locates all classes matching the pattern in the environment. Throws a start-up error if any class is not found.
     """

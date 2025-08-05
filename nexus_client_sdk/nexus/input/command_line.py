@@ -21,7 +21,7 @@ class NexusDefaultArguments:
         If no parser is provided, a new will be instantiated.
 
         :param parser: Existing argument parser.
-        :return: The existing argument parser (if provided) with Crystal arguments added.
+        :return: The existing argument parser (if provided) with Nexus arguments added.
         """
         if parser is None:
             parser = ArgumentParser()

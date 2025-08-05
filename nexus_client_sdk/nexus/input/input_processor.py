@@ -19,7 +19,6 @@
 
 from abc import abstractmethod
 from functools import partial
-from typing import Optional
 
 from adapta.metrics import MetricsProvider
 from adapta.utils.decorators import run_time_metrics_async
@@ -50,11 +49,11 @@ class InputProcessor(InputObject[TPayload, TResult]):
         super().__init__(metrics_provider, logger_factory)
         self._readers = readers
         self._payload = payload
-        self._result: Optional[TResult] = None
+        self._result: TResult | None = None
         self._cache = cache
 
     @property
-    def data(self) -> Optional[TResult]:
+    def data(self) -> TResult | None:
         """
         Data returned by this processor
         """
