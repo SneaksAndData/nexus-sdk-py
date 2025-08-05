@@ -26,6 +26,7 @@ from typing import final, Type, Optional, Self
 from collections.abc import Callable
 
 import backoff
+import requests.exceptions
 import urllib3.exceptions
 from adapta.logs import LoggerInterface
 from adapta.metrics import MetricsProvider
@@ -33,7 +34,6 @@ from adapta.process_communication import DataSocket
 from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from injector import Injector, Module, singleton
-from requests import HTTPError
 
 import nexus_client_sdk.nexus.exceptions
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
@@ -380,7 +380,7 @@ class Nexus:
                 to=receiver_client,
                 scope=singleton,
             )
-        except HTTPError as http_error:
+        except requests.exceptions.HTTPError as http_error:
             bootstrap_logger.error("HTTP error reading algorithm payload", http_error)
 
             # ensure we flush bootstrap logger before we exit
