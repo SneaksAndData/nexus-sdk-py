@@ -443,13 +443,13 @@ class Nexus:
                     version=__version__,
                 )
                 metrics_provider.increment("failed_runs")
+            else:
+                metrics_provider.increment("successful_runs")
 
             await self._submit_result(
                 self._algorithm_run_task.result() if not ex else None,
                 self._algorithm_run_task.exception(),
             )
-
-            metrics_provider.increment("successful_runs")
 
             # record telemetry
             root_logger.info(
