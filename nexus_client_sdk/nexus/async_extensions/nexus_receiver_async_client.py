@@ -15,7 +15,7 @@
 #  limitations under the License.
 #
 
-from typing import Self, final
+from typing import final
 from collections.abc import Callable
 
 from adapta.logs import LoggerInterface
