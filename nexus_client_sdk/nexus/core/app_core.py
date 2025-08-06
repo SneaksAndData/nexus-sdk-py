@@ -334,18 +334,6 @@ class Nexus:
 
         bootstrap_logger.start()
 
-        # create and bind receiver and scheduler clients
-        receiver_client = NexusReceiverAsyncClient.create(
-            url=os.getenv("NEXUS__RECEIVER_URL"),
-            token_provider=None,
-        )
-
-        self._injector.binder.bind(
-            NexusReceiverAsyncClient,
-            to=receiver_client,
-            scope=singleton,
-        )
-
         try:
             logger_fixed_template = {}
             logger_tags = {}
@@ -380,17 +368,41 @@ class Nexus:
                 to=metrics_provider,
                 scope=singleton,
             )
+
+            # create and bind receiver client
+            receiver_client = NexusReceiverAsyncClient(
+                url=os.getenv("NEXUS__RECEIVER_URL"),
+                logger=logger_factory.create_logger(NexusReceiverAsyncClient),
+                token_provider=None,
+            )
+
+            self._injector.binder.bind(
+                NexusReceiverAsyncClient,
+                to=receiver_client,
+                scope=singleton,
+            )
+
         except requests.exceptions.HTTPError as http_error:
             bootstrap_logger.error("HTTP error reading algorithm payload", http_error)
 
-            # ensure we flush bootstrap logger before we exit
-            bootstrap_logger.stop()
-
             # non-retryable exceptions like missing auth should cancel the run immediately
             if http_error.response.status_code in [401, 403, 410, 405, 501, 505]:
-                await self._submit_result(None, http_error)
+                await NexusReceiverAsyncClient(
+                    url=os.getenv("NEXUS__RECEIVER_URL"), token_provider=None, logger=bootstrap_logger
+                ).complete_run(
+                    result=SdkCompletedRunResult.create(
+                        result_uri=None,
+                        error=http_error,
+                    ),
+                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    request_id=self._run_args.request_id,
+                )
+                # ensure we flush bootstrap logger before we exit
+                bootstrap_logger.stop()
                 sys.exit(0)
 
+            # ensure we flush bootstrap logger before we exit
+            bootstrap_logger.stop()
             sys.exit(1)
         except BaseException as ex:  # pylint: disable=broad-except
             bootstrap_logger.error("Error reading algorithm payload", ex)
