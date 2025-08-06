@@ -71,7 +71,7 @@ class NexusReceiverClient:
         :return:
         """
         self._init_client()
-        response: SdkErrorResponse = self._client.complete_run(
+        response: SdkErrorResponse = self._complete_run(
             result.as_pointer(),
             bytes(algorithm, encoding="utf-8"),
             bytes(request_id, encoding="utf-8"),
