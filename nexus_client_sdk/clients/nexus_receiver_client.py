@@ -21,6 +21,7 @@ from adapta.logs import LoggerInterface
 
 from nexus_client_sdk.clients.cwrapper import CLIB
 from nexus_client_sdk.models.access_token import AccessToken
+from nexus_client_sdk.models.client_errors.go_http_errors import SdkError
 from nexus_client_sdk.models.common import SdkErrorResponse
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult, ErrorResponse
 
@@ -78,6 +79,11 @@ class NexusReceiverClient:
         )
 
         maybe_error = ErrorResponse.from_sdk_response(response)
+
+        if maybe_error is None:
+            raise SdkError(
+                "No response received from the SDK when trying to complete a run. This is a bug in the SDK and should be reported to the project."
+            )
 
         match maybe_error.error():
             case None:

@@ -37,9 +37,6 @@ class ErrorResponse(PySdkType):
         if not response:
             return None
 
-        if response.client_error_type is None and response.client_error_message is None:
-            return None
-
         return cls(
             client_error_type=response.client_error_type,
             client_error_message=response.client_error_message,
