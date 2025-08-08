@@ -27,6 +27,7 @@ pylint = "^3"
 black = "^23"
 wheel = "^0.42.0"
 pyupgrade = "^3"
+scylla-driver = "^3"
 
 [tool.black]
 line-length = 120

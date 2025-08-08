@@ -1,0 +1,40 @@
+{
+  "container": {
+    "image": "nexus-hello",
+    "registry": "ghcr.io/sneaksanddata",
+    "versionTag": "0.1.1-9-g372300a",
+    "serviceAccountName": "nexus"
+  },
+  "computeResources": {
+    "cpuLimit": "1000m",
+    "memoryLimit": "1000Mi"
+  },
+  "workgroupRef": {
+    "name": "default",
+    "group": "science.sneaksanddata.com",
+    "kind": "NexusAlgorithmWorkgroup"
+  },
+  "command": "python",
+  "args": [
+    "main.py",
+    "--sas-uri=%s",
+    "--request-id=%s"
+  ],
+  "runtimeEnvironment": {
+    "environmentVariables": [
+    ],
+    "deadlineSeconds": 120,
+    "maximumRetries": 1
+  },
+  "errorHandlingBehaviour": {
+    "transientExitCodes": [
+      139
+    ],
+    "fatalExitCodes": [
+      137
+    ]
+  },
+  "datadogIntegrationSettings": {
+    "mountDatadogSocket": true
+  }
+}

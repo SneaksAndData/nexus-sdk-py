@@ -1,11 +1,5 @@
-import asyncio
-import json
 import math
-import os
-import socketserver
-import threading
 from dataclasses import dataclass
-from http.server import ThreadingHTTPServer
 from typing import Any
 
 import pandas
@@ -27,7 +21,6 @@ from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 
-from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
     UserTelemetry,
@@ -189,7 +182,7 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
     def __init__(
         self,
         _: TestAlgorithmConfiguration,
-        algorithm_payload: AlgorithmPayload,
+        algorithm_payload: TestAlgorithmPayload,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         storage_client: StorageClient,
@@ -247,7 +240,3 @@ async def main():
     )
 
     await nexus.activate()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

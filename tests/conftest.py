@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import pathlib
@@ -11,6 +12,7 @@ from adapta.logs import create_async_logger
 from adapta.storage.blob.base import StorageClient
 from adapta.storage.blob.s3_storage_client import S3StorageClient
 from adapta.storage.models import S3Path
+from cassandra.cluster import Cluster
 from dataclasses_json import DataClassJsonMixin
 
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
@@ -80,6 +82,14 @@ def scheduler():
     yield NexusSchedulerClient.create("http://localhost:8080", logger, lambda: AccessToken.empty())
 
     logger.stop()
+
+
+@pytest.fixture(scope="session")
+def cql_session():
+    cluster = Cluster()
+    session = cluster.connect("nexus")
+    yield session
+    session.shutdown()
 
 
 def payloads() -> list[tuple[str, str]]:

@@ -39,6 +39,9 @@ class NexusReceiverAsyncClient:
     ):
         self._sync_client = NexusReceiverClient(url=url, logger=logger, token_provider=token_provider)
 
+    def __del__(self):
+        self._sync_client.__del__()
+
     async def complete_run(self, result: SdkCompletedRunResult, algorithm: str, request_id: str):
         """
          Async wrapper for NexusReceiverClient.complete_run.
