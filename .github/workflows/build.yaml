@@ -75,7 +75,7 @@ jobs:
         run: |
           set -euxo pipefail
           
-          chmod 777 nexus_client_sdk/.extensions/nexus_sdk.so
+          poetry run ls nexus_client_sdk/.extensions
           
           poetry run pytest ./tests --asyncio-mode=auto --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=term-missing:skip-covered | tee pytest-coverage.txt
       - name: Publish Code Coverage
