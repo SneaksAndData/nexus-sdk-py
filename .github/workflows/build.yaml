@@ -21,10 +21,6 @@ jobs:
         with:
           python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
           architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
-      - name: Install Poetry and dependencies
-        uses: SneaksAndData/github-actions/install_poetry@v0.1.11
-        with:
-          install_extras: all
 
       - name: Create Controller Kind Cluster
         uses: helm/kind-action@main
@@ -69,6 +65,11 @@ jobs:
           
           curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_linux_arm64.tar.gz > nexus_sdk_linux_arm64.tar.gz
           mkdir cext && tar -xvzf nexus_sdk_linux_arm64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_arm64.so nexus_client_sdk/.extensions/nexus_sdk.so   
+
+      - name: Install Poetry and dependencies
+        uses: SneaksAndData/github-actions/install_poetry@v0.1.11
+        with:
+          install_extras: all
 
       - name: Unit test
         run: |
