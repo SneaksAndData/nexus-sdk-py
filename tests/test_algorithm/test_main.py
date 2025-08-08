@@ -11,6 +11,7 @@ from typing import Any
 import pandas
 import polars
 from adapta.metrics import MetricsProvider
+from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from injector import inject
 
@@ -22,6 +23,7 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import (
 )
 from nexus_client_sdk.nexus.core.app_core import Nexus
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
+from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 
@@ -58,9 +60,8 @@ class XYReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
 
     async def _read_input(self, **_) -> pandas.DataFrame:
         self._logger.info(
-            "Payload: {payload}; Socket path: {socket_path}",
+            "Payload: {payload}",
             payload=self._payload.to_json(),
-            socket_path=self.socket.data_path,
         )
         return pandas.DataFrame({"x": self._payload.x, "y": self._payload.y})
 
@@ -88,11 +89,6 @@ class ZReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
         )
 
     async def _read_input(self, **_) -> pandas.DataFrame:
-        self._logger.info(
-            "Payload: {payload}; Socket path: {socket_path}",
-            payload=self._payload.to_json(),
-            socket_path=self.socket.data_path,
-        )
         return pandas.DataFrame({"z": self._payload.z})
 
 
@@ -119,9 +115,9 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
     async def _process_input(self, xy: pandas.DataFrame, **_) -> pandas.DataFrame:
         self._logger.info("Config: {config}", config=self.conf.to_json())
         if self.conf.c1 == "sum":
-            return pandas.DataFrame({"s": xy["x"].sum() + xy["y"].sum()})
+            return pandas.DataFrame({"s": [int(xy["x"].sum()) + int(xy["y"].sum())]})
 
-        return pandas.DataFrame({"s": xy["x"].sum() / xy["y"].sum()})
+        return pandas.DataFrame({"s": [int(xy["x"].sum()) / int(xy["y"].sum())]})
 
 
 class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
@@ -147,23 +143,20 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
     async def _process_input(self, z: pandas.DataFrame, **_) -> pandas.DataFrame:
         self._logger.info("Config: {config}", config=self.conf.to_json())
         if self.conf.c2 == "mean":
-            return pandas.DataFrame({"v": z.mean()})
+            return pandas.DataFrame({"v": [float(z.mean())]})
 
-        return pandas.DataFrame({"v": z.sum / z.size})
+        return pandas.DataFrame({"v": [float(z.sum() / z.size)]})
 
 
 @dataclass
 class TestResult(AlgorithmResult):
     def result(self) -> pandas.DataFrame | polars.DataFrame | dict:
         return {
-            "number": math.sqrt(self.xy.sum() + self.z.sum()),
+            "number": math.sqrt(float(self.xy.sum()) + float(self.z.sum())),
         }
 
     xy: pandas.DataFrame
     z: pandas.DataFrame
-
-    def dataframe(self) -> pandas.DataFrame:
-        return pandas.concat([self.x, self.y])
 
     def to_kwargs(self) -> dict[str, Any]:
         pass
@@ -191,7 +184,19 @@ class TestAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
         return TestResult(xy, z)
 
 
-class TestUserAnalytics(UserTelemetryRecorder):
+class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
+    @inject
+    def __init__(
+        self,
+        _: TestAlgorithmConfiguration,
+        algorithm_payload: AlgorithmPayload,
+        metrics_provider: MetricsProvider,
+        logger_factory: LoggerFactory,
+        storage_client: StorageClient,
+        serializer: TelemetrySerializer,
+    ):
+        super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer)
+
     async def _compute(
         self,
         algorithm_payload: TestAlgorithmPayload,
@@ -218,7 +223,7 @@ async def main():
         payload: TestAlgorithmPayload, run_args: NexusDefaultArguments
     ) -> dict[str, dict[str, str]]:
         return {
-            "(mean of z:{z})": {"z": payload.z[: len(payload.z) / 2]},
+            "(mean of z:{z})": {"z": payload.z[: int(len(payload.z) / 2)]},
             "(request_id:{request_id})": {"request_id": run_args.request_id},
         }
 
@@ -234,7 +239,7 @@ async def main():
         .use_processor(XYProcessor)
         .use_processor(ZProcessor)
         .use_algorithm(TestAlgorithm)
-        .on_complete(TestUserAnalytics)
+        .on_complete(TestUserAnalyticsTelemetry)
         .inject_configuration(TestAlgorithmConfiguration)
         .inject_payload(TestAlgorithmPayload)
         .with_log_enricher(tags_from_payload, enrich_from_payload)

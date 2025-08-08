@@ -9,6 +9,7 @@ from logging import StreamHandler
 import pytest
 from adapta.logs import create_async_logger
 from adapta.storage.blob.base import StorageClient
+from adapta.storage.blob.s3_storage_client import S3StorageClient
 from adapta.storage.models import S3Path
 from dataclasses_json import DataClassJsonMixin
 
@@ -54,6 +55,11 @@ def run_configuration():
     os.environ["NEXUS__METRICS_PROVIDER_CONFIGURATION"] = json.dumps(
         {"init_args": {"metric_namespace": "sdk"}, "protocol": "uds"}
     )
+    os.environ["NEXUS__ALGORITHM_INPUT_EXTERNAL_DATA_SOCKETS"] = json.dumps(
+        [
+            {"alias": "localfile", "data_path": "local+file:///tmp/file.json", "data_format": "text"},
+        ]
+    )
     os.environ["ALGORITHM_STORAGE_TYPE"] = "S3"
     os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
     os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
@@ -76,14 +82,14 @@ def scheduler():
     logger.stop()
 
 
-@pytest.fixture(scope="session")
-def payloads() -> list[str]:
+def payloads() -> list[tuple[str, str]]:
     upload_path = S3Path(bucket="nexus", path="units")
 
     def _rand_range(limit: int) -> list[int]:
         return [random.randint(0, 10) for _ in range(limit)]
 
-    payloads = [TestAlgorithmPayload(x=_rand_range(10), y=_rand_range(10), z=_rand_range(10)) for _ in range(10)]
+    generated = [TestAlgorithmPayload(x=_rand_range(10), y=_rand_range(10), z=_rand_range(10)) for _ in range(10)]
     return [
-        generate_payload_url(upload_path, payload, StorageClient.for_storage_path(upload_path)) for payload in payloads
+        generate_payload_url(upload_path, payload, S3StorageClient.for_storage_path(upload_path.to_hdfs_path()))
+        for payload in generated
     ]
