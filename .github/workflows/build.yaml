@@ -64,9 +64,8 @@ jobs:
           cext_version=$(cat nexus_client_sdk/.extensions/cext_version)
           
           curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_linux_arm64.tar.gz > nexus_sdk_linux_arm64.tar.gz
-          mkdir cext && tar -xvzf nexus_sdk_linux_arm64.tar.gz -C cext && ls cext/dist && mv cext/dist/nexus_sdk_linux_arm64.so nexus_client_sdk/.extensions/nexus_sdk.so   
-          
-          realpath nexus_client_sdk/.extensions/nexus_sdk.so
+          mkdir cext && tar -xvzf nexus_sdk_linux_arm64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_arm64.so nexus_client_sdk/.extensions/nexus_sdk.so   
+
       - name: Install Poetry and dependencies
         uses: SneaksAndData/github-actions/install_poetry@v0.1.11
         with:
@@ -76,7 +75,7 @@ jobs:
         run: |
           set -euxo pipefail
           
-          ls nexus_client_sdk/.extensions
+          chmod 777 nexus_client_sdk/.extensions/nexus_sdk.so
           
           poetry run pytest ./tests --asyncio-mode=auto --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=term-missing:skip-covered | tee pytest-coverage.txt
       - name: Publish Code Coverage
