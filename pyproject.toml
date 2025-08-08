@@ -13,15 +13,15 @@ include = [
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.13"
-adapta = { version = "^3.4.1", extras = ["storage", "datadog"] }
+adapta = { version = "^3.5.1", extras = ["storage", "datadog"] }
 injector = "~0.22.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.1"
-pytest-mock = "~3.6.1"
-pytest-xdist = "~3.5.0"
-pytest-asyncio = "~0.23.3"
-pytest-cov = "~2.12"
+pytest = "^8"
+pytest-mock = "^3"
+pytest-xdist = "^3"
+pytest-asyncio = "^1.1"
+pytest-cov = "^2.12.1"
 locust = "^2.14.2"
 pylint = "^3"
 black = "^23"
