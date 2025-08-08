@@ -66,7 +66,7 @@ jobs:
           curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_linux_arm64.tar.gz > nexus_sdk_linux_arm64.tar.gz
           mkdir cext && tar -xvzf nexus_sdk_linux_arm64.tar.gz -C cext && ls cext/dist && mv cext/dist/nexus_sdk_linux_arm64.so nexus_client_sdk/.extensions/nexus_sdk.so   
           
-          ls nexus_client_sdk/.extensions
+          realpath nexus_client_sdk/.extensions/nexus_sdk.so
       - name: Install Poetry and dependencies
         uses: SneaksAndData/github-actions/install_poetry@v0.1.11
         with:
