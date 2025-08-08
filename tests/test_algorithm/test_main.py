@@ -1,16 +1,17 @@
 import asyncio
 import json
+import math
 import os
 import socketserver
 import threading
 from dataclasses import dataclass
-from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
-from typing import Optional, Any
+from http.server import ThreadingHTTPServer
+from typing import Any
 
 import pandas
+import polars
 from adapta.metrics import MetricsProvider
 from adapta.storage.query_enabled_store import QueryEnabledStore
-from dataclasses_json import DataClassJsonMixin
 from injector import inject
 
 from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
@@ -19,18 +20,21 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
     ExternalSocketProvider,
 )
-from nexus_client_sdk.nexus.configurations.algorithm_configuration import (
-    NexusConfiguration,
-)
 from nexus_client_sdk.nexus.core.app_core import Nexus
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
+from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
-from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import UserTelemetryRecorder, UserTelemetry
+from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
+    UserTelemetryRecorder,
+    UserTelemetry,
+    UserTelemetryPathSegment,
+)
+from tests.conftest import TestAlgorithmPayload, TestAlgorithmConfiguration
 
 
-class XReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
+class XYReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
@@ -38,12 +42,12 @@ class XReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         payload: TestAlgorithmPayload,
-        socket_provider: ExternalSocketProvider,
+        _: ExternalSocketProvider,
         *readers: "InputReader",
         cache: InputCache
     ):
         super().__init__(
-            socket=socket_provider.socket("x"),
+            socket=None,
             store=store,
             metrics_provider=metrics_provider,
             logger_factory=logger_factory,
@@ -58,23 +62,23 @@ class XReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
             payload=self._payload.to_json(),
             socket_path=self.socket.data_path,
         )
-        return pandas.DataFrame([{"a": 1, "b": 2}, {"a": 2, "b": 3}])
+        return pandas.DataFrame({"x": self._payload.x, "y": self._payload.y})
 
 
-class YReader(InputReader[TestAlgorithmPayload2, pandas.DataFrame]):
+class ZReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
         store: QueryEnabledStore,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        payload: TestAlgorithmPayload2,
-        socket_provider: ExternalSocketProvider,
+        payload: TestAlgorithmPayload,
+        _: ExternalSocketProvider,
         *readers: "InputReader",
         cache: InputCache
     ):
         super().__init__(
-            socket=socket_provider.socket("y"),
+            socket=None,
             store=store,
             metrics_provider=metrics_provider,
             logger_factory=logger_factory,
@@ -89,21 +93,49 @@ class YReader(InputReader[TestAlgorithmPayload2, pandas.DataFrame]):
             payload=self._payload.to_json(),
             socket_path=self.socket.data_path,
         )
-        return pandas.DataFrame([{"a": 10, "b": 12}, {"a": 11, "b": 13}])
+        return pandas.DataFrame({"z": self._payload.z})
 
 
-class XProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
-        x: XReader,
+        xy: XYReader,
+        metrics_provider: MetricsProvider,
+        logger_factory: LoggerFactory,
+        conf: TestAlgorithmConfiguration,
+        cache: InputCache,
+    ):
+        super().__init__(
+            xy,
+            metrics_provider=metrics_provider,
+            logger_factory=logger_factory,
+            payload=None,
+            cache=cache,
+        )
+
+        self.conf = conf
+
+    async def _process_input(self, xy: pandas.DataFrame, **_) -> pandas.DataFrame:
+        self._logger.info("Config: {config}", config=self.conf.to_json())
+        if self.conf.c1 == "sum":
+            return pandas.DataFrame({"s": xy["x"].sum() + xy["y"].sum()})
+
+        return pandas.DataFrame({"s": xy["x"].sum() / xy["y"].sum()})
+
+
+class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+    @inject
+    def __init__(
+        self,
+        z: ZReader,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         my_conf: TestAlgorithmConfiguration,
         cache: InputCache,
     ):
         super().__init__(
-            x,
+            z,
             metrics_provider=metrics_provider,
             logger_factory=logger_factory,
             payload=None,
@@ -112,40 +144,23 @@ class XProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
 
         self.conf = my_conf
 
-    async def _process_input(self, x: pandas.DataFrame, **_) -> pandas.DataFrame:
+    async def _process_input(self, z: pandas.DataFrame, **_) -> pandas.DataFrame:
         self._logger.info("Config: {config}", config=self.conf.to_json())
-        return x.assign(c=[-1, 1])
+        if self.conf.c2 == "mean":
+            return pandas.DataFrame({"v": z.mean()})
 
-
-class YProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
-    @inject
-    def __init__(
-        self,
-        y: YReader,
-        metrics_provider: MetricsProvider,
-        logger_factory: LoggerFactory,
-        my_conf: TestAlgorithmConfiguration,
-        cache: InputCache,
-    ):
-        super().__init__(
-            y,
-            metrics_provider=metrics_provider,
-            logger_factory=logger_factory,
-            payload=None,
-            cache=cache,
-        )
-
-        self.conf = my_conf
-
-    async def _process_input(self, y: pandas.DataFrame, **_) -> pandas.DataFrame:
-        self._logger.info("Config: {config}", config=self.conf.to_json())
-        return y.assign(c=[-1, 1])
+        return pandas.DataFrame({"v": z.sum / z.size})
 
 
 @dataclass
-class MyResult(AlgorithmResult):
-    x: pandas.DataFrame
-    y: pandas.DataFrame
+class TestResult(AlgorithmResult):
+    def result(self) -> pandas.DataFrame | polars.DataFrame | dict:
+        return {
+            "number": math.sqrt(self.xy.sum() + self.z.sum()),
+        }
+
+    xy: pandas.DataFrame
+    z: pandas.DataFrame
 
     def dataframe(self) -> pandas.DataFrame:
         return pandas.concat([self.x, self.y])
@@ -154,7 +169,7 @@ class MyResult(AlgorithmResult):
         pass
 
 
-class MyAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
+class TestAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
     async def _context_open(self):
         pass
 
@@ -166,66 +181,67 @@ class MyAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
         self,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        x_processor: XProcessor,
-        y_processor: YProcessor,
+        xy_processor: XYProcessor,
+        z_processor: ZProcessor,
         cache: InputCache,
     ):
-        super().__init__(metrics_provider, logger_factory, x_processor, y_processor, cache=cache)
+        super().__init__(metrics_provider, logger_factory, xy_processor, z_processor, cache=cache)
 
-    async def _run(self, x: pandas.DataFrame, y: pandas.DataFrame, **kwargs) -> MyResult:
-        return MyResult(x, y)
+    async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, **kwargs) -> TestResult:
+        return TestResult(xy, z)
 
 
-class ObjectiveAnalytics(UserTelemetryRecorder):
+class TestUserAnalytics(UserTelemetryRecorder):
     async def _compute(
         self,
-        algorithm_payload: AlgorithmPayload,
-        algorithm_result: AlgorithmResult,
+        algorithm_payload: TestAlgorithmPayload,
+        algorithm_result: TestResult,
         run_id: str,
         **inputs: pandas.DataFrame
     ) -> UserTelemetry:
-        pass
+        return UserTelemetry(
+            pandas.DataFrame({"x": algorithm_payload.x, "result": algorithm_result.result()["number"]}),
+            UserTelemetryPathSegment("analysis", "test-recording"),
+        )
 
 
 async def main():
     """
-     Mock HTTP Server
+    Main entry point.
     :return:
     """
 
-    def tags_from_payload(payload: TestAlgorithmPayload, _: CrystalEntrypointArguments) -> dict[str, str]:
-        return {"test_tag": str(payload.x)}
+    def tags_from_payload(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
+        return {"x_tag": str(sum(payload.x))}
 
     def enrich_from_payload(
-        payload: TestAlgorithmPayload2, run_args: CrystalEntrypointArguments
+        payload: TestAlgorithmPayload, run_args: NexusDefaultArguments
     ) -> dict[str, dict[str, str]]:
-        return {"(value of y:{y})": {"y": payload.y}, "(request_id:{request_id})": {"request_id": run_args.request_id}}
-
-    def tag_metrics(payload: TestAlgorithmPayload2, run_args: CrystalEntrypointArguments) -> dict[str, str]:
         return {
-            "country": payload.y,
+            "(mean of z:{z})": {"z": payload.z[: len(payload.z) / 2]},
+            "(request_id:{request_id})": {"request_id": run_args.request_id},
         }
 
-    with ThreadingHTTPServer(("localhost", 9876), MockRequestHandler) as server:
-        server_thread = threading.Thread(target=server.serve_forever)
-        server_thread.daemon = True
-        server_thread.start()
-        nexus = (
-            Nexus.create()
-            .add_reader(XReader)
-            .add_reader(YReader)
-            .use_processor(XProcessor)
-            .use_processor(YProcessor)
-            .use_algorithm(MyAlgorithm)
-            .on_complete(ObjectiveAnalytics)
-            .inject_configuration(TestAlgorithmConfiguration)
-            .inject_payload(TestAlgorithmPayload, TestAlgorithmPayload2)
-            .with_log_enricher(tags_from_payload, enrich_from_payload)
-            .with_metric_tagger(tag_metrics)
-        )
+    def tag_metrics(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
+        return {
+            "y_tag": str(sum(payload.y)),
+        }
 
-        await nexus.activate()
-        server.shutdown()
+    nexus = (
+        Nexus.create()
+        .add_reader(XYReader)
+        .add_reader(ZReader)
+        .use_processor(XYProcessor)
+        .use_processor(ZProcessor)
+        .use_algorithm(TestAlgorithm)
+        .on_complete(TestUserAnalytics)
+        .inject_configuration(TestAlgorithmConfiguration)
+        .inject_payload(TestAlgorithmPayload)
+        .with_log_enricher(tags_from_payload, enrich_from_payload)
+        .with_metric_tagger(tag_metrics)
+    )
+
+    await nexus.activate()
 
 
 if __name__ == "__main__":
