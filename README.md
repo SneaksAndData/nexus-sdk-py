@@ -2,7 +2,7 @@
 Nexus SDK Py is a Python development kit for Nexus client applications. It builds upon [Golang Client](https://github.com/SneaksAndData/nexus-sdk-go) via `cgo`. 
 Python SDK does not use any Python-level HTTP middleware for Nexus interactions, but authentication might require it.
 
-SDK is tested against a Nexus stack deployed to a `kind` cluster (WIP).
+SDK is tested against a Nexus stack in a `docker-compose` deployment, backed by `kind` Kubernetes clusters.
 
 ## Quickstart
 
