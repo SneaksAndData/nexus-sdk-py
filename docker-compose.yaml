@@ -39,7 +39,7 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-    image: ghcr.io/sneaksanddata/nexus:1.0.0
+    image: ghcr.io/sneaksanddata/nexus:1.1.0
     volumes:
       - ./test-resources/kubecfg/controller:/opt/kubecfg/controller
       - ./test-resources/kubecfg/shards:/opt/kubecfg/shards
@@ -63,34 +63,13 @@ services:
       NEXUS__SCYLLA_CQL_STORE__HOSTS: 127.0.0.1
       DD_DOGSTATSD_URL: udp://localhost:8125
 
-  nexus-supervisor:
-    container_name: nexus-supervisor
-    network_mode: host
-    depends_on:
-      scylla:
-        condition: service_healthy
-    image: ghcr.io/sneaksanddata/nexus-supervisor:0.0.0-11-gfa243d6
-    volumes:
-      - ./test-resources/kubecfg/shards/kind-nexus-shard-0.kubeconfig:/opt/kubecfg/cluster
-    environment:
-      NEXUS__RESOURCE_NAMESPACE: nexus
-      NEXUS__KUBE_CONFIG_PATH: /opt/kubecfg/cluster
-      NEXUS__CQL_STORE_TYPE: scylla
-      NEXUS__FAILURE_RATE_BASE_DELAY: 100ms
-      NEXUS__FAILURE_RATE_MAX_DELAY: 1s
-      NEXUS__RATE_LIMIT_ELEMENTS_PER_SECOND: 5
-      NEXUS__RATE_LIMIT_ELEMENTS_BURST: 100
-      NEXUS__WORKERS: 10
-      NEXUS__SCYLLA_CQL_STORE__HOSTS: 127.0.0.1
-      DD_DOGSTATSD_URL: udp://localhost:8125
-
   nexus-receiver:
     container_name: nexus-receiver
     network_mode: host
     depends_on:
       scylla:
         condition: service_healthy
-    image: ghcr.io/sneaksanddata/nexus-receiver:1.0.0
+    image: ghcr.io/sneaksanddata/nexus-receiver:1.1.0
     volumes:
       - ./test-resources/kubecfg/shards/kind-nexus-shard-0.kubeconfig:/opt/kubecfg/cluster
     environment:

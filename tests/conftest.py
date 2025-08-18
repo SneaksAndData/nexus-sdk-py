@@ -1,7 +1,5 @@
-import asyncio
 import json
 import os
-import pathlib
 import random
 import sys
 from dataclasses import dataclass
@@ -9,7 +7,6 @@ from logging import StreamHandler
 
 import pytest
 from adapta.logs import create_async_logger
-from adapta.storage.blob.base import StorageClient
 from adapta.storage.blob.s3_storage_client import S3StorageClient
 from adapta.storage.models import S3Path
 from cassandra.cluster import Cluster
