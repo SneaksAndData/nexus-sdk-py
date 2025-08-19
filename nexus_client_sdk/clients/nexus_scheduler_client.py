@@ -62,6 +62,9 @@ class NexusSchedulerClient:
         self._get_run_results = CLIB.GetRunResults
         self._get_run_results.restype = ctypes.POINTER(SdkRunResult)
 
+        self._get_run_result = CLIB.GetRunResult
+        self._get_run_result.restype = SdkRunResult
+
         self._update_token = CLIB.UpdateToken
 
         self._create_run = CLIB.CreateRun
@@ -111,6 +114,29 @@ class NexusSchedulerClient:
                     break
                 case _:
                     raise maybe_result.error()
+
+    def get_run_result(self, request_id: str, algorithm: str) -> RunResult:
+        """
+         Retrieves result of a specified run
+        :param request_id: Run request identifier
+        :param algorithm: Algorithm name for the provided identifier
+        :return:
+        """
+        self._init_client()
+        result = self._get_run_result(bytes(request_id, encoding="utf-8"), bytes(algorithm, encoding="utf-8"))
+
+        if not result:
+            raise RuntimeError(
+                "Unmapped SDK error: Go client failed to return coherent result. This is a bug and must be reported to the maintainer team."
+            )
+
+        converted = RunResult.from_sdk_result(result)
+
+        match converted.error():
+            case None:
+                return converted
+            case _:
+                raise converted.error()
 
     def get_run_results(self, tag: str, algorithm: str | None = None) -> Iterator[RunResult]:
         """

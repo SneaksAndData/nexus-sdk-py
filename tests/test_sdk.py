@@ -38,5 +38,6 @@ async def test_sdk_run(test_args: NexusDefaultArguments, scheduler: NexusSchedul
     sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
     await sample_algorithm_main()
     await asyncio.sleep(1)
-    result = json.loads(requests.get(scheduler.get_request_metadata(test_args.request_id, algorithm).result_uri).text)
-    assert "number" in result
+    result = json.loads(requests.get(scheduler.get_run_result(test_args.request_id, algorithm).result_uri).text)
+    run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
+    assert "number" in result and run_meta.payload_uri
