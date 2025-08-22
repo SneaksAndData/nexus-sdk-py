@@ -1,6 +1,7 @@
 """
  Remotely executed algorithm
 """
+import json
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
@@ -101,7 +102,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             tag = self._generate_tag()
             request_ids = [
                 await self._remote_client.create_run(
-                    algorithm_parameters=payload.to_dict(),
+                    algorithm_parameters=json.loads(payload.to_json()),
                     algorithm_name=self._remote_name,
                     custom_configuration=self._remote_config,
                     tag=tag,
