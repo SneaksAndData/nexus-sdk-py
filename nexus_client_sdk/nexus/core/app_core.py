@@ -50,6 +50,7 @@ from nexus_client_sdk.nexus.algorithms import (
     BaselineAlgorithm,
 )
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
+from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.configurations.algorithm_configuration import (
     NexusConfiguration,
 )
@@ -379,6 +380,19 @@ class Nexus:
             self._injector.binder.bind(
                 NexusReceiverAsyncClient,
                 to=receiver_client,
+                scope=singleton,
+            )
+
+            # create and bind scheduler client
+            scheduler_client = NexusSchedulerAsyncClient(
+                url=os.getenv("NEXUS__SCHEDULER_URL"),
+                logger=logger_factory.create_logger(NexusSchedulerAsyncClient),
+                token_provider=None,
+            )
+
+            self._injector.binder.bind(
+                NexusSchedulerAsyncClient,
+                to=scheduler_client,
                 scope=singleton,
             )
 

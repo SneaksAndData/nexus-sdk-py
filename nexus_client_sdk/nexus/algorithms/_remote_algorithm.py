@@ -25,7 +25,6 @@ from adapta.utils.decorators import run_time_metrics_async
 from injector import inject
 
 from nexus_client_sdk.models.scheduler import SdkCustomRunConfiguration
-from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     NexusObject,
@@ -33,6 +32,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
     AlgorithmResult,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
+from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.input.input_processor import (
     InputProcessor,
 )
@@ -49,7 +49,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         self,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        remote_client: NexusSchedulerClient,
+        remote_client: NexusSchedulerAsyncClient,
         remote_name: str,
         remote_config: SdkCustomRunConfiguration,
         *input_processors: InputProcessor,
@@ -69,13 +69,13 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         """
 
     @abstractmethod
-    def _transform_submission_result(self, request_id: str, tag: str) -> AlgorithmResult:
+    def _transform_submission_result(self, request_ids: list[str], tag: str) -> AlgorithmResult:
         """
         Called after submitting a remote run. Use this to enrich your output with remote run id and tag.
         """
 
     @abstractmethod
-    async def _run(self, **kwargs) -> AlgorithmPayload:
+    async def _run(self, **kwargs) -> list[AlgorithmPayload]:
         """
         Core logic for this algorithm. Implementing this method is mandatory.
         """
@@ -97,15 +97,18 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             },
         )
         async def _measured_run(**run_args) -> AlgorithmResult:
-            payload = await self._run(**run_args)
+            payloads = await self._run(**run_args)
             tag = self._generate_tag()
-            request_id = self._remote_client.create_run(
-                algorithm_parameters=payload.to_dict(),
-                algorithm_name=self._remote_name,
-                custom_configuration=self._remote_config,
-                tag=tag,
-            )
-            return self._transform_submission_result(request_id, tag)
+            request_ids = [
+                await self._remote_client.create_run(
+                    algorithm_parameters=payload.to_dict(),
+                    algorithm_name=self._remote_name,
+                    custom_configuration=self._remote_config,
+                    tag=tag,
+                )
+                for payload in payloads
+            ]
+            return self._transform_submission_result(request_ids, tag)
 
         results = await self._cache.resolve(*self._input_processors, **kwargs)
 
