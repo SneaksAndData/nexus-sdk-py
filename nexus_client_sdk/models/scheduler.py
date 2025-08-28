@@ -318,3 +318,45 @@ class RequestMetadata(PySdkType):
             client_error_type=result.client_error_type.decode() if result.client_error_type else None,
             client_error_message=result.client_error_message.decode() if result.client_error_message else None,
         )
+
+
+@final
+class SdkStringResult(ctypes.Structure):
+    """
+    Optional string result
+    """
+
+    _fields_ = [
+        ("result", ctypes.c_char_p),
+        ("client_error_type", ctypes.c_char_p),
+        ("client_error_message", ctypes.c_char_p),
+    ]
+
+    def __del__(self):
+        CLIB.FreeStringResult(self)
+
+
+@dataclass
+class StringResult(PySdkType):
+    """
+    Python counterpart for SdkStringResult
+    """
+
+    result: str
+
+    @classmethod
+    def from_sdk_result(cls, result: SdkStringResult) -> Self | None:
+        """
+          Create an instance of this class from a SdkStringResult
+        :param result: An instance of SdkStringResult
+        :return:
+        """
+
+        if not result:
+            return None
+
+        return cls(
+            result=result.result.decode() if result.result else "",
+            client_error_type=result.client_error_type.decode() if result.client_error_type else None,
+            client_error_message=result.client_error_message.decode() if result.client_error_message else None,
+        )

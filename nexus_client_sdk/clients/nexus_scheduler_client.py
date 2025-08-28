@@ -37,6 +37,8 @@ from nexus_client_sdk.models.scheduler import (
     SdkParentRequest,
     RequestMetadata,
     SdkRequestMetadata,
+    SdkStringResult,
+    StringResult,
 )
 
 
@@ -80,6 +82,12 @@ class NexusSchedulerClient:
         self._get_request_metadata.restype = SdkRequestMetadata
 
         self._free_results_array = CLIB.FreeRunResultsPointer
+
+        self._cancel_run = CLIB.CancelRun
+        self._cancel_run.restype = SdkStringResult
+
+        self._get_buffered_run = CLIB.GetBufferedRun
+        self._get_buffered_run.restype = SdkStringResult
 
     def __del__(self):
         CLIB.FreeClient(self._client)
@@ -165,6 +173,7 @@ class NexusSchedulerClient:
         parent_request: SdkParentRequest | None = None,
         tag: str | None = None,
         payload_valid_for: str = "24h",
+        dry_run: bool = False,
     ) -> str:
         """
          Creates a new run for a given algorithm.
@@ -174,6 +183,7 @@ class NexusSchedulerClient:
         :param parent_request: Optional Parent request reference, if applicable. Specifying a parent request allows indirect cancellation of the submission - via cancellation of a parent.
         :param tag: Client side assigned run tag.
         :param payload_valid_for: Payload pre-signed URL validity period.
+        :param dry_run: Dry run, if set to True, will only buffer a submission but skip job creation.
         :return:
         """
         self._init_client()
@@ -189,6 +199,7 @@ class NexusSchedulerClient:
             parent_request.as_pointer() if parent_request else None,
             bytes(payload_valid_for, encoding="utf-8"),
             bytes(tag, encoding="utf-8") if tag else None,
+            bytes(str(dry_run).lower(), encoding="utf-8"),
         )
 
         converted = AlgorithmRun.from_sdk_run(maybe_result)
@@ -299,6 +310,37 @@ class NexusSchedulerClient:
                 return None
             case _:
                 raise maybe_meta.error()
+
+    def cancel_run(
+        self, request_id: str, algorithm: str, initiator: str, reason: str, policy: str = "Background"
+    ) -> None:
+        """
+         Cancel a for provided request id and algorithm.
+        :param request_id: Run request identifier
+        :param algorithm: Algorithm name for the provided identifier
+        :param initiator: Person initiating the cancel
+        :param reason: Reason for cancellation
+        :param policy: Cleanup policy
+        :return:
+        """
+        self._init_client()
+        sdk_result = self._cancel_run(
+            bytes(request_id, encoding="utf-8"),
+            bytes(algorithm, encoding="utf-8"),
+            bytes(policy, encoding="utf-8"),
+            bytes(initiator, encoding="utf-8"),
+            bytes(reason, encoding="utf-8"),
+        )
+        maybe_result = StringResult.from_sdk_result(sdk_result)
+
+        if maybe_result is None:
+            return None
+
+        match maybe_result.error():
+            case None:
+                return None
+            case _:
+                raise maybe_result.error()
 
     @classmethod
     def create(cls, url: str, logger: LoggerInterface, token_provider: Callable[[], AccessToken] | None = None) -> Self:
