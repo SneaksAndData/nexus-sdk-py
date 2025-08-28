@@ -33,7 +33,7 @@ async def test_sdk_run(test_args: NexusDefaultArguments, scheduler: NexusSchedul
     algorithm = os.getenv("NEXUS__ALGORITHM_NAME")
     # create initial fake record
     cql_session.execute(
-        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent_job) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{runtime_config_stub}', '{{}}', '{{}}')"
+        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{runtime_config_stub}', '{{}}', '{{}}')"
     )
     sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
     await sample_algorithm_main()
