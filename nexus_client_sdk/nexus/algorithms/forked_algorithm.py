@@ -165,7 +165,9 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
                 "Forking node with: {forks}, after the node run",
                 forks=",".join([fork.alias() for fork in forks]),
             )
-            await asyncio.wait([asyncio.create_task(fork.run(**kwargs)) for fork in forks], return_when=asyncio.FIRST_EXCEPTION)
+            await asyncio.wait(
+                [asyncio.create_task(fork.run(**kwargs)) for fork in forks], return_when=asyncio.FIRST_EXCEPTION
+            )
         else:
             self._logger.info("Leaf algorithm node: proceeding with this node run only")
 
