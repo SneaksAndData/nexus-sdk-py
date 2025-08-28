@@ -50,6 +50,7 @@ class NexusSchedulerAsyncClient:
         parent_request: SdkParentRequest | None = None,
         tag: str | None = None,
         payload_valid_for: str = "24h",
+        dry_run: bool = False,
     ) -> str:
         """
          Creates a new run for a given algorithm.
@@ -59,6 +60,7 @@ class NexusSchedulerAsyncClient:
         :param parent_request: Optional Parent request reference, if applicable. Specifying a parent request allows indirect cancellation of the submission - via cancellation of a parent.
         :param tag: Client side assigned run tag.
         :param payload_valid_for: Payload pre-signed URL validity period.
+        :param dry_run: If True, will buffer but skip creating an actual algorithm job.
         :return:
         """
         return self._sync_client.create_run(
@@ -68,4 +70,5 @@ class NexusSchedulerAsyncClient:
             parent_request=parent_request,
             payload_valid_for=payload_valid_for,
             tag=tag,
+            dry_run=dry_run,
         )

@@ -2,6 +2,7 @@
  Remotely executed algorithm
 """
 import json
+import os
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
@@ -25,7 +26,7 @@ from adapta.metrics import MetricsProvider
 from adapta.utils.decorators import run_time_metrics_async
 from injector import inject
 
-from nexus_client_sdk.models.scheduler import SdkCustomRunConfiguration
+from nexus_client_sdk.models.scheduler import SdkCustomRunConfiguration, SdkParentRequest
 from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     NexusObject,
@@ -105,7 +106,11 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
                     algorithm_parameters=json.loads(payload.to_json()),
                     algorithm_name=self._remote_name,
                     custom_configuration=self._remote_config,
+                    parent_request=SdkParentRequest.create(
+                        algorithm_name=os.getenv("NEXUS__ALGORITHM_NAME"), request_id=run_args["request_id"]
+                    ),
                     tag=tag,
+                    dry_run=os.getenv("NEXUS__REMOTE_DRY_RUN", "0") == "1",
                 )
                 for payload in payloads
             ]
