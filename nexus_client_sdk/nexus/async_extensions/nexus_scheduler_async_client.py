@@ -70,4 +70,5 @@ class NexusSchedulerAsyncClient:
             parent_request=parent_request,
             payload_valid_for=payload_valid_for,
             tag=tag,
+            dry_run=dry_run,
         )
