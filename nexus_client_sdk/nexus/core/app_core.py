@@ -464,7 +464,7 @@ class Nexus:
 
             await self._submit_result(
                 result=self._algorithm_run_task.result() if not ex else None,
-                ex=self._algorithm_run_task.exception(),
+                ex=ex,
                 root_logger=root_logger,
                 metrics_provider=metrics_provider,
                 algorithm_name=algorithm.__class__.alias().upper(),
