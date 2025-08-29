@@ -258,7 +258,6 @@ class Nexus:
         self,
         root_logger: LoggerInterface,
         metrics_provider: MetricsProvider,
-        algorithm_name: str,
         result: AlgorithmResult | None = None,
         ex: BaseException | None = None,
     ) -> None:
@@ -318,7 +317,7 @@ class Nexus:
                 root_logger.error(
                     "Algorithm {algorithm} run failed on Nexus version {version}",
                     ex,
-                    algorithm=algorithm_name,
+                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
                     version=__version__,
                 )
                 metrics_provider.increment("failed_runs")
@@ -465,7 +464,6 @@ class Nexus:
                 ex=ex,
                 root_logger=root_logger,
                 metrics_provider=metrics_provider,
-                algorithm_name=algorithm.__class__.alias().upper(),
             )
 
             # record telemetry
