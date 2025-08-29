@@ -256,6 +256,9 @@ class Nexus:
 
     async def _submit_result(
         self,
+        root_logger: LoggerInterface,
+        metrics_provider: MetricsProvider,
+        algorithm_name: str,
         result: AlgorithmResult | None = None,
         ex: BaseException | None = None,
     ) -> None:
@@ -300,7 +303,9 @@ class Nexus:
                     algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
                     request_id=self._run_args.request_id,
                 )
+                metrics_provider.increment("successful_runs")
             case True:
+                metrics_provider.increment("distinct_failed_runs")
                 sys.exit(1)
             case False:
                 await receiver.complete_run(
@@ -311,7 +316,15 @@ class Nexus:
                     algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
                     request_id=self._run_args.request_id,
                 )
+                root_logger.error(
+                    "Algorithm {algorithm} run failed on Nexus version {version}",
+                    ex,
+                    algorithm=algorithm_name,
+                    version=__version__,
+                )
+                metrics_provider.increment("failed_runs")
             case _:
+                metrics_provider.increment("distinct_failed_runs")
                 sys.exit(1)
 
     async def _get_payload(self, payload_type: type[AlgorithmPayload]) -> AlgorithmPayload:
@@ -449,20 +462,12 @@ class Nexus:
             await asyncio.wait([self._algorithm_run_task], return_when=asyncio.FIRST_EXCEPTION)
             ex = self._algorithm_run_task.exception()
 
-            if ex is not None:
-                root_logger.error(
-                    "Algorithm {algorithm} run failed on Nexus version {version}",
-                    ex,
-                    algorithm=algorithm.__class__.alias().upper(),
-                    version=__version__,
-                )
-                metrics_provider.increment("failed_runs")
-            else:
-                metrics_provider.increment("successful_runs")
-
             await self._submit_result(
-                self._algorithm_run_task.result() if not ex else None,
-                self._algorithm_run_task.exception(),
+                result=self._algorithm_run_task.result() if not ex else None,
+                ex=self._algorithm_run_task.exception(),
+                root_logger=root_logger,
+                metrics_provider=metrics_provider,
+                algorithm_name=algorithm.__class__.alias().upper(),
             )
 
             # record telemetry
