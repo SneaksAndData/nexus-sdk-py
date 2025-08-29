@@ -256,6 +256,8 @@ class Nexus:
 
     async def _submit_result(
         self,
+        root_logger: LoggerInterface,
+        metrics_provider: MetricsProvider,
         result: AlgorithmResult | None = None,
         ex: BaseException | None = None,
     ) -> None:
@@ -300,6 +302,7 @@ class Nexus:
                     algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
                     request_id=self._run_args.request_id,
                 )
+                metrics_provider.increment("successful_runs")
             case True:
                 sys.exit(1)
             case False:
@@ -311,6 +314,13 @@ class Nexus:
                     algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
                     request_id=self._run_args.request_id,
                 )
+                root_logger.error(
+                    "Algorithm {algorithm} run failed on Nexus version {version}",
+                    ex,
+                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    version=__version__,
+                )
+                metrics_provider.increment("failed_runs")
             case _:
                 sys.exit(1)
 
@@ -449,20 +459,11 @@ class Nexus:
             await asyncio.wait([self._algorithm_run_task], return_when=asyncio.FIRST_EXCEPTION)
             ex = self._algorithm_run_task.exception()
 
-            if ex is not None:
-                root_logger.error(
-                    "Algorithm {algorithm} run failed on Nexus version {version}",
-                    ex,
-                    algorithm=algorithm.__class__.alias().upper(),
-                    version=__version__,
-                )
-                metrics_provider.increment("failed_runs")
-            else:
-                metrics_provider.increment("successful_runs")
-
             await self._submit_result(
-                self._algorithm_run_task.result() if not ex else None,
-                self._algorithm_run_task.exception(),
+                result=self._algorithm_run_task.result() if not ex else None,
+                ex=ex,
+                root_logger=root_logger,
+                metrics_provider=metrics_provider,
             )
 
             # record telemetry
