@@ -305,7 +305,6 @@ class Nexus:
                 )
                 metrics_provider.increment("successful_runs")
             case True:
-                metrics_provider.increment("distinct_failed_runs")
                 sys.exit(1)
             case False:
                 await receiver.complete_run(
@@ -324,7 +323,6 @@ class Nexus:
                 )
                 metrics_provider.increment("failed_runs")
             case _:
-                metrics_provider.increment("distinct_failed_runs")
                 sys.exit(1)
 
     async def _get_payload(self, payload_type: type[AlgorithmPayload]) -> AlgorithmPayload:
