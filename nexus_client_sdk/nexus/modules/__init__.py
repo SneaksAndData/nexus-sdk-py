@@ -21,4 +21,7 @@ try:
     from nexus_client_sdk.nexus.modules.mlflow_module import MlflowModule
 except ModuleNotFoundError:
     pass
-from nexus_client_sdk.nexus.modules.astra_client_module import AstraClientModule
+try:
+    from nexus_client_sdk.nexus.modules.astra_client_module import AstraClientModule
+except ModuleNotFoundError:
+    pass
