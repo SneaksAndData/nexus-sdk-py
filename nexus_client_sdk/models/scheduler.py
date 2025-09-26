@@ -44,6 +44,7 @@ class SdkRunResult(ctypes.Structure):
         CLIB.FreeRunResult(self)
 
 
+@final
 class RequestLifeCycleStage(Enum):
     """
     Nexus status states.
