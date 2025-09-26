@@ -72,3 +72,17 @@ class NexusSchedulerAsyncClient:
             tag=tag,
             dry_run=dry_run,
         )
+
+    async def await_run(self, request_id: str, algorithm: str, poll_interval_seconds=5):
+        """
+        Awaits result for a given run for a given algorithm.
+        :param request_id: Run request ID.
+        :param algorithm: Algorithm name.
+        :param poll_interval_seconds: Time between status checks
+        :return:
+        """
+        return self._sync_client.await_run(
+            request_id=request_id,
+            algorithm=algorithm,
+            poll_interval_seconds=poll_interval_seconds,
+        )
