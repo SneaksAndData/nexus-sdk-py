@@ -1,6 +1,6 @@
 import math
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, final
 
 import pandas
 import polars
@@ -18,6 +18,7 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import (
 from nexus_client_sdk.nexus.core.app_core import Nexus
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
+from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 
@@ -27,6 +28,15 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryPathSegment,
 )
 from tests.conftest import TestAlgorithmPayload, TestAlgorithmConfiguration
+
+
+@final
+class NegativeZError(FatalNexusError):
+    def __init__(self):
+        super().__init__()
+
+    def __str__(self) -> str:
+        return "Z-axis contains a negative value"
 
 
 class XYReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
@@ -82,6 +92,9 @@ class ZReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
         )
 
     async def _read_input(self, **_) -> pandas.DataFrame:
+        # negative value should abort the run and be handled accordingly
+        if any([v < 0 for v in self._payload.z]):
+            raise NegativeZError()
         return pandas.DataFrame({"z": self._payload.z})
 
 

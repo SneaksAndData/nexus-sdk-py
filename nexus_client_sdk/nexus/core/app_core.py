@@ -503,12 +503,12 @@ class Nexus:
                             else:
                                 metrics_provider.increment("telemetry_reports_succeeded")
                     else:
-                        root_logger.warning(
-                            "Skipping user telemetry recording as the run {run_id} has failed",
-                            run_id=self._run_args.request_id,
-                        )
+                        root_logger.info("No post processing tasks were defined for this run")
                 else:
-                    root_logger.info("No post processing tasks were defined for this run.")
+                    root_logger.warning(
+                        "Skipping user telemetry recording as the run {run_id} has failed",
+                        run_id=self._run_args.request_id,
+                    )
 
             # dispose of QES instance gracefully as it might hold open connections
             qes = self._injector.get(QueryEnabledStore)

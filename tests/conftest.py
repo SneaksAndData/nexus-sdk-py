@@ -100,3 +100,13 @@ def payloads() -> list[tuple[str, str]]:
         generate_payload_url(upload_path, payload, S3StorageClient.for_storage_path(upload_path.to_hdfs_path()))
         for payload in generated
     ]
+
+
+def negative_z_payload() -> tuple[str, str]:
+    upload_path = S3Path(bucket="nexus", path="units")
+
+    return generate_payload_url(
+        upload_path,
+        TestAlgorithmPayload(x=[1, 2, 3], y=[4, 5, 6], z=[0, -1, 10]),
+        S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
+    )
