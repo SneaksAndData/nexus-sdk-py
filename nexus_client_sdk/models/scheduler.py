@@ -17,6 +17,7 @@
 
 import ctypes
 from dataclasses import dataclass
+from enum import Enum
 from typing import final, Self
 
 from nexus_client_sdk.clients.cwrapper import CLIB
@@ -41,6 +42,22 @@ class SdkRunResult(ctypes.Structure):
 
     def __del__(self):
         CLIB.FreeRunResult(self)
+
+
+@final
+class RequestLifeCycleStage(Enum):
+    """
+    Nexus status states.
+    """
+
+    NEW = "NEW"
+    BUFFERED = "BUFFERED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    SCHEDULING_FAILED = "SCHEDULING_FAILED"
+    DEADLINE_EXCEEDED = "DEADLINE_EXCEEDED"
+    CANCELLED = "CANCELLED"
 
 
 @dataclass
