@@ -65,7 +65,7 @@ class InputCache:
         self,
         *readers_or_processors: InputObject[TPayload, TResult],
         **kwargs,
-    ) -> dict[str, TResult]:
+    ) -> dict[str, TResult | None]:
         """
         Concurrently resolve `data` property of all readers by invoking their `read` method.
         """
@@ -78,10 +78,12 @@ class InputCache:
             return completed_task.result()
 
         async def _execute(nexus_input: InputObject) -> TResult:
+            result: TResult | None = None
             async with nexus_input as instance:
-                result = await nexus_input.process(**kwargs)
-
-            self._cache[instance.cache_key()] = result
+                try:
+                    result = await nexus_input.process(**kwargs)
+                finally:
+                    self._cache[instance.cache_key()] = result
 
             return result
 

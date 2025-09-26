@@ -323,7 +323,7 @@ class RequestMetadata(PySdkType):
             content_hash=result.content_hash.decode() if result.content_hash else None,
             job_uid=result.job_uid.decode() if result.job_uid else None,
             last_modified=result.last_modified.decode() if result.last_modified else None,
-            lifecycle_stage=result.lifecycle_stage,
+            lifecycle_stage=result.lifecycle_stage.decode() if result.lifecycle_stage else None,
             parent_job=result.parent_job.decode() if result.parent_job else None,
             payload_uri=result.payload_uri.decode() if result.payload_uri else None,
             payload_valid_for=result.payload_valid_for.decode() if result.payload_valid_for else None,
