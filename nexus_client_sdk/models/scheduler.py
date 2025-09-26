@@ -17,7 +17,6 @@
 
 import ctypes
 from dataclasses import dataclass
-from enum import Enum
 from typing import final, Self
 
 from nexus_client_sdk.clients.cwrapper import CLIB
@@ -44,21 +43,6 @@ class SdkRunResult(ctypes.Structure):
         CLIB.FreeRunResult(self)
 
 
-class RequestLifeCycleStage(Enum):
-    """
-    Crystal status states.
-    """
-
-    NEW = "NEW"
-    BUFFERED = "BUFFERED"
-    RUNNING = "RUNNING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    SCHEDULING_FAILED = "SCHEDULING_FAILED"
-    DEADLINE_EXCEEDED = "DEADLINE_EXCEEDED"
-    CANCELLED = "CANCELLED"
-
-
 @dataclass
 class RunResult(PySdkType):
     """
@@ -69,7 +53,7 @@ class RunResult(PySdkType):
     request_id: str | None
     result_uri: str | None
     run_error_message: str | None
-    status: RequestLifeCycleStage | None
+    status: str | None
 
     @classmethod
     def from_sdk_result(cls, result: SdkRunResult) -> Self | None:
