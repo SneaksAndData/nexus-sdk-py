@@ -473,33 +473,40 @@ class Nexus:
             )
             async with telemetry_recorder as recorder:
                 await recorder.record(run_id=self._run_args.request_id, **algorithm.inputs)
-                on_complete_tasks = [
-                    recorder.record_user_telemetry(
-                        user_recorder=self._injector.get(on_complete_task_class),
-                        run_id=self._run_args.request_id,
-                        result=self._algorithm_run_task.result(),
-                        **algorithm.inputs,
-                    )
-                    for on_complete_task_class in self._on_complete_tasks
-                ]
-                if len(on_complete_tasks) > 0:
-                    done, pending = await asyncio.wait(on_complete_tasks, return_when=asyncio.FIRST_EXCEPTION)
-                    if len(pending) > 0:
-                        metrics_provider.increment("telemetry_reports_incomplete")
-                        root_logger.warning(
-                            "Some post-processing operations did not complete or failed. Please review application logs for more information"
+                # only execute user telemetry if this run has succeeded
+                if ex is None:
+                    on_complete_tasks = [
+                        recorder.record_user_telemetry(
+                            user_recorder=self._injector.get(on_complete_task_class),
+                            run_id=self._run_args.request_id,
+                            result=self._algorithm_run_task.result(),
+                            **algorithm.inputs,
                         )
-
-                    for done_on_complete_task in done:
-                        on_complete_task_exc = done_on_complete_task.exception()
-                        if on_complete_task_exc:
-                            metrics_provider.increment("telemetry_reports_failed")
+                        for on_complete_task_class in self._on_complete_tasks
+                    ]
+                    if len(on_complete_tasks) > 0:
+                        done, pending = await asyncio.wait(on_complete_tasks, return_when=asyncio.FIRST_EXCEPTION)
+                        if len(pending) > 0:
+                            metrics_provider.increment("telemetry_reports_incomplete")
                             root_logger.warning(
-                                "Post processing task failed",
-                                exception=on_complete_task_exc,
+                                "Some post-processing operations did not complete or failed. Please review application logs for more information"
                             )
-                        else:
-                            metrics_provider.increment("telemetry_reports_succeeded")
+
+                        for done_on_complete_task in done:
+                            on_complete_task_exc = done_on_complete_task.exception()
+                            if on_complete_task_exc:
+                                metrics_provider.increment("telemetry_reports_failed")
+                                root_logger.warning(
+                                    "Post processing task failed",
+                                    exception=on_complete_task_exc,
+                                )
+                            else:
+                                metrics_provider.increment("telemetry_reports_succeeded")
+                    else:
+                        root_logger.warning(
+                            "Skipping user telemetry recording as the run {run_id} has failed",
+                            run_id=self._run_args.request_id,
+                        )
                 else:
                     root_logger.info("No post processing tasks were defined for this run.")
 
