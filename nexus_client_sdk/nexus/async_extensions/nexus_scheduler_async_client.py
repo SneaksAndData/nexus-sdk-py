@@ -22,7 +22,7 @@ from adapta.logs import LoggerInterface
 
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.access_token import AccessToken
-from nexus_client_sdk.models.scheduler import SdkCustomRunConfiguration, SdkParentRequest
+from nexus_client_sdk.models.scheduler import SdkCustomRunConfiguration, SdkParentRequest, RunResult
 
 
 @final
@@ -73,7 +73,7 @@ class NexusSchedulerAsyncClient:
             dry_run=dry_run,
         )
 
-    async def await_run(self, request_id: str, algorithm: str, poll_interval_seconds=5):
+    async def await_run(self, request_id: str, algorithm: str, poll_interval_seconds=5) -> RunResult:
         """
         Awaits result for a given run for a given algorithm.
         :param request_id: Run request ID.
