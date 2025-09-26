@@ -69,7 +69,7 @@ class RunResult(PySdkType):
     request_id: str | None
     result_uri: str | None
     run_error_message: str | None
-    status: RequestLifeCycleStage | None
+    status: str | None
 
     @classmethod
     def from_sdk_result(cls, result: SdkRunResult) -> Self | None:
