@@ -46,7 +46,7 @@ class SdkRunResult(ctypes.Structure):
 
 class RequestLifeCycleStage(Enum):
     """
-    Crystal status states.
+    Nexus status states.
     """
 
     NEW = "NEW"
