@@ -51,7 +51,7 @@ Nexus provides a set of utilities that allow viewing and inspecting the executio
 from nexus_client_sdk.nexus.execution.trees import get_tree
 from tests.sample_algorithm.sample_main import TestAlgorithm
 
-print(get_tree(TestAlgorithm))
+print(get_tree(TestAlgorithm).serialize())
 
 # graph TB
 # TESTALGORITHM["TestAlgorithm"] --> XYPROCESSOR["XYProcessor"] --> XYREADER["XYReader"]

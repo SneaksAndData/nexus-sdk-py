@@ -2,8 +2,6 @@ import inspect
 from dataclasses import dataclass
 from typing import Self, final
 
-from click import Parameter
-
 from nexus_client_sdk.nexus.algorithms import BaselineAlgorithm
 
 
@@ -82,7 +80,7 @@ class ExecutionTree:
         return "\n".join(["graph TB", self.root_node.serialize()])
 
 
-def _is_nexus_input_object_annotation(parameter: Parameter) -> bool:
+def _is_nexus_input_object_annotation(parameter: inspect.Parameter) -> bool:
     if isinstance(parameter.annotation, str):
         return False
 
@@ -108,7 +106,6 @@ def get_tree(algorithm_class: type[BaselineAlgorithm]) -> ExecutionTree:
     """
      Generates a text representation of an execution tree for the provided algorithm class.
     :param algorithm_class: Nexus algorithm class to generate tree for
-    :param tree_format: Output format. Supported formats: 'plain' (default), 'mermaid'
     :return:
     """
     root_node = inspect.signature(algorithm_class.__init__)
