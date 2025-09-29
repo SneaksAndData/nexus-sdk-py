@@ -42,3 +42,18 @@ Nexus's design makes life even easier when using AI code generation, as it is es
 In essence, a developer just needs to specify which inputs are required for an algorithm to run, and provide class implementations for this, and Nexus will take care of the rest. This also implies that whether an IO operation happens, such as a database read or a file load, Nexus will utilize `asyncio` coroutines to run multiple IO ops in parallel, significantly increasing the execution speed, without any need for a developer to understand async programming.
 
 For a example of how to use Nexus, take a look at a [Sample Algorithm](tests/sample_algorithm) and a corresponding [test configuration](tests/conftest.py) and a [test](tests/test_sdk.py) itself.
+
+### Execution tree
+
+Nexus provides a set of utilities that allow viewing and inspecting the execution tree:
+
+```python
+from nexus_client_sdk.nexus.execution.trees import get_tree
+from tests.sample_algorithm.sample_main import TestAlgorithm
+
+print(get_tree(TestAlgorithm))
+
+# graph TB
+# TESTALGORITHM["TestAlgorithm"] --> XYPROCESSOR["XYProcessor"] --> XYREADER["XYReader"]
+# TESTALGORITHM["TestAlgorithm"] --> ZPROCESSOR["ZProcessor"] --> ZREADER["ZReader"]
+```
