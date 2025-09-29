@@ -58,6 +58,11 @@ class ExecutionTree:
 
     @classmethod
     def create(cls, root_node_name: str) -> Self:
+        """
+         Creates a new execution tree node
+        :param root_node_name: Name for the node.
+        :return:
+        """
         return cls(root_node=ExecutionTreeNode(children=set(), class_name=root_node_name))
 
     def add_child(self, node: ExecutionTreeNode):
@@ -78,7 +83,7 @@ class ExecutionTree:
 
 
 def _is_nexus_input_object_annotation(parameter: Parameter) -> bool:
-    if type(parameter.annotation) == str:
+    if isinstance(parameter.annotation, str):
         return False
 
     return "processor" in parameter.annotation.__name__.lower() or "reader" in parameter.annotation.__name__.lower()
