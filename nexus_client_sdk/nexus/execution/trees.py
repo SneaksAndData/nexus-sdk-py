@@ -4,7 +4,7 @@ from typing import Self, final
 
 from nexus_client_sdk.nexus.algorithms import BaselineAlgorithm
 
-
+@final
 @dataclass
 class ExecutionTreeNode:
     """
@@ -20,6 +20,17 @@ class ExecutionTreeNode:
     def __hash__(self) -> int:
         return id(self)
 
+
+    def has_child(self, new_child: Self) -> bool:
+        if len(self.children) == 0:
+            return False
+
+        for child in self.children:
+            if child.has_child(new_child):
+                return True
+
+        return False
+
     def serialize(self) -> str:
         """
           Serializes this node to a Mermaid Flowchart.
@@ -33,7 +44,7 @@ class ExecutionTreeNode:
         if len(self.children) == 0:
             result_lines.append(root)
 
-        return "\n".join(result_lines)
+        return "\n".join(set(result_lines))
 
     def add_child(self, child: Self) -> Self:
         """
@@ -41,6 +52,9 @@ class ExecutionTreeNode:
         :param child:
         :return:
         """
+        if self.has_child(child):
+            return self
+
         self.children.add(child)
         return self
 
@@ -77,7 +91,7 @@ class ExecutionTree:
          Serialize the execution tree to a string using the given target format.
         :return:
         """
-        return "\n".join(["graph TB", self.root_node.serialize()])
+        return "\n".join(["graph TB", '\n'.join(set(self.root_node.serialize().split('\n')))])
 
 
 def _is_nexus_input_object_annotation(parameter: inspect.Parameter) -> bool:
@@ -87,17 +101,20 @@ def _is_nexus_input_object_annotation(parameter: inspect.Parameter) -> bool:
     return "processor" in parameter.annotation.__name__.lower() or "reader" in parameter.annotation.__name__.lower()
 
 
-def _get_parameter_tree(parameter: inspect.Parameter) -> ExecutionTreeNode:
+def _get_parameter_tree(parameter: inspect.Parameter, node_cache: dict[str, ExecutionTreeNode]) -> ExecutionTreeNode:
     sig = inspect.signature(parameter.annotation.__init__)
     dependents = list(filter(lambda meta: _is_nexus_input_object_annotation(meta[1]), sig.parameters.items()))
-    current_node = ExecutionTreeNode(children=set(), class_name=parameter.annotation.__name__)
+    cached_node = node_cache.get(parameter.annotation.__name__, None)
+    current_node = cached_node or ExecutionTreeNode(children=set(), class_name=parameter.annotation.__name__)
+    if cached_node is None:
+        node_cache[parameter.annotation.__name__] = current_node
 
     # leaf node
     if len(dependents) == 0:
         return current_node
 
     for _, dependent in dependents:
-        current_node.add_child(_get_parameter_tree(dependent))
+        current_node.add_child(_get_parameter_tree(dependent, node_cache))
 
     return current_node
 
@@ -111,7 +128,8 @@ def get_tree(algorithm_class: type[BaselineAlgorithm]) -> ExecutionTree:
     root_node = inspect.signature(algorithm_class.__init__)
     tree = ExecutionTree.create(root_node_name=algorithm_class.__name__)
     processors = filter(lambda meta: "Processor" in meta[1].annotation.__name__, root_node.parameters.items())
+    node_cache: dict[str, ExecutionTreeNode] = dict()
     for _, processor_parameter in processors:
-        tree.add_child(_get_parameter_tree(processor_parameter))
+        tree.add_child(_get_parameter_tree(processor_parameter, node_cache))
 
     return tree
