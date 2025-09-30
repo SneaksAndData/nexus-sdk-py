@@ -8,11 +8,13 @@ def test_tree_generation():
 
 
 def test_tree_serialization():
-    mermaid_tree = get_tree(TestAlgorithm).serialize()
+    mermaid_tree = get_tree(TestAlgorithm).serialize(sort_nodes=True)
 
     assert (
         mermaid_tree
         == """graph TB
-TESTALGORITHM["TestAlgorithm"] --> XYPROCESSOR["XYProcessor"] --> XYREADER["XYReader"]
-TESTALGORITHM["TestAlgorithm"] --> ZPROCESSOR["ZProcessor"] --> ZREADER["ZReader"]"""
+TESTALGORITHM["TestAlgorithm"] --> XYPROCESSOR["XYProcessor"]
+TESTALGORITHM["TestAlgorithm"] --> ZPROCESSOR["ZProcessor"]
+XYPROCESSOR["XYProcessor"] --> XYREADER["XYReader"]
+ZPROCESSOR["ZProcessor"] --> ZREADER["ZReader"]"""
     )
