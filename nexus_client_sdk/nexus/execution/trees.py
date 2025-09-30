@@ -1,8 +1,8 @@
 import inspect
 from dataclasses import dataclass
 from typing import Self, final
-
 from nexus_client_sdk.nexus.algorithms import BaselineAlgorithm
+
 
 @final
 @dataclass
@@ -11,25 +11,11 @@ class ExecutionTreeNode:
     Nexus execution tree node
     """
 
-    children: set[Self]
+    children: dict[str, Self]
     class_name: str
 
-    def __eq__(self, other: Self) -> bool:
-        return self.__hash__() == other.__hash__()
-
-    def __hash__(self) -> int:
-        return id(self)
-
-
-    def has_child(self, new_child: Self) -> bool:
-        if len(self.children) == 0:
-            return False
-
-        for child in self.children:
-            if child.has_child(new_child):
-                return True
-
-        return False
+    def _as_mermaid_node(self) -> str:
+        return f'{self.class_name.upper()}["{self.class_name}"]'
 
     def serialize(self) -> str:
         """
@@ -37,12 +23,12 @@ class ExecutionTreeNode:
         :return:
         """
         result_lines = []
-        root = f'{self.class_name.upper()}["{self.class_name}"]'
-        for child in self.children:
-            result_lines.append(f"{root} --> {child.serialize()}")
+        for _, child in self.children.items():
+            result_lines.append(f"{self._as_mermaid_node()} --> {child._as_mermaid_node()}")
+            result_lines.append(child.serialize())
 
         if len(self.children) == 0:
-            result_lines.append(root)
+            return self._as_mermaid_node()
 
         return "\n".join(set(result_lines))
 
@@ -52,10 +38,7 @@ class ExecutionTreeNode:
         :param child:
         :return:
         """
-        if self.has_child(child):
-            return self
-
-        self.children.add(child)
+        self.children |= {child.class_name.lower(): child}
         return self
 
 
@@ -75,7 +58,7 @@ class ExecutionTree:
         :param root_node_name: Name for the node.
         :return:
         """
-        return cls(root_node=ExecutionTreeNode(children=set(), class_name=root_node_name))
+        return cls(root_node=ExecutionTreeNode(children=dict(), class_name=root_node_name))
 
     def add_child(self, node: ExecutionTreeNode):
         """
@@ -83,15 +66,18 @@ class ExecutionTree:
         :param node:
         :return:
         """
-        self.root_node.children.add(node)
+        self.root_node.add_child(node)
         return self
 
-    def serialize(self) -> str:
+    def serialize(self, sort_nodes=False) -> str:
         """
          Serialize the execution tree to a string using the given target format.
         :return:
         """
-        return "\n".join(["graph TB", '\n'.join(set(self.root_node.serialize().split('\n')))])
+        mermaid_nodes = filter(lambda ser_node: " --> " in ser_node, set(self.root_node.serialize().split("\n")))
+        if sort_nodes:
+            mermaid_nodes = sorted(mermaid_nodes)
+        return "\n".join(["graph TB", "\n".join(mermaid_nodes)])
 
 
 def _is_nexus_input_object_annotation(parameter: inspect.Parameter) -> bool:
@@ -105,7 +91,7 @@ def _get_parameter_tree(parameter: inspect.Parameter, node_cache: dict[str, Exec
     sig = inspect.signature(parameter.annotation.__init__)
     dependents = list(filter(lambda meta: _is_nexus_input_object_annotation(meta[1]), sig.parameters.items()))
     cached_node = node_cache.get(parameter.annotation.__name__, None)
-    current_node = cached_node or ExecutionTreeNode(children=set(), class_name=parameter.annotation.__name__)
+    current_node = cached_node or ExecutionTreeNode(children=dict(), class_name=parameter.annotation.__name__)
     if cached_node is None:
         node_cache[parameter.annotation.__name__] = current_node
 
