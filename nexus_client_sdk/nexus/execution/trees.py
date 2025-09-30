@@ -58,7 +58,7 @@ class ExecutionTree:
         :param root_node_name: Name for the node.
         :return:
         """
-        return cls(root_node=ExecutionTreeNode(children=dict(), class_name=root_node_name))
+        return cls(root_node=ExecutionTreeNode(children={}, class_name=root_node_name))
 
     def add_child(self, node: ExecutionTreeNode):
         """
@@ -91,7 +91,7 @@ def _get_parameter_tree(parameter: inspect.Parameter, node_cache: dict[str, Exec
     sig = inspect.signature(parameter.annotation.__init__)
     dependents = list(filter(lambda meta: _is_nexus_input_object_annotation(meta[1]), sig.parameters.items()))
     cached_node = node_cache.get(parameter.annotation.__name__, None)
-    current_node = cached_node or ExecutionTreeNode(children=dict(), class_name=parameter.annotation.__name__)
+    current_node = cached_node or ExecutionTreeNode(children={}, class_name=parameter.annotation.__name__)
     if cached_node is None:
         node_cache[parameter.annotation.__name__] = current_node
 
@@ -114,7 +114,7 @@ def get_tree(algorithm_class: type[BaselineAlgorithm]) -> ExecutionTree:
     root_node = inspect.signature(algorithm_class.__init__)
     tree = ExecutionTree.create(root_node_name=algorithm_class.__name__)
     processors = filter(lambda meta: "Processor" in meta[1].annotation.__name__, root_node.parameters.items())
-    node_cache: dict[str, ExecutionTreeNode] = dict()
+    node_cache: dict[str, ExecutionTreeNode] = {}
     for _, processor_parameter in processors:
         tree.add_child(_get_parameter_tree(processor_parameter, node_cache))
 
