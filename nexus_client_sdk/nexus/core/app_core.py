@@ -172,10 +172,10 @@ class Nexus:
 
     def add_readers(self, *readers: type[InputReader]) -> "Nexus":
         """
-        Adds an input data reader for the algorithm.
+        Adds one or more input data readers for the algorithm.
         """
         for reader in readers:
-            self._configurator = self._configurator.with_input_reader(reader)
+            self.add_reader(reader)
 
         return self
 
@@ -188,10 +188,10 @@ class Nexus:
 
     def use_processors(self, *input_processors: type[InputProcessor]) -> "Nexus":
         """
-        Initialises an input processor for the algorithm.
+        Initialises one or more input processors for the algorithm.
         """
         for input_processor in input_processors:
-            self._configurator = self._configurator.with_input_processor(input_processor)
+            self.use_processor(input_processor)
 
         return self
 
