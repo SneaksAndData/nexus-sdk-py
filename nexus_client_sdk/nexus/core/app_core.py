@@ -170,11 +170,29 @@ class Nexus:
         self._configurator = self._configurator.with_input_reader(reader)
         return self
 
+    def add_readers(self, *readers: type[InputReader]) -> "Nexus":
+        """
+        Adds an input data reader for the algorithm.
+        """
+        for reader in readers:
+            self._configurator = self._configurator.with_input_reader(reader)
+
+        return self
+
     def use_processor(self, input_processor: type[InputProcessor]) -> "Nexus":
         """
         Initialises an input processor for the algorithm.
         """
         self._configurator = self._configurator.with_input_processor(input_processor)
+        return self
+
+    def use_processors(self, *input_processors: type[InputProcessor]) -> "Nexus":
+        """
+        Initialises an input processor for the algorithm.
+        """
+        for input_processor in input_processors:
+            self._configurator = self._configurator.with_input_processor(input_processor)
+
         return self
 
     def use_algorithm(self, algorithm: type[BaselineAlgorithm]) -> "Nexus":

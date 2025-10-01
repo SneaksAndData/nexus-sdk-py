@@ -240,10 +240,8 @@ async def main():
 
     nexus = (
         Nexus.create()
-        .add_reader(XYReader)
-        .add_reader(ZReader)
-        .use_processor(XYProcessor)
-        .use_processor(ZProcessor)
+        .add_readers(XYReader, ZReader)
+        .use_processors(XYProcessor, ZProcessor)
         .use_algorithm(TestAlgorithm)
         .on_complete(TestUserAnalyticsTelemetry)
         .inject_configuration(TestAlgorithmConfiguration)
