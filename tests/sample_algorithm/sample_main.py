@@ -21,6 +21,7 @@ from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
+from nexus_client_sdk.nexus.output.output_processor import OutputProcessor
 
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
@@ -153,6 +154,33 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
 
         return pandas.DataFrame({"v": [float(z.sum() / z.size)]})
 
+class TestOutputProcessor(OutputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+    @inject
+    def __init__(
+        self,
+        xy_processor: XYProcessor,
+        z_processor: ZProcessor,
+        metrics_provider: MetricsProvider,
+        logger_factory: LoggerFactory,
+        payload: TestAlgorithmPayload,
+        cache: InputCache,
+        algorithm_result: AlgorithmResult,
+    ):
+        super().__init__(
+            [xy_processor, z_processor],
+            metrics_provider=metrics_provider,
+            logger_factory=logger_factory,
+            payload=payload,
+            cache=cache,
+            algorithm_result=algorithm_result,
+        )
+
+    async def _process_input(self, **kwargs) -> pandas.DataFrame:
+        return pandas.DataFrame(
+            {
+                "x": self._payload.x,
+            }
+        )
 
 @dataclass
 class TestResult(AlgorithmResult):
@@ -243,6 +271,9 @@ async def main():
         .add_readers(XYReader, ZReader)
         .use_processors(XYProcessor, ZProcessor)
         .use_algorithm(TestAlgorithm)
+        .use_output_processors(
+            TestOutputProcessor
+        )
         .on_complete(TestUserAnalyticsTelemetry)
         .inject_configuration(TestAlgorithmConfiguration)
         .inject_payload(TestAlgorithmPayload)

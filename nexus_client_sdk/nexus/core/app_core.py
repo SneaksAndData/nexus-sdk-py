@@ -67,6 +67,7 @@ from nexus_client_sdk.nexus.input.payload_reader import (
     AlgorithmPayloadReader,
     AlgorithmPayload,
 )
+from nexus_client_sdk.nexus.output.output_processor import OutputProcessor
 from nexus_client_sdk.nexus.telemetry.recorder import TelemetryRecorder
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
@@ -121,6 +122,7 @@ class Nexus:
         self._algorithm_class: type[BaselineAlgorithm] | None = None
         self._run_args = args
         self._algorithm_run_task: asyncio.Task | None = None
+        self._output_processors: list[type[OutputProcessor]] = []
         self._on_complete_tasks: list[type[UserTelemetryRecorder]] = []
         self._payload_types: list[type[AlgorithmPayload]] = []
         self._log_enricher: Callable[
@@ -193,6 +195,13 @@ class Nexus:
         for input_processor in input_processors:
             self.use_processor(input_processor)
 
+        return self
+
+    def use_output_processors(self, *output_processor: type[OutputProcessor]) -> "Nexus":
+        """
+        Initialises a post-processor for the algorithm.
+        """
+        self._output_processors.extend(output_processor)
         return self
 
     def use_algorithm(self, algorithm: type[BaselineAlgorithm]) -> "Nexus":

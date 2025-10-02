@@ -41,6 +41,7 @@ from nexus_client_sdk.nexus.exceptions.startup_error import (
 )
 from nexus_client_sdk.nexus.input.input_processor import InputProcessor
 from nexus_client_sdk.nexus.input.input_reader import InputReader
+from nexus_client_sdk.nexus.output.output_processor import OutputProcessor
 from nexus_client_sdk.nexus.telemetry.recorder import TelemetryRecorder
 from nexus_client_sdk.nexus.core.serializers import (
     TelemetrySerializer,
@@ -226,6 +227,13 @@ class ServiceConfigurator:
         Adds the input processor implementation
         """
         self._injection_binds.append(type(f"{input_processor.__name__}Module", (Module,), {})())
+        return self
+
+    def with_output_processor(self, post_processor: type[OutputProcessor]) -> "ServiceConfigurator":
+        """
+        Adds the output processor implementation
+        """
+        self._injection_binds.append(type(f"{post_processor.__name__}Module", (Module,), {})())
         return self
 
     def with_configuration(self, config: NexusConfiguration) -> "ServiceConfigurator":

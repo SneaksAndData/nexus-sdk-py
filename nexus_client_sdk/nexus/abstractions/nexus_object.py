@@ -34,10 +34,23 @@ class AlgorithmResult(ABC):
     Interface for algorithm run result. You can store arbitrary data here, but `dataframe` method must be implemented.
     """
 
+    def collect_results(self) -> dict:
+        """
+        Collect all results into a dictionary. This will be written to the linked output storage.
+
+        This method gets the result from the 'result' method, and appends all post-processing results.
+        """
+
+        result_from_algorithm = self._convert_result(self.result())
+
+        post_processing_results = {}
+
+        return result_from_algorithm | post_processing_results
+
     @abstractmethod
     def result(self) -> pandas.DataFrame | polars.DataFrame | dict:
         """
-        Returns the main result. This will be written to the linked output storage.
+        Returns the main result of the algorithm.
         """
 
     @abstractmethod
@@ -45,6 +58,20 @@ class AlgorithmResult(ABC):
         """
         Convert result to kwargs for the next iteration (for recursive algorithms)
         """
+
+    @staticmethod
+    def _convert_result(result_: pandas.DataFrame | polars.DataFrame | dict) -> dict:
+        """
+        Convert the result to a dictionary format.
+        """
+        if isinstance(result_, pandas.DataFrame):
+            return {"dataframe": result_.to_dict(orient="records")}
+        elif isinstance(result_, polars.DataFrame):
+            return {"dataframe": result_.to_dicts()}
+        elif isinstance(result_, dict):
+            return result_
+
+        raise TypeError(f"Unsupported result type: {type(result_)}")
 
 
 TPayload = TypeVar("TPayload")
