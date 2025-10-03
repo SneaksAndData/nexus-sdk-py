@@ -58,7 +58,7 @@ class XYReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
             logger_factory=logger_factory,
             payload=payload,
             cache=cache,
-            *readers
+            *readers,
         )
 
     async def _read_input(self, **_) -> pandas.DataFrame:
@@ -88,7 +88,7 @@ class ZReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
             logger_factory=logger_factory,
             payload=payload,
             cache=cache,
-            *readers
+            *readers,
         )
 
     async def _read_input(self, **_) -> pandas.DataFrame:
@@ -118,8 +118,10 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
 
         self.conf = conf
 
-    async def _process_input(self, xy: pandas.DataFrame, **_) -> pandas.DataFrame:
-        self._logger.info("Config: {config}", config=self.conf.to_json())
+    async def _process_input(self, xy: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
+        self._logger.info(
+            "Config: {config}, request_id: {request_id}", config=self.conf.to_json(), request_id=request_id
+        )
         if self.conf.c1 == "sum":
             return pandas.DataFrame({"s": [int(xy["x"].sum()) + int(xy["y"].sum())]})
 
@@ -154,6 +156,32 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
         return pandas.DataFrame({"v": [float(z.sum() / z.size)]})
 
 
+class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+    @inject
+    def __init__(
+        self,
+        zz: ZProcessor,
+        metrics_provider: MetricsProvider,
+        logger_factory: LoggerFactory,
+        my_conf: TestAlgorithmConfiguration,
+        cache: InputCache,
+    ):
+        super().__init__(
+            *[zz],
+            metrics_provider=metrics_provider,
+            logger_factory=logger_factory,
+            payload=None,
+            cache=cache,
+        )
+
+        self.conf = my_conf
+
+    async def _process_input(self, request_id: str, **_) -> pandas.DataFrame:
+        self._logger.info("ZZ id: {request_id}", request_id=request_id)
+
+        return pandas.DataFrame()
+
+
 @dataclass
 class TestResult(AlgorithmResult):
     def result(self) -> pandas.DataFrame | polars.DataFrame | dict:
@@ -182,11 +210,12 @@ class TestAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
         logger_factory: LoggerFactory,
         xy_processor: XYProcessor,
         z_processor: ZProcessor,
+        zz_processor: ZZProcessor,
         cache: InputCache,
     ):
-        super().__init__(metrics_provider, logger_factory, xy_processor, z_processor, cache=cache)
+        super().__init__(metrics_provider, logger_factory, xy_processor, z_processor, zz_processor, cache=cache)
 
-    async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, **kwargs) -> TestResult:
+    async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
         return TestResult(xy, z)
 
 
