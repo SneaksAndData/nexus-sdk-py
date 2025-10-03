@@ -148,8 +148,10 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
 
         self.conf = my_conf
 
-    async def _process_input(self, z: pandas.DataFrame, **_) -> pandas.DataFrame:
-        self._logger.info("Config: {config}", config=self.conf.to_json())
+    async def _process_input(self, z: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
+        self._logger.info(
+            "Config: {config}, request id: {request_id}", config=self.conf.to_json(), request_id=request_id
+        )
         if self.conf.c2 == "mean":
             return pandas.DataFrame({"v": [float(z.mean())]})
 
@@ -160,14 +162,14 @@ class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
-        zz: ZProcessor,
+        z: ZProcessor,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         my_conf: TestAlgorithmConfiguration,
         cache: InputCache,
     ):
         super().__init__(
-            *[zz],
+            *[z],
             metrics_provider=metrics_provider,
             logger_factory=logger_factory,
             payload=None,
@@ -177,7 +179,7 @@ class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
         self.conf = my_conf
 
     async def _process_input(self, request_id: str, **_) -> pandas.DataFrame:
-        self._logger.info("ZZ id: {request_id}", request_id=request_id)
+        self._logger.info("Z id: {request_id}", request_id=request_id)
 
         return pandas.DataFrame()
 
