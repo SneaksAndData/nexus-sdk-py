@@ -82,7 +82,7 @@ class InputProcessor(InputObject[TPayload, TResult]):
             },
         )
         async def _process(**_) -> TResult:
-            readers = await self._cache.resolve(*self._readers)
+            readers = await self._cache.resolve(*self._readers, **kwargs)
             return await self._process_input(**(kwargs | readers))
 
         if self._result is None:
