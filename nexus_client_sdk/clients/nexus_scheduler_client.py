@@ -188,9 +188,9 @@ class NexusSchedulerClient:
         """
         self._init_client()
         self._logger.info(
-            "Creating a new run for {algorithm} with tag '{tag}'",
-            algorithm=algorithm_name,
-            tag=tag or "tag not provided",
+            "Creating a new run for {algorithm_template_name} with tag '{client_runtime_tag}'",
+            algorithm_template_name=algorithm_name,
+            client_runtime_tag=tag or "tag not provided",
         )
         maybe_result = self._create_run(
             bytes(algorithm_name, encoding="utf-8"),
@@ -219,7 +219,11 @@ class NexusSchedulerClient:
         :return:
         """
         self._init_client()
-        self._logger.info("Awaiting run for {algorithm}/{request_id}", algorithm=algorithm, request_id=request_id)
+        self._logger.info(
+            "Awaiting run for {algorithm_template_name}/{request_identifier}",
+            algorithm_template_name=algorithm,
+            request_identifier=request_id,
+        )
         maybe_result = self._await_run(
             bytes(request_id, encoding="utf-8"),
             bytes(algorithm, encoding="utf-8"),
@@ -265,15 +269,17 @@ class NexusSchedulerClient:
                     and progress_counter.contents.value / len(tags) - prev_progress / len(tags) > 0.05
                 ):
                     self._logger.info(
-                        "Total tagged runs: {total}, completed {completed}, remaining {remaining}",
-                        total=len(tags),
-                        completed=progress_counter.contents.value,
-                        remaining=len(tags) - progress_counter.contents.value,
+                        "Total tagged runs: {total_tagged_runs}, completed {completed_tagged_runs}, remaining {remaining_tagged_runs}",
+                        total_tagged_runs=len(tags),
+                        completed_tagged_runs=progress_counter.contents.value,
+                        remaining_tagged_runs=len(tags) - progress_counter.contents.value,
                     )
                     prev_progress = progress_counter.contents.value
                 time.sleep(1)
 
-            self._logger.info("All runs have completed")
+            self._logger.info(
+                "All tagged runs for {algorithm_template_name} have completed", algorithm_template_name=algorithm
+            )
 
         self._init_client()
         tags_array_ptr = self._c_string_array(tags)
