@@ -102,6 +102,6 @@ class InputCache:
         }
 
         if len(read_tasks) > 0:
-            await asyncio.wait(fs=read_tasks.values())
+            await asyncio.wait(fs=read_tasks.values(), return_when=asyncio.FIRST_EXCEPTION)
 
         return {alias: get_result(alias, task) for alias, task in read_tasks.items()} | cached
