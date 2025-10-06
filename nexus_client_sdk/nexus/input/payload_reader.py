@@ -53,7 +53,7 @@ class AlgorithmPayloadReader:
             self._http = session_with_retries()
         http_response = self._http.get(url=self._payload_uri)
         http_response.raise_for_status()
-        self._payload = self._payload_type.from_dict(DictJsonSerializationFormat().deserialize(http_response.content))
+        self._payload = self._payload_type.from_json(DictJsonSerializationFormat().deserialize(http_response.content))
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
