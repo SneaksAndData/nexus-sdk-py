@@ -52,7 +52,7 @@ class AlgorithmPayloadReader:
             self._http = session_with_retries()
         http_response = self._http.get(url=self._payload_uri)
         http_response.raise_for_status()
-        self._payload = self._payload_type.from_json(http_response.content.decode("utf-8"))
+        self._payload = self._payload_type.from_json(http_response.content)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

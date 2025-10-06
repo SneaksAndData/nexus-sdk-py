@@ -3,6 +3,7 @@ import os
 import random
 import sys
 from dataclasses import dataclass
+from enum import Enum
 from logging import StreamHandler
 
 import pytest
@@ -29,11 +30,18 @@ class TestAlgorithmConfiguration(NexusConfiguration):
     c2: str
 
 
+class TestEnum(Enum):
+    A = "A"
+    B = "B"
+    C = "C"
+
+
 @dataclass
 class TestAlgorithmPayload(AlgorithmPayload, DataClassJsonMixin):
     x: list[int]
     y: list[int]
     z: list[int]
+    enum_value: TestEnum
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -95,7 +103,12 @@ def payloads() -> list[tuple[str, str]]:
     def _rand_range(limit: int) -> list[int]:
         return [random.randint(0, 10) for _ in range(limit)]
 
-    generated = [TestAlgorithmPayload(x=_rand_range(10), y=_rand_range(10), z=_rand_range(10)) for _ in range(10)]
+    generated = [
+        TestAlgorithmPayload(
+            x=_rand_range(10), y=_rand_range(10), z=_rand_range(10), enum_value=random.choice(list(TestEnum))
+        )
+        for _ in range(10)
+    ]
     return [
         generate_payload_url(upload_path, payload, S3StorageClient.for_storage_path(upload_path.to_hdfs_path()))
         for payload in generated
@@ -107,6 +120,6 @@ def negative_z_payload() -> tuple[str, str]:
 
     return generate_payload_url(
         upload_path,
-        TestAlgorithmPayload(x=[1, 2, 3], y=[4, 5, 6], z=[0, -1, 10]),
+        TestAlgorithmPayload(x=[1, 2, 3], y=[4, 5, 6], z=[0, -1, 10], enum_value=TestEnum.A),
         S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
     )
