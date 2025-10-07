@@ -65,13 +65,13 @@ Nexus supports reading compressed payloads for efficient data transfer. When a p
 ### Payload Structure
 
 A compressed payload should be a dictionary with the following keys:
-- `content`: The compressed data (as bytes).
+- `content`: The compressed data (as a base64-encoded string).
 - `decompression_function_path`: The Python import path to the decompression function.
 
 Example:
 ```python
 {
-    "content": b"...compressed bytes...",
+    "content": "SGVsbG8gd29ybGQ=",  # base64-encoded string of compressed bytes
     "decompression_function_path": "my_module.my_decompression_function"
 }
 ```
