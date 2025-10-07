@@ -76,7 +76,7 @@ class AlgorithmPayloadReader:
         decompression_function = locate(decompression_function_path)
         if not callable(decompression_function):
             raise FatalNexusError(
-                f"Failed to decompress payload: Could not locate or call the decompression function at '{decompression_function}' "
+                f"Failed to decompress payload: Could not locate or call the decompression function at '{decompression_function_path}' "
             )
         try:
             compressed_bytes = base64.b64decode(content)
