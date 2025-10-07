@@ -46,7 +46,7 @@ def generate_payload_url(
         compressed_content = gzip.compress(serialized_data)
         encoded_compressed_content = base64.b64encode(compressed_content)
         data = {
-            "content": encoded_compressed_content,
+            "content": encoded_compressed_content.decode("utf-8"),
             "decompression_function_path": "gzip.decompress",
         }
     upload_path = base_path.__class__.from_hdfs_path("/".join([base_path.to_hdfs_path(), obj_name]))
