@@ -1,4 +1,6 @@
 """Support functions for writing tests for Nexus apps"""
+import gzip
+import json
 import uuid
 
 from adapta.storage.blob.base import StorageClient
@@ -25,17 +27,26 @@ from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 
 
 def generate_payload_url(
-    base_path: DataPath, payload_object: AlgorithmPayload, storage_client: StorageClient
+    base_path: DataPath, payload_object: AlgorithmPayload, storage_client: StorageClient, compress_payload: bool = False
 ) -> tuple[str, str]:
     """
-     Uploads provided data to the path and returns a signed URL for the uploaded object, as well as its request_id
+    Uploads provided data to the path and returns a signed URL for the uploaded object, as well as its request_id
+    In addition, it was added to support optional compression of the payload.
+
     :param base_path:
     :param payload_object:
     :param storage_client:
+    :param compress_payload: if True, the payload will be compressed using gzip before uploading
     :return:
     """
     data = DictJsonSerializationFormat().deserialize(payload_object.to_json().encode(encoding="utf-8"))
     obj_name = str(uuid.uuid4())
+    if compress_payload:
+        compressed_content = gzip.compress(data)
+        data = {
+            "content": compressed_content,
+            "decompression_function_path": "gzip.decompress",
+        }
     upload_path = base_path.__class__.from_hdfs_path("/".join([base_path.to_hdfs_path(), obj_name]))
     storage_client.save_data_as_blob(
         data=data, blob_path=upload_path, serialization_format=DictJsonSerializationFormat, overwrite=True

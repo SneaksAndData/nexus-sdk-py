@@ -57,3 +57,47 @@ print(get_tree(TestAlgorithm).serialize())
 # TESTALGORITHM["TestAlgorithm"] --> XYPROCESSOR["XYProcessor"] --> XYREADER["XYReader"]
 # TESTALGORITHM["TestAlgorithm"] --> ZPROCESSOR["ZProcessor"] --> ZREADER["ZReader"]
 ```
+
+## Handling Compressed Payloads
+
+Nexus supports reading compressed payloads for efficient data transfer. When a payload is compressed, it must include both the compressed content and a reference to the decompression function.
+
+### Payload Structure
+
+A compressed payload should be a dictionary with the following keys:
+- `content`: The compressed data (as bytes).
+- `decompression_function_path`: The Python import path to the decompression function.
+
+Example:
+```python
+{
+    "content": b"...compressed bytes...",
+    "decompression_function_path": "my_module.my_decompression_function"
+}
+```
+
+## Automatic Compression for Remote Algorithms
+
+Nexus can automatically compress payloads for remote algorithms if the required configuration is provided via environment variables. This allows seamless integration of custom compression algorithms without code changes.
+
+When the environment variable `NEXUS__REMOTE_ALGORITHM_COMPRESSION_ALGORITHM` is set and compress_payload = True for a remote algorithm, Nexus will:
+1. Parse the JSON config from the environment variable.
+2. Locate and use the specified compression function to compress outgoing payloads.
+3. Attach the corresponding decompression function path to the payload for automatic decompression on the receiving end.
+
+### Example Environment Variable Configuration
+
+Set the following environment variable (as a JSON string):
+
+```
+NEXUS__REMOTE_ALGORITHM_COMPRESSION_ALGORITHM='{
+  "compression_function_path": "my_module.my_compress",
+  "decompression_function_path": "my_module.my_decompress"
+}'
+```
+
+- `compression_function_path`: Python import path to your compression function (must accept bytes and return bytes).
+- `decompression_function_path`: Python import path to your decompression function (must accept bytes and return the original data).
+
+**Note:**  
+Both functions must be importable in the runtime environment.
