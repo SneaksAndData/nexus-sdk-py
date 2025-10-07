@@ -70,7 +70,6 @@ class AlgorithmPayloadReader:
         else:
             self._payload = self._payload_type.from_json(http_response.content)
 
-        self._payload = self._payload_type.from_json(http_response.content)
         return self
 
     async def _decompress_payload(self, decompression_function_path: str, content: str) -> bytes:

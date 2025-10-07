@@ -130,7 +130,7 @@ def compressed_payloads() -> list[tuple[str, str]]:
     return [
         generate_payload_url(
             base_path=upload_path,
-            payload=payload,
+            payload_object=payload,
             storage_client=S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
             compress_payload=True,
         )

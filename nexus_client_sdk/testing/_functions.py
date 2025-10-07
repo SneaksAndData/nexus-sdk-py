@@ -41,7 +41,8 @@ def generate_payload_url(
     data = DictJsonSerializationFormat().deserialize(payload_object.to_json().encode(encoding="utf-8"))
     obj_name = str(uuid.uuid4())
     if compress_payload:
-        compressed_content = gzip.compress(data)
+        serialized_data = DictJsonSerializationFormat().serialize(data)
+        compressed_content = gzip.compress(serialized_data)
         data = {
             "content": compressed_content,
             "decompression_function_path": "gzip.decompress",
