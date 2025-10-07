@@ -1,6 +1,7 @@
 """
  Remotely executed algorithm
 """
+import base64
 import json
 import os
 
@@ -139,8 +140,9 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
 
         payload_bytes = payload.to_json().encode(encoding="utf-8")
         compressed_content = compression_function(payload_bytes)
+        encoded_compressed_content = base64.b64encode(compressed_content)
         compressed_payload = {
-            "content": compressed_content,
+            "content": encoded_compressed_content,
             RemoteAlgorithm.DECOMPRESSION_PATH_KEY: compression_config[RemoteAlgorithm.DECOMPRESSION_PATH_KEY],
         }
         return compressed_payload

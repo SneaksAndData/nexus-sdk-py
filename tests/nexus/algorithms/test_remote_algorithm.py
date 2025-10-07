@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 from dataclasses import dataclass
@@ -98,7 +99,8 @@ def test__remote_algorithm__compress_remote_payload(inputs: TestInput):
     compressed_payload = remote_algorithm._compress_remote_payload(payload=inputs.payload)
 
     decompress_function = locate(inputs.compression_config["decompression_function_path"])
-    decompressed_bytes = decompress_function(compressed_payload["content"])
+    decoded_content = base64.b64decode(compressed_payload["content"])
+    decompressed_bytes = decompress_function(decoded_content)
     decompressed_payload = SimpleTestPayload.from_json(decompressed_bytes)
 
     # Assert

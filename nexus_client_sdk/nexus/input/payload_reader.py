@@ -61,7 +61,7 @@ class AlgorithmPayloadReader:
         # Identify if the payload is compressed by checking for the presence of specific keys
         if set(payload_dict.keys()) == {"content", "decompression_function_path"}:
             self._payload = self._payload_type.from_json(
-                await self._decompress_payload(
+                self._decompress_payload(
                     decompression_function_path=payload_dict["decompression_function_path"],
                     content=payload_dict["content"],
                 )
@@ -72,7 +72,7 @@ class AlgorithmPayloadReader:
 
         return self
 
-    async def _decompress_payload(self, decompression_function_path: str, content: str) -> bytes:
+    def _decompress_payload(self, decompression_function_path: str, content: str) -> bytes:
         decompression_function = locate(decompression_function_path)
         if not callable(decompression_function):
             raise FatalNexusError(
