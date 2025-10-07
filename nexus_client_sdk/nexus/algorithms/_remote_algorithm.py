@@ -24,6 +24,7 @@ from functools import partial
 from pydoc import locate
 
 from adapta.metrics import MetricsProvider
+from adapta.storage.models.formatters import DictJsonSerializationFormat
 from adapta.utils.decorators import run_time_metrics_async
 from injector import inject
 

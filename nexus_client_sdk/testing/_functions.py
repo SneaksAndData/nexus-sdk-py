@@ -1,6 +1,5 @@
 """Support functions for writing tests for Nexus apps"""
 import gzip
-import json
 import uuid
 
 from adapta.storage.blob.base import StorageClient
