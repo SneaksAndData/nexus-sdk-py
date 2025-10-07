@@ -142,7 +142,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         compressed_content = compression_function(payload_bytes)
         encoded_compressed_content = base64.b64encode(compressed_content)
         compressed_payload = {
-            "content": encoded_compressed_content,
+            "content": encoded_compressed_content.decode("utf-8"),
             RemoteAlgorithm.DECOMPRESSION_PATH_KEY: compression_config[RemoteAlgorithm.DECOMPRESSION_PATH_KEY],
         }
         return compressed_payload
