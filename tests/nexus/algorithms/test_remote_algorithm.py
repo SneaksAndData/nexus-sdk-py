@@ -13,6 +13,7 @@ from nexus_client_sdk.nexus.algorithms import RemoteAlgorithm
 from nexus_client_sdk.nexus.core.app_dependencies import Compressor
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 
+
 class RandomEnum(Enum):
     """A simple enum for testing purposes."""
 

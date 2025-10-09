@@ -19,6 +19,7 @@ class RandomEnum(Enum):
     OPTION_B = "option_b"
     OPTION_C = "option_c"
 
+
 @dataclass
 class SimpleTestPayload(AlgorithmPayload):
     """A simple payload with fields for testing purposes."""
