@@ -115,6 +115,29 @@ def payloads() -> list[tuple[str, str]]:
     ]
 
 
+def compressed_payloads() -> list[tuple[str, str]]:
+    upload_path = S3Path(bucket="nexus", path="units")
+
+    def _rand_range(limit: int) -> list[int]:
+        return [random.randint(0, 10) for _ in range(limit)]
+
+    generated = [
+        TestAlgorithmPayload(
+            x=_rand_range(10), y=_rand_range(10), z=_rand_range(10), enum_value=random.choice(list(TestEnum))
+        )
+        for _ in range(10)
+    ]
+    return [
+        generate_payload_url(
+            base_path=upload_path,
+            payload_object=payload,
+            storage_client=S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
+            compress_payload=True,
+        )
+        for payload in generated
+    ]
+
+
 def negative_z_payload() -> tuple[str, str]:
     upload_path = S3Path(bucket="nexus", path="units")
 

@@ -57,3 +57,53 @@ print(get_tree(TestAlgorithm).serialize())
 # TESTALGORITHM["TestAlgorithm"] --> XYPROCESSOR["XYProcessor"] --> XYREADER["XYReader"]
 # TESTALGORITHM["TestAlgorithm"] --> ZPROCESSOR["ZProcessor"] --> ZREADER["ZReader"]
 ```
+
+## Handling Compressed Payloads
+
+Nexus supports reading compressed payloads for efficient data transfer. When a payload is compressed, it must include both the compressed content and a reference to the decompression function.
+
+### Payload Structure
+
+A compressed payload should be a json with the following keys:
+- `content`: The compressed data (as a base64-encoded string).
+- `decompressor_import_path`: The Python import path to the decompression function.
+
+Example:
+```python
+{
+    "content": "SGVsbG8gd29ybGQ=",  # base64-encoded string of compressed bytes
+    "decompressor_import_path": "my_module.my_decompress"
+}
+```
+
+When Nexus receives such a payload, it will:
+1. Base64-decode the `content` field to obtain the compressed bytes.
+2. Dynamically import and call the function specified by `decompressor_import_path` to decompress the payload.
+3. Use the decompressed data as the actual payload for the algorithm.
+
+This mechanism allows for flexible, pluggable decompression logic, as long as the function path is importable and callable in the runtime environment.
+
+
+## Automatic Payload Compression
+
+Nexus can automatically compress and decompress payloads when using `RemoteAlgorithm`. To use this feature, you must first configure it with environment variables and then explicitly enable it in your `RemoteAlgorithm` implementation.
+
+### Step 1: Configuration (Environment Variables)
+
+First, you need to provide the Python import paths for your compression and decompression logic. Setting these environment variables allows Nexus to create an injectable `Compressor` service.
+
+  * `NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH`: The import path to your **compression** function (e.g., `my_module.my_compress`).
+  * `NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH`: The import path to your **decompression** function (e.g., `my_module.my_decompress`).
+
+### Step 2: Enabling Compression in Your Algorithm
+
+Once the environment variables are set, you can activate compression on a `RemoteAlgorithm` instance by providing two arguments during its initialization:
+
+1.  **`compress_payload=True`**: This boolean flag signals your intent to use compression for this remote algorithm.
+2.  **`compressor=<injected_compressor_instance>`**: You must inject the `Compressor` service that Nexus creates from your environment variables.
+
+
+### Important Requirement
+
+For compression to work, both conditions must be met. The application will raise an error if `compress_payload` is set to `True` but a valid `Compressor` instance is not injected. Ensure that the required environment variables are set so the `Compressor` service can be created and injected successfully.
+
