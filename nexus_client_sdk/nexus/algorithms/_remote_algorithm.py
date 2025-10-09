@@ -27,7 +27,7 @@ from adapta.utils.decorators import run_time_metrics_async
 from injector import inject
 
 from nexus_client_sdk.models.scheduler import SdkCustomRunConfiguration, SdkParentRequest
-from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     NexusObject,
     TPayload,

@@ -9,7 +9,7 @@ from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from injector import inject, singleton
 
-from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.abstractions.socket_provider import (

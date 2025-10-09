@@ -25,7 +25,7 @@ from adapta.process_communication import DataSocket
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from adapta.utils.decorators import run_time_metrics_async
 
-from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.input_object import InputObject
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,

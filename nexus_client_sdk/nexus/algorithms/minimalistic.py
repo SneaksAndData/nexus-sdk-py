@@ -22,7 +22,7 @@ from abc import ABC
 from adapta.metrics import MetricsProvider
 from injector import inject
 
-from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import TPayload
 from nexus_client_sdk.nexus.algorithms._baseline_algorithm import (
