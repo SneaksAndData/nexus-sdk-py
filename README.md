@@ -86,7 +86,7 @@ This mechanism allows for flexible, pluggable decompression logic, as long as th
 
 ## Automatic Payload Compression
 
-Nexus can automatically compress and decompress payloads for remote algorithms. To use this feature, you must first configure it with environment variables and then explicitly enable it in your `RemoteAlgorithm` implementation.
+Nexus can automatically compress and decompress payloads when using `RemoteAlgorithm`. To use this feature, you must first configure it with environment variables and then explicitly enable it in your `RemoteAlgorithm` implementation.
 
 ### Step 1: Configuration (Environment Variables)
 
