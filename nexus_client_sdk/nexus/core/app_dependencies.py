@@ -173,6 +173,7 @@ class CacheModule(Module):
         return InputCache()
 
 
+@final
 class Compressor:
     """
     Compression and decompression support for remote algorithm payloads.
