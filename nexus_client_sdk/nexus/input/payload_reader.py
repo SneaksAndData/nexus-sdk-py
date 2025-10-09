@@ -27,6 +27,7 @@ from dataclasses_json import DataClassJsonMixin
 
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 
+
 @dataclass
 class AlgorithmPayload(DataClassJsonMixin):
     """
@@ -41,11 +42,13 @@ class AlgorithmPayload(DataClassJsonMixin):
     def __post_init__(self):
         self.validate()
 
+
 @dataclass
 class CompressedPayload(DataClassJsonMixin):
     """
     Represents a compressed payload with its decompression function import path.
     """
+
     CONTENT = "content"
     DECOMPRESSION_IMPORT_PATH = "decompression_import_path"
     content: str
@@ -67,6 +70,7 @@ class CompressedPayload(DataClassJsonMixin):
 
         return decompression_function(compressed_bytes)
 
+
 @final
 class AlgorithmPayloadReader:
     """
@@ -83,7 +87,7 @@ class AlgorithmPayloadReader:
 
         try:
             compressed_payload = CompressedPayload.from_json(http_response.content)
-        except Exception: # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             pass
 
         if compressed_payload is not None:

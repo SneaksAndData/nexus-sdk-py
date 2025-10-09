@@ -11,9 +11,6 @@ import bz2
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader, CompressedPayload
 
 
-# --- Test Subject Dataclass ---
-
-
 @dataclass
 class SimpleTestPayload(AlgorithmPayload):
     """A simple payload with fields for testing purposes."""
@@ -22,9 +19,6 @@ class SimpleTestPayload(AlgorithmPayload):
     item_count: int
     is_enabled: bool
     list_of_values: list[str]
-
-
-# --- Test Inputs and Expected Outputs ---
 
 
 @dataclass
@@ -40,8 +34,6 @@ class TestOutput:
 
     expected_payload: SimpleTestPayload
 
-
-# --- Test Data Setup ---
 
 # This is the original data we expect to recover
 original_payload_dict = {
@@ -75,11 +67,11 @@ zlib_compressed_json_bytes = json.dumps(zlib_compressed_payload_dict).encode("ut
 # 4. BZ2 compressed test case
 bz2_compressed_bytes = bz2.compress(json.dumps(original_payload_dict).encode("utf-8"))
 bz2_base64_encoded_content = base64.b64encode(bz2_compressed_bytes).decode("utf-8")
-bz2_compressed_payload_dict = {CompressedPayload.DECOMPRESSION_IMPORT_PATH: "bz2.decompress", CompressedPayload.CONTENT: bz2_base64_encoded_content}
+bz2_compressed_payload_dict = {
+    CompressedPayload.DECOMPRESSION_IMPORT_PATH: "bz2.decompress",
+    CompressedPayload.CONTENT: bz2_base64_encoded_content,
+}
 bz2_compressed_json_bytes = json.dumps(bz2_compressed_payload_dict).encode("utf-8")
-
-
-# --- Pytest Parametrized Test ---
 
 
 @pytest.mark.asyncio
@@ -121,19 +113,14 @@ async def test__algorithm_payload_reader__general(
     * Case 4 (compressed_bz2_payload): Verifies that a bz2 compressed and base64 encoded payload is correctly decompressed and deserialized.
     """
     # Arrange
-    # 1. Mock the response object that 'get' will return.
     mock_response = MagicMock()
     mock_response.content = inputs.payload_content_bytes
 
-    # 2. Mock the session object that the factory will return.
-    #    Configure its 'get' method to return our mock_response.
     mock_session = MagicMock()
     mock_session.get.return_value = mock_response
 
-    # 3. Configure the mocked factory to return our mock_session.
     mock_session_factory.return_value = mock_session
 
-    # 4. Now, initialize the reader. It will use our mocks.
     dummy_uri = "http://mock.uri/payload.json"
     reader = AlgorithmPayloadReader(payload_uri=dummy_uri, payload_type=SimpleTestPayload)
 
