@@ -39,6 +39,23 @@ class InputCache:
 
     def __init__(self):
         self._cache: dict[str, Any] = {}
+        self._scheduled: dict[str, InputObject[TPayload, TResult]] = {}
+        self._total_executed: int = 0
+        self._lock = asyncio.Lock()
+
+    def get_total_executed(self) -> int:
+        """
+         Returns the total number of executed (cached) inputs
+        :return:
+        """
+        return self._total_executed
+
+    def get_size(self) -> int:
+        """
+         Returns number of cached inputs
+        :return:
+        """
+        return len(self._cache)
 
     def _resolve_exc_type(self, ex: BaseException) -> type[FatalCachingError] | type[TransientCachingError]:
         """
@@ -78,6 +95,9 @@ class InputCache:
             return completed_task.result()
 
         async def _execute(nexus_input: InputObject) -> TResult:
+            async with self._lock:
+                self._total_executed += 1
+
             result: TResult | None = None
             async with nexus_input as instance:
                 try:
@@ -87,9 +107,14 @@ class InputCache:
 
             return result
 
+        async with self._lock:
+            to_schedule = [rp for rp in readers_or_processors if rp.cache_key() not in self._scheduled]
+            for to_schedule_object in to_schedule:
+                self._scheduled[to_schedule_object.cache_key()] = to_schedule_object
+
         cached = {
             reader_or_processor.__class__.alias(): reader_or_processor.data
-            for reader_or_processor in readers_or_processors
+            for reader_or_processor in to_schedule
             if reader_or_processor.cache_key() in self._cache
         }
         if len(cached) == len(readers_or_processors):
@@ -97,7 +122,7 @@ class InputCache:
 
         read_tasks: dict[str, asyncio.Task] = {
             reader.__class__.alias(): asyncio.create_task(_execute(reader))
-            for reader in readers_or_processors
+            for reader in to_schedule
             if reader.cache_key() not in self._cache
         }
 
