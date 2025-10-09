@@ -2,6 +2,7 @@ import base64
 import json
 import os
 from dataclasses import dataclass
+from enum import Enum
 from pydoc import locate
 from unittest.mock import MagicMock
 
@@ -12,8 +13,12 @@ from nexus_client_sdk.nexus.algorithms import RemoteAlgorithm
 from nexus_client_sdk.nexus.core.app_dependencies import Compressor
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 
+class RandomEnum(Enum):
+    """A simple enum for testing purposes."""
 
-# --- Test Subject Dataclass ---
+    OPTION_A = "option_a"
+    OPTION_B = "option_b"
+    OPTION_C = "option_c"
 
 
 @dataclass
@@ -24,6 +29,7 @@ class SimpleTestPayload(AlgorithmPayload):
     item_count: int
     is_enabled: bool
     list_of_values: list[str]
+    enum_field: RandomEnum
 
 
 # --- Test Inputs and Expected Outputs ---
@@ -42,6 +48,7 @@ payload = {
     "item_count": 42,
     "is_enabled": True,
     "list_of_values": ["value1", "value2", "value3"],
+    "enum_field": RandomEnum.OPTION_B.value,
 }
 
 

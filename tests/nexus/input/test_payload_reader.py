@@ -1,6 +1,7 @@
 import base64
 import json
 from dataclasses import dataclass
+from enum import Enum
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,6 +12,13 @@ import bz2
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader, CompressedPayload
 
 
+class RandomEnum(Enum):
+    """A simple enum for testing purposes."""
+
+    OPTION_A = "option_a"
+    OPTION_B = "option_b"
+    OPTION_C = "option_c"
+
 @dataclass
 class SimpleTestPayload(AlgorithmPayload):
     """A simple payload with fields for testing purposes."""
@@ -19,6 +27,7 @@ class SimpleTestPayload(AlgorithmPayload):
     item_count: int
     is_enabled: bool
     list_of_values: list[str]
+    enum_field: RandomEnum
 
 
 @dataclass
@@ -41,6 +50,7 @@ original_payload_dict = {
     "item_count": 42,
     "is_enabled": True,
     "list_of_values": ["value1", "value2", "value3"],
+    "enum_field": RandomEnum.OPTION_B.value,
 }
 
 # 1. Uncompressed test case
