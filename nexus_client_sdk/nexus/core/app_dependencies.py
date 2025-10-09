@@ -249,7 +249,7 @@ class CompressorModule(Module):
 
     @singleton
     @provider
-    def provide(self) -> Compressor | None:
+    def provide(self) -> Compressor:
         """
         Returns a compressor if configured, else None.
         """
