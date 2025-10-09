@@ -6,7 +6,10 @@ from pydoc import locate
 from unittest.mock import MagicMock
 
 import pytest
+from pygments.lexers import q
+
 from nexus_client_sdk.nexus.algorithms import RemoteAlgorithm
+from nexus_client_sdk.nexus.core.app_dependencies import Compressor
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 
 
@@ -50,8 +53,8 @@ payload = {
             TestInput(
                 payload=SimpleTestPayload.from_dict(payload),
                 compression_config={
-                    "compression_function_path": "gzip.compress",
-                    "decompression_function_path": "gzip.decompress",
+                    "compress_import_path": "gzip.compress",
+                    "decompress_import_path": "gzip.decompress",
                 },
             ),
             id="compressed_payload",
@@ -60,8 +63,8 @@ payload = {
             TestInput(
                 payload=SimpleTestPayload.from_dict(payload),
                 compression_config={
-                    "compression_function_path": "zlib.compress",
-                    "decompression_function_path": "zlib.decompress",
+                    "compress_import_path": "zlib.compress",
+                    "decompress_import_path": "zlib.decompress",
                 },
             ),
             id="zlib_compressed_payload",
@@ -70,8 +73,8 @@ payload = {
             TestInput(
                 payload=SimpleTestPayload.from_dict(payload),
                 compression_config={
-                    "compression_function_path": "bz2.compress",
-                    "decompression_function_path": "bz2.decompress",
+                    "compress_import_path": "bz2.compress",
+                    "decompress_import_path": "bz2.decompress",
                 },
             ),
             id="bz2_compressed_payload",
@@ -83,6 +86,12 @@ def test__remote_algorithm__compress_remote_payload(inputs: TestInput):
     Asserts that the RemoteAlgorithm correctly compresses and decompresses the payload using the specified compression algorithm.
     This test verifies that the payload can be compressed and then decompressed back to its original form.
     """
+
+    os.environ["NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH"] = inputs.compression_config["compress_import_path"]
+    os.environ["NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH"] = inputs.compression_config[
+        "decompress_import_path"
+    ]
+
     # Arrange
     remote_algorithm = TestRemoteAlgorithm(
         metrics_provider=MagicMock(),
@@ -90,15 +99,18 @@ def test__remote_algorithm__compress_remote_payload(inputs: TestInput):
         remote_client=MagicMock(),
         remote_name=MagicMock(),
         remote_config=MagicMock(),
+        compressor=Compressor.create(
+            compress_import_path=os.environ["NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH"],
+            decompress_import_path=os.environ["NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH"],
+        ),
         compress_payload=True,
         cache=MagicMock(),
     )
-    os.environ["NEXUS__REMOTE_ALGORITHM_COMPRESSION_ALGORITHM"] = json.dumps(inputs.compression_config)
 
     # Act
     compressed_payload = remote_algorithm._compress_remote_payload(payload=inputs.payload)
 
-    decompress_function = locate(inputs.compression_config["decompression_function_path"])
+    decompress_function = locate(inputs.compression_config["decompress_import_path"])
     decoded_content = base64.b64decode(compressed_payload["content"])
     decompressed_bytes = decompress_function(decoded_content)
     decompressed_payload = SimpleTestPayload.from_json(decompressed_bytes)

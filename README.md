@@ -64,40 +64,46 @@ Nexus supports reading compressed payloads for efficient data transfer. When a p
 
 ### Payload Structure
 
-A compressed payload should be a dictionary with the following keys:
+A compressed payload should be a json with the following keys:
 - `content`: The compressed data (as a base64-encoded string).
-- `decompression_function_path`: The Python import path to the decompression function.
+- `decompressor_import_path`: The Python import path to the decompression function.
 
 Example:
 ```python
 {
     "content": "SGVsbG8gd29ybGQ=",  # base64-encoded string of compressed bytes
-    "decompression_function_path": "my_module.my_decompression_function"
+    "decompressor_import_path": "my_module.my_decompress"
 }
 ```
 
-## Automatic Compression for Remote Algorithms
+When Nexus receives such a payload, it will:
+1. Base64-decode the `content` field to obtain the compressed bytes.
+2. Dynamically import and call the function specified by `decompressor_import_path` to decompress the payload.
+3. Use the decompressed data as the actual payload for the algorithm.
 
-Nexus can automatically compress payloads for remote algorithms if the required configuration is provided via environment variables. This allows seamless integration of custom compression algorithms without code changes.
+This mechanism allows for flexible, pluggable decompression logic, as long as the function path is importable and callable in the runtime environment.
 
-When the environment variable `NEXUS__REMOTE_ALGORITHM_COMPRESSION_ALGORITHM` is set and compress_payload = True for a remote algorithm, Nexus will:
-1. Parse the JSON config from the environment variable.
-2. Locate and use the specified compression function to compress outgoing payloads.
-3. Attach the corresponding decompression function path to the payload for automatic decompression on the receiving end.
 
-### Example Environment Variable Configuration
+## Automatic Payload Compression
 
-Set the following environment variable (as a JSON string):
+Nexus can automatically compress and decompress payloads for remote algorithms. To use this feature, you must first configure it with environment variables and then explicitly enable it in your `RemoteAlgorithm` implementation.
 
-```
-NEXUS__REMOTE_ALGORITHM_COMPRESSION_ALGORITHM='{
-  "compression_function_path": "my_module.my_compress",
-  "decompression_function_path": "my_module.my_decompress"
-}'
-```
+### Step 1: Configuration (Environment Variables)
 
-- `compression_function_path`: Python import path to your compression function (must accept bytes and return bytes).
-- `decompression_function_path`: Python import path to your decompression function (must accept bytes and return the original data).
+First, you need to provide the Python import paths for your compression and decompression logic. Setting these environment variables allows Nexus to create an injectable `Compressor` service.
 
-**Note:**  
-Both functions must be importable in the runtime environment.
+  * `NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH`: The import path to your **compression** function (e.g., `my_module.my_compress`).
+  * `NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH`: The import path to your **decompression** function (e.g., `my_module.my_decompress`).
+
+### Step 2: Enabling Compression in Your Algorithm
+
+Once the environment variables are set, you can activate compression on a `RemoteAlgorithm` instance by providing two arguments during its initialization:
+
+1.  **`compress_payload=True`**: This boolean flag signals your intent to use compression for this remote algorithm.
+2.  **`compressor=<injected_compressor_instance>`**: You must inject the `Compressor` service that Nexus creates from your environment variables.
+
+
+### Important Requirement
+
+For compression to work, both conditions must be met. The application will raise an error if `compress_payload` is set to `True` but a valid `Compressor` instance is not injected. Ensure that the required environment variables are set so the `Compressor` service can be created and injected successfully.
+

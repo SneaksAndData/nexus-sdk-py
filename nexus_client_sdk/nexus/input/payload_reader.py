@@ -21,13 +21,11 @@ import base64
 from pydoc import locate
 from typing import final
 
-from adapta.storage.models.formatters import DictJsonSerializationFormat
 from adapta.utils import session_with_retries
 
 from dataclasses_json import DataClassJsonMixin
 
-from nexus_client_sdk.nexus.exceptions import FatalNexusError
-
+from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 
 @dataclass
 class AlgorithmPayload(DataClassJsonMixin):
@@ -43,6 +41,30 @@ class AlgorithmPayload(DataClassJsonMixin):
     def __post_init__(self):
         self.validate()
 
+@dataclass
+class CompressedPayload(DataClassJsonMixin):
+    """
+    Represents a compressed payload with its decompression function path.
+    """
+
+    content: str
+    decompression_function_path: str
+
+    def decompress(self) -> bytes:
+        """
+        Decompresses the payload content using the specified decompression function.
+        """
+        decompression_function = locate(self.decompression_function_path)
+        if not callable(decompression_function):
+            raise FatalStartupConfigurationError(
+                f"Failed to decompress payload: Could not locate or call the decompression function at '{self.decompression_function_path}' "
+            )
+        try:
+            compressed_bytes = base64.b64decode(self.content)
+        except Exception as e:
+            raise FatalStartupConfigurationError(f"Failed to decode base64 content: {e}") from e
+
+        return decompression_function(compressed_bytes)
 
 @final
 class AlgorithmPayloadReader:
@@ -56,34 +78,19 @@ class AlgorithmPayloadReader:
         http_response = self._http.get(url=self._payload_uri)
         http_response.raise_for_status()
 
-        payload_dict: dict = DictJsonSerializationFormat().deserialize(http_response.content)
+        compressed_payload: CompressedPayload | None = None
 
-        # Identify if the payload is compressed by checking for the presence of specific keys
-        if set(payload_dict.keys()) == {"content", "decompression_function_path"}:
-            self._payload = self._payload_type.from_json(
-                self._decompress_payload(
-                    decompression_function_path=payload_dict["decompression_function_path"],
-                    content=payload_dict["content"],
-                )
-            )
+        try:
+            compressed_payload = CompressedPayload.from_json(http_response.content)
+        except Exception: # pylint: disable=broad-except
+            pass
 
+        if compressed_payload is not None:
+            self._payload = self._payload_type.from_json(compressed_payload.decompress())
         else:
             self._payload = self._payload_type.from_json(http_response.content)
 
         return self
-
-    def _decompress_payload(self, decompression_function_path: str, content: str) -> bytes:
-        decompression_function = locate(decompression_function_path)
-        if not callable(decompression_function):
-            raise FatalNexusError(
-                f"Failed to decompress payload: Could not locate or call the decompression function at '{decompression_function_path}' "
-            )
-        try:
-            compressed_bytes = base64.b64decode(content)
-        except Exception as e:
-            raise FatalNexusError(f"Failed to decode base64 content: {e}") from e
-
-        return decompression_function(compressed_bytes)
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self._http.close()
