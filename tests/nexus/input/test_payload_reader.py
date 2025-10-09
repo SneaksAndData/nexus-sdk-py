@@ -8,7 +8,7 @@ import gzip
 import zlib
 import bz2
 
-from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader, CompressedPayload
 
 
 # --- Test Subject Dataclass ---
@@ -58,8 +58,8 @@ uncompressed_json_bytes = json.dumps(original_payload_dict).encode("utf-8")
 gzip_compressed_bytes = gzip.compress(json.dumps(original_payload_dict).encode("utf-8"))
 gzip_base64_encoded_content = base64.b64encode(gzip_compressed_bytes).decode("utf-8")
 gzip_compressed_payload_dict = {
-    "decompression_function_path": "gzip.decompress",
-    "content": gzip_base64_encoded_content,
+    CompressedPayload.DECOMPRESSION_IMPORT_PATH: "gzip.decompress",
+    CompressedPayload.CONTENT: gzip_base64_encoded_content,
 }
 gzip_compressed_json_bytes = json.dumps(gzip_compressed_payload_dict).encode("utf-8")
 
@@ -67,15 +67,15 @@ gzip_compressed_json_bytes = json.dumps(gzip_compressed_payload_dict).encode("ut
 zlib_compressed_bytes = zlib.compress(json.dumps(original_payload_dict).encode("utf-8"))
 zlib_base64_encoded_content = base64.b64encode(zlib_compressed_bytes).decode("utf-8")
 zlib_compressed_payload_dict = {
-    "decompression_function_path": "zlib.decompress",
-    "content": zlib_base64_encoded_content,
+    CompressedPayload.DECOMPRESSION_IMPORT_PATH: "zlib.decompress",
+    CompressedPayload.CONTENT: zlib_base64_encoded_content,
 }
 zlib_compressed_json_bytes = json.dumps(zlib_compressed_payload_dict).encode("utf-8")
 
 # 4. BZ2 compressed test case
 bz2_compressed_bytes = bz2.compress(json.dumps(original_payload_dict).encode("utf-8"))
 bz2_base64_encoded_content = base64.b64encode(bz2_compressed_bytes).decode("utf-8")
-bz2_compressed_payload_dict = {"decompression_function_path": "bz2.decompress", "content": bz2_base64_encoded_content}
+bz2_compressed_payload_dict = {CompressedPayload.DECOMPRESSION_IMPORT_PATH: "bz2.decompress", CompressedPayload.CONTENT: bz2_base64_encoded_content}
 bz2_compressed_json_bytes = json.dumps(bz2_compressed_payload_dict).encode("utf-8")
 
 

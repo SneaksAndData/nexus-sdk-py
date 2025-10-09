@@ -7,7 +7,7 @@ from adapta.storage.blob.base import StorageClient
 from adapta.storage.models import DataPath
 from adapta.storage.models.formatters import DictJsonSerializationFormat
 
-from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, CompressedPayload
 
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
@@ -46,8 +46,8 @@ def generate_payload_url(
         compressed_content = gzip.compress(serialized_data)
         encoded_compressed_content = base64.b64encode(compressed_content)
         data = {
-            "content": encoded_compressed_content.decode("utf-8"),
-            "decompression_function_path": "gzip.decompress",
+            CompressedPayload.CONTENT: encoded_compressed_content.decode("utf-8"),
+            CompressedPayload.DECOMPRESSION_IMPORT_PATH: "gzip.decompress",
         }
     upload_path = base_path.__class__.from_hdfs_path("/".join([base_path.to_hdfs_path(), obj_name]))
     storage_client.save_data_as_blob(

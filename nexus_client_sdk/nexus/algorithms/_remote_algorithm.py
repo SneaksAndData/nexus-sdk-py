@@ -41,7 +41,7 @@ from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input.input_processor import (
     InputProcessor,
 )
-from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, CompressedPayload
 
 
 class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
@@ -108,8 +108,8 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         payload_bytes = payload.to_json().encode(encoding="utf-8")
         encoded_compressed_content = base64.b64encode(self._compressor.compress(payload_bytes))
         return {
-            "content": encoded_compressed_content.decode("utf-8"),
-            "decompressor_import_path": self._compressor.decompressor_import_path,
+            CompressedPayload.CONTENT: encoded_compressed_content.decode("utf-8"),
+            CompressedPayload.DECOMPRESSION_IMPORT_PATH: self._compressor.decompressor_import_path,
         }
 
     async def run(self, **kwargs) -> AlgorithmResult:

@@ -44,20 +44,21 @@ class AlgorithmPayload(DataClassJsonMixin):
 @dataclass
 class CompressedPayload(DataClassJsonMixin):
     """
-    Represents a compressed payload with its decompression function path.
+    Represents a compressed payload with its decompression function import path.
     """
-
+    CONTENT = "content"
+    DECOMPRESSION_IMPORT_PATH = "decompression_import_path"
     content: str
-    decompression_function_path: str
+    decompression_import_path: str
 
     def decompress(self) -> bytes:
         """
         Decompresses the payload content using the specified decompression function.
         """
-        decompression_function = locate(self.decompression_function_path)
+        decompression_function = locate(self.decompression_import_path)
         if not callable(decompression_function):
             raise FatalStartupConfigurationError(
-                f"Failed to decompress payload: Could not locate or call the decompression function at '{self.decompression_function_path}' "
+                f"Failed to decompress payload: Could not locate or call the decompression function at '{self.decompression_import_path}' "
             )
         try:
             compressed_bytes = base64.b64decode(self.content)
