@@ -114,7 +114,7 @@ class InputCache:
 
         cached = {
             reader_or_processor.__class__.alias(): reader_or_processor.data
-            for reader_or_processor in to_schedule
+            for reader_or_processor in readers_or_processors
             if reader_or_processor.cache_key() in self._cache
         }
         if len(cached) == len(readers_or_processors):
