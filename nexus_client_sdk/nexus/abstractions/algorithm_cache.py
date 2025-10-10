@@ -18,6 +18,7 @@
 #
 
 import asyncio
+from functools import reduce
 from typing import final, Any
 
 import deltalake.exceptions
@@ -39,6 +40,23 @@ class InputCache:
 
     def __init__(self):
         self._cache: dict[str, Any] = {}
+        self._scheduled: dict[str, asyncio.Task] = {}
+        self._total_executed: int = 0
+        self._lock = asyncio.Lock()
+
+    def total_evaluated_inputs(self) -> int:
+        """
+         Returns the total number of executed (cached) inputs
+        :return:
+        """
+        return self._total_executed
+
+    def total_cached_inputs(self) -> int:
+        """
+         Returns number of cached inputs
+        :return:
+        """
+        return len(self._cache)
 
     def _resolve_exc_type(self, ex: BaseException) -> type[FatalCachingError] | type[TransientCachingError]:
         """
@@ -70,38 +88,47 @@ class InputCache:
         Concurrently resolve `data` property of all readers by invoking their `read` method.
         """
 
-        def get_result(alias: str, completed_task: asyncio.Task) -> TResult:
-            object_exc = completed_task.exception()
-            if object_exc:
-                raise self._resolve_exc_type(object_exc)(alias) from object_exc
-
-            return completed_task.result()
-
         async def _execute(nexus_input: InputObject) -> TResult:
-            result: TResult | None = None
+            async with self._lock:
+                self._total_executed += 1
+
             async with nexus_input as instance:
+                result: TResult | None = None
                 try:
                     result = await nexus_input.process(**kwargs)
                 finally:
-                    self._cache[instance.cache_key()] = result
+                    async with self._lock:
+                        self._cache[instance.cache_key()] = result
 
             return result
 
-        cached = {
-            reader_or_processor.__class__.alias(): reader_or_processor.data
-            for reader_or_processor in readers_or_processors
-            if reader_or_processor.cache_key() in self._cache
-        }
-        if len(cached) == len(readers_or_processors):
-            return cached
+        async with self._lock:
+            to_schedule = [rp for rp in readers_or_processors if rp.cache_key() not in self._scheduled]
+            for to_schedule_object in to_schedule:
+                self._scheduled[to_schedule_object.cache_key()] = asyncio.create_task(_execute(to_schedule_object))
 
-        read_tasks: dict[str, asyncio.Task] = {
-            reader.__class__.alias(): asyncio.create_task(_execute(reader))
-            for reader in readers_or_processors
-            if reader.cache_key() not in self._cache
-        }
+        async def _wait_for_cache(
+            *inputs: InputObject[TPayload, TResult],
+        ) -> dict[str, TResult | None]:
+            num_cached = 0
+            while num_cached != len(inputs):
+                num_cached = reduce(
+                    lambda cached, input_object: cached + 1 if input_object.cache_key() in self._cache else cached,
+                    readers_or_processors,
+                    0,
+                )
+                for scheduled_object_key, scheduled_object in self._scheduled.items():
+                    if scheduled_object.done() and scheduled_object.exception() is not None:
+                        raise self._resolve_exc_type(scheduled_object.exception())(
+                            scheduled_object_key
+                        ) from scheduled_object.exception()
 
-        if len(read_tasks) > 0:
-            await asyncio.wait(fs=read_tasks.values(), return_when=asyncio.FIRST_EXCEPTION)
+                await asyncio.sleep(0.1)
 
-        return {alias: get_result(alias, task) for alias, task in read_tasks.items()} | cached
+            return {
+                reader_or_processor.__class__.alias(): reader_or_processor.data
+                for reader_or_processor in inputs
+                if reader_or_processor.cache_key() in self._cache
+            }
+
+        return await _wait_for_cache(*readers_or_processors)
