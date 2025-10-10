@@ -179,7 +179,7 @@ class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
 
         self.conf = my_conf
 
-    async def _process_input(self, request_id: str, **_) -> pandas.DataFrame:
+    async def _process_input(self, request_id: str, z: pandas.DataFrame, **_) -> pandas.DataFrame:
         self._logger.info("ZZ invoked")
 
         return pandas.DataFrame()
