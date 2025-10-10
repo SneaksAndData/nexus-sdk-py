@@ -43,14 +43,14 @@ class InputCache:
         self._total_executed: int = 0
         self._lock = asyncio.Lock()
 
-    def get_total_executed(self) -> int:
+    def total_evaluated_inputs(self) -> int:
         """
          Returns the total number of executed (cached) inputs
         :return:
         """
         return self._total_executed
 
-    def get_size(self) -> int:
+    def total_cached_inputs(self) -> int:
         """
          Returns number of cached inputs
         :return:
@@ -120,13 +120,13 @@ class InputCache:
         if len(cached) == len(readers_or_processors):
             return cached
 
-        read_tasks: dict[str, asyncio.Task] = {
+        input_evaluation_tasks: dict[str, asyncio.Task] = {
             reader.__class__.alias(): asyncio.create_task(_execute(reader))
             for reader in to_schedule
             if reader.cache_key() not in self._cache
         }
 
-        if len(read_tasks) > 0:
-            await asyncio.wait(fs=read_tasks.values(), return_when=asyncio.FIRST_EXCEPTION)
+        if len(input_evaluation_tasks) > 0:
+            await asyncio.wait(fs=input_evaluation_tasks.values(), return_when=asyncio.FIRST_EXCEPTION)
 
-        return {alias: get_result(alias, task) for alias, task in read_tasks.items()} | cached
+        return {alias: get_result(alias, task) for alias, task in input_evaluation_tasks.items()} | cached

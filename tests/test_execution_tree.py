@@ -16,7 +16,7 @@ def test_tree_serialization():
 TESTALGORITHM["TestAlgorithm"] --> XYPROCESSOR["XYProcessor"]
 TESTALGORITHM["TestAlgorithm"] --> ZPROCESSOR["ZProcessor"]
 TESTALGORITHM["TestAlgorithm"] --> ZZPROCESSOR["ZZProcessor"]
-XYPROCESSOR["XYProcessor"] --> XYREADER["XYReader"]
-ZPROCESSOR["ZProcessor"] --> ZREADER["ZReader"]
+XYPROCESSOR["XYProcessor"] --> XYSAMPLEREADER["XYSampleReader"]
+ZPROCESSOR["ZProcessor"] --> ZSAMPLEREADER["ZSampleReader"]
 ZZPROCESSOR["ZZProcessor"] --> ZPROCESSOR["ZProcessor"]"""
     )

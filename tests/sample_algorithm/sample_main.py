@@ -222,7 +222,7 @@ class TestAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
         super().__init__(metrics_provider, logger_factory, xy_processor, z_processor, zz_processor, cache=cache)
 
     async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
-        return TestResult(xy, z, self._cache.get_total_executed())
+        return TestResult(xy, z, self._cache.total_evaluated_inputs())
 
 
 @singleton
