@@ -134,7 +134,7 @@ class TestRemoteAlgorithm(RemoteAlgorithm):
     def _context_open(self):
         pass
 
-    def _generate_tag(self) -> str:
+    def _generate_tag(self, **_) -> str:
         return "test-tag"
 
     async def _run(self, **kwargs):
