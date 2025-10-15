@@ -89,6 +89,12 @@ class NexusSchedulerClient:
         self._get_buffered_run = CLIB.GetBufferedRun
         self._get_buffered_run.restype = SdkStringResult
 
+        self._is_run_finished = CLIB.IsRunFinished
+        self._is_run_finished.restype = ctypes.c_int32
+
+        self._has_run_succeeded = CLIB.HasRunSucceeded
+        self._has_run_succeeded.restype = ctypes.c_int32
+
     def __del__(self):
         CLIB.FreeClient(self._client)
 
@@ -347,6 +353,27 @@ class NexusSchedulerClient:
                 return None
             case _:
                 raise maybe_result.error()
+
+    def is_finished(self, result: RunResult) -> bool:
+        """
+         Check if a run has finished.
+        :param result: RunResult instance
+        :return:
+        """
+        result = self._is_run_finished(bytes(result.status, encoding="utf-8"))
+        return bool(result)
+
+    def has_succeeded(self, result: RunResult) -> bool | None:
+        """
+         Check if a run has succeeded. Returns None if the run is not finished yet.
+        :param result: RunResult instance
+        :return:
+        """
+        result = self._has_run_succeeded(bytes(result.status, encoding="utf-8"))
+        if result == -1:
+            return None
+
+        return bool(result)
 
     @classmethod
     def create(cls, url: str, logger: LoggerInterface, token_provider: Callable[[], AccessToken] | None = None) -> Self:
