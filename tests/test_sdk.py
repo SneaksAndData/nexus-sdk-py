@@ -64,9 +64,16 @@ async def test_sdk_run_compressed(
     sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
     await sample_algorithm_main()
     await asyncio.sleep(1)
-    result = json.loads(requests.get(scheduler.get_run_result(test_args.request_id, algorithm).result_uri).text)
+
+    run_result = scheduler.get_run_result(test_args.request_id, algorithm)
+    result = json.loads(requests.get(run_result.result_uri).text)
     run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
-    assert "number" in result and run_meta.payload_uri
+    assert (
+        "number" in result
+        and run_meta.payload_uri
+        and scheduler.is_finished(run_result)
+        and scheduler.has_succeeded(run_result)
+    )
 
 
 @pytest.mark.asyncio(loop_scope="package")
@@ -81,8 +88,11 @@ async def test_failing_reader(scheduler: NexusSchedulerClient, cql_session: Sess
     await sample_algorithm_main()
     await asyncio.sleep(1)
     run_details = scheduler.get_request_metadata(request_id, algorithm)
+    run_result = scheduler.get_run_result(request_id, algorithm)
 
     assert (
         run_details.lifecycle_stage == RequestLifeCycleStage.FAILED.value
+        and scheduler.is_finished(run_result)
+        and not scheduler.has_succeeded(run_result)
         and str(NegativeZError()) in run_details.algorithm_failure_details
     )

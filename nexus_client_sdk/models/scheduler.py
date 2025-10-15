@@ -47,7 +47,7 @@ class SdkRunResult(ctypes.Structure):
 @final
 class RequestLifeCycleStage(Enum):
     """
-    Nexus status states.
+    Nexus status states. DEPRECATED - DO NOT USE. Use `scheduler.is_finished` or `scheduler.has_succeeded` instead.
     """
 
     NEW = "NEW"
