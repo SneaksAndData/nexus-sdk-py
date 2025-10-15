@@ -72,9 +72,18 @@ class InputCache:
                 | deltalake.exceptions.SchemaMismatchError
             ):
                 return TransientCachingError
-            case cassandra.Unauthorized, cassandra.RequestValidationException, cassandra.AuthenticationFailed:
+            case cassandra.Unauthorized | cassandra.RequestValidationException | cassandra.AuthenticationFailed:
                 return TransientCachingError
-            case cassandra.Timeout, cassandra.Unavailable, cassandra.ReadTimeout, cassandra.WriteTimeout, cassandra.OperationTimedOut, cassandra.ReadFailure, cassandra.ReadFailure, cassandra.CoordinationFailure:
+            case (
+                cassandra.Timeout
+                | cassandra.Unavailable
+                | cassandra.ReadTimeout
+                | cassandra.WriteTimeout
+                | cassandra.OperationTimedOut
+                | cassandra.ReadFailure
+                | cassandra.ReadFailure
+                | cassandra.CoordinationFailure
+            ):
                 return TransientCachingError
             case _:
                 return FatalCachingError
