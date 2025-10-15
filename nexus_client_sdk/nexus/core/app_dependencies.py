@@ -99,7 +99,12 @@ class StorageClientModule(Module):
         if "NEXUS__ALGORITHM_OUTPUT_PATH" not in os.environ:
             raise FatalStartupConfigurationError("NEXUS__ALGORITHM_OUTPUT_PATH")
 
-        return storage_client_class.for_storage_path(path=os.getenv("NEXUS__ALGORITHM_OUTPUT_PATH"))
+        try:
+            return storage_client_class.for_storage_path(path=os.getenv("NEXUS__ALGORITHM_OUTPUT_PATH"))
+        except Exception as e:
+            raise FatalStartupConfigurationError(
+                "StorageClient cannot be created, configuration missing or invalid. Review the underlying exception."
+            ) from e
 
 
 @final
