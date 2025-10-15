@@ -322,7 +322,18 @@ class Nexus:
                     request_id=self._run_args.request_id,
                 )
                 metrics_provider.increment("successful_runs")
+                root_logger.info(
+                    "Algorithm {algorithm} run completed on Nexus version {version}",
+                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    version=__version__,
+                )
             case True:
+                root_logger.warning(
+                    "Algorithm {algorithm} run transiently failed on Nexus version {version}",
+                    ex,
+                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    version=__version__,
+                )
                 sys.exit(1)
             case False:
                 await receiver.complete_run(
