@@ -35,7 +35,6 @@ from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from injector import Injector, Module, singleton
 
-import nexus_client_sdk.nexus.exceptions
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
 
 from nexus_client_sdk.nexus.abstractions.logger_factory import (
