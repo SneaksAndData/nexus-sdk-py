@@ -60,6 +60,7 @@ from nexus_client_sdk.nexus.core.app_dependencies import (
 from nexus_client_sdk.nexus.core.serializers import (
     ResultSerializer,
 )
+from nexus_client_sdk.nexus.exceptions import TransientNexusError, FatalNexusError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.input.input_processor import InputProcessor
 from nexus_client_sdk.nexus.input.input_reader import InputReader
@@ -80,13 +81,13 @@ def is_transient_exception(exception: BaseException | None) -> bool | None:
     """
     if not exception:
         return None
-    match type(exception):
-        case nexus_client_sdk.nexus.exceptions.FatalNexusError:
-            return False
-        case nexus_client_sdk.nexus.exceptions.TransientNexusError:
-            return True
-        case _:
-            return False
+
+    if isinstance(exception, TransientNexusError):
+        return True
+    if isinstance(exception, FatalNexusError):
+        return False
+
+    return False
 
 
 async def graceful_shutdown():
