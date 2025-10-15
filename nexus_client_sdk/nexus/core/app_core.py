@@ -35,7 +35,6 @@ from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from injector import Injector, Module, singleton
 
-import nexus_client_sdk.nexus.exceptions
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
 
 from nexus_client_sdk.nexus.abstractions.logger_factory import (
@@ -60,6 +59,7 @@ from nexus_client_sdk.nexus.core.app_dependencies import (
 from nexus_client_sdk.nexus.core.serializers import (
     ResultSerializer,
 )
+from nexus_client_sdk.nexus.exceptions import TransientNexusError, FatalNexusError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.input.input_processor import InputProcessor
 from nexus_client_sdk.nexus.input.input_reader import InputReader
@@ -80,13 +80,13 @@ def is_transient_exception(exception: BaseException | None) -> bool | None:
     """
     if not exception:
         return None
-    match type(exception):
-        case nexus_client_sdk.nexus.exceptions.FatalNexusError:
-            return False
-        case nexus_client_sdk.nexus.exceptions.TransientNexusError:
-            return True
-        case _:
-            return False
+
+    if isinstance(exception, TransientNexusError):
+        return True
+    if isinstance(exception, FatalNexusError):
+        return False
+
+    return False
 
 
 async def graceful_shutdown():
@@ -321,7 +321,18 @@ class Nexus:
                     request_id=self._run_args.request_id,
                 )
                 metrics_provider.increment("successful_runs")
+                root_logger.info(
+                    "Algorithm {algorithm} run completed on Nexus version {version}",
+                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    version=__version__,
+                )
             case True:
+                root_logger.warning(
+                    "Algorithm {algorithm} run transiently failed on Nexus version {version}",
+                    ex,
+                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    version=__version__,
+                )
                 sys.exit(1)
             case False:
                 await receiver.complete_run(
