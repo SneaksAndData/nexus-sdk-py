@@ -35,6 +35,10 @@ from nexus_client_sdk.nexus.exceptions import FatalNexusError
 
 @final
 class NexusSchedulerRuntimeError(FatalNexusError):
+    """
+    Fatal error to be thrown from the scheduler client, to prevent Nexus apps from retrying.
+    """
+
     def __init__(self, algorithm_name: str) -> None:
         super().__init__()
         self._algorithm_name = algorithm_name
@@ -145,7 +149,7 @@ class NexusSchedulerAsyncClient:
 
             result = await self.await_run(request_id=run_id, algorithm=algorithm_name)
             if result.status == RequestLifeCycleStage.SCHEDULING_FAILED and retries > 0:
-                if try_number >= retries - 1:
+                if try_number >= retries:  # first + 3 more
                     raise NexusSchedulerRuntimeError(algorithm_name=algorithm_name)
 
                 delay = retry_base_delay_ms / 1000 + (random.random() * retry_base_delay_ms) / 1000
