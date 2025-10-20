@@ -60,7 +60,7 @@ class SdkCompletedRunResult(ctypes.Structure):
         cls,
         *,
         result_uri: str | None = None,
-        error: Exception | None = None,
+        error: BaseException | None = None,
     ) -> Self:
         """
          Create an instance of this class.
