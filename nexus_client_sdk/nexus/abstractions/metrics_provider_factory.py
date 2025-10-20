@@ -87,15 +87,18 @@ class MetricsProviderFactory:
         Creates a metrics provider enriched with additional tags for each metric emitted by this algorithm.
         In case of DatadogMetricsProvider, takes care of UDP/UDS specific initialization.
         """
-        init_args = self._metrics_settings.init_args | {
-            "fixed_tags": self._metrics_settings.fixed_tags | self._global_tags
-        }
+        try:
+            init_args = self._metrics_settings.init_args | {
+                "fixed_tags": self._metrics_settings.fixed_tags | self._global_tags
+            }
 
-        if self._metrics_class == DatadogMetricsProvider:
-            if self._metrics_settings.protocol == "udp":
-                return self._metrics_class.udp(**init_args)
+            if self._metrics_class == DatadogMetricsProvider:
+                if self._metrics_settings.protocol == "udp":
+                    return self._metrics_class.udp(**init_args)
 
-            if self._metrics_settings.protocol == "uds":
-                return self._metrics_class.uds(**init_args)
+                if self._metrics_settings.protocol == "uds":
+                    return self._metrics_class.uds(**init_args)
 
-        return self._metrics_class(**init_args)
+            return self._metrics_class(**init_args)
+        except Exception as e:
+            raise FatalStartupConfigurationError("metrics provider implementation") from e

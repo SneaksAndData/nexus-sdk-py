@@ -60,6 +60,7 @@ from nexus_client_sdk.nexus.core.serializers import (
     ResultSerializer,
 )
 from nexus_client_sdk.nexus.exceptions import TransientNexusError, FatalNexusError
+from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.input.input_processor import InputProcessor
 from nexus_client_sdk.nexus.input.input_reader import InputReader
@@ -275,7 +276,6 @@ class Nexus:
     async def _submit_result(
         self,
         root_logger: LoggerInterface,
-        metrics_provider: MetricsProvider,
         result: AlgorithmResult | None = None,
         ex: BaseException | None = None,
     ) -> None:
@@ -309,6 +309,7 @@ class Nexus:
             return storage_client.get_blob_uri(blob_path=blob_path)
 
         receiver = self._injector.get(NexusReceiverAsyncClient)
+        metrics_provider = self._injector.get(MetricsProvider)
 
         match is_transient_exception(ex):
             case None:
@@ -360,20 +361,19 @@ class Nexus:
         ) as reader:
             return reader.payload
 
-    async def activate(self):
-        """
-        Activates the run sequence.
-        """
-
-        self._injector = Injector(self._configurator.injection_binds)
-
-        bootstrap_logger: LoggerInterface = self._injector.get(BootstrapLoggerFactory).create_logger(
+    async def _complete_with_error(self, logger: LoggerInterface, error: BaseException) -> None:
+        await NexusReceiverAsyncClient(
+            url=os.getenv("NEXUS__RECEIVER_URL"), token_provider=None, logger=logger
+        ).complete_run(
+            result=SdkCompletedRunResult.create(
+                result_uri=None,
+                error=error,
+            ),
+            algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
             request_id=self._run_args.request_id,
-            algorithm_name=os.getenv("NEXUS__ALGORITHM_NAME"),
         )
 
-        bootstrap_logger.start()
-
+    async def _bootstrap(self, logger: LoggerInterface) -> None:
         try:
             logger_fixed_template = {}
             logger_tags = {}
@@ -435,34 +435,45 @@ class Nexus:
                 scope=singleton,
             )
 
+        except FatalStartupConfigurationError as startup_error:
+            await self._complete_with_error(logger, startup_error)
+            logger.stop()
+            sys.exit(0)
         except requests.exceptions.HTTPError as http_error:
-            bootstrap_logger.error("HTTP error reading algorithm payload", http_error)
+            logger.error("HTTP error reading algorithm payload", http_error)
 
             # non-retryable exceptions like missing auth should cancel the run immediately
             if http_error.response.status_code in [401, 403, 410, 405, 501, 505]:
-                await NexusReceiverAsyncClient(
-                    url=os.getenv("NEXUS__RECEIVER_URL"), token_provider=None, logger=bootstrap_logger
-                ).complete_run(
-                    result=SdkCompletedRunResult.create(
-                        result_uri=None,
-                        error=http_error,
-                    ),
-                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
-                    request_id=self._run_args.request_id,
-                )
+                await self._complete_with_error(logger, http_error)
                 # ensure we flush bootstrap logger before we exit
-                bootstrap_logger.stop()
+                logger.stop()
                 sys.exit(0)
 
             # ensure we flush bootstrap logger before we exit
-            bootstrap_logger.stop()
+            logger.stop()
             sys.exit(1)
         except BaseException as ex:  # pylint: disable=broad-except
-            bootstrap_logger.error("Error reading algorithm payload", ex)
+            logger.error("Error during run bootstrap", ex)
 
             # ensure we flush bootstrap logger before we exit
-            bootstrap_logger.stop()
+            logger.stop()
             sys.exit(1)
+
+    async def activate(self):
+        """
+        Activates the run sequence.
+        """
+
+        self._injector = Injector(self._configurator.injection_binds)
+
+        bootstrap_logger: LoggerInterface = self._injector.get(BootstrapLoggerFactory).create_logger(
+            request_id=self._run_args.request_id,
+            algorithm_name=os.getenv("NEXUS__ALGORITHM_NAME"),
+        )
+
+        bootstrap_logger.start()
+
+        await self._bootstrap(logger=bootstrap_logger)
 
         bootstrap_logger.stop()
 
@@ -492,7 +503,6 @@ class Nexus:
                 result=self._algorithm_run_task.result() if not ex else None,
                 ex=ex,
                 root_logger=root_logger,
-                metrics_provider=metrics_provider,
             )
 
             # record telemetry
@@ -500,6 +510,7 @@ class Nexus:
                 "Recording telemetry for the run {run_id}",
                 run_id=self._run_args.request_id,
             )
+            metrics_provider = self._injector.get(MetricsProvider)
             async with telemetry_recorder as recorder:
                 await recorder.record(run_id=self._run_args.request_id, **algorithm.inputs)
                 # only execute user telemetry if this run has succeeded
