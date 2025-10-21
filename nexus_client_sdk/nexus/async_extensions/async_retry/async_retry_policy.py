@@ -1,5 +1,7 @@
 """Framework level retry policy"""
 import asyncio
+import random
+
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,12 +54,16 @@ class NexusSchedulingError(BaseException):
 @final
 class NexusSchedulerAsyncRetryPolicy:
     """
-     Retry policy for Nexus scheduler API calls.
+    Retry policy for Nexus scheduler API calls.
     """
 
     def __init__(
-            self, retry_count: int, retry_base_delay_ms: int, error_types: list[type[RuntimeError]],
-            retry_exhaust_error_type: type[BaseException], logger: LoggerInterface
+        self,
+        retry_count: int,
+        retry_base_delay_ms: int,
+        error_types: list[type[BaseException]],
+        retry_exhaust_error_type: type[BaseException],
+        logger: LoggerInterface,
     ):
         self._retry_count: int = retry_count
         self._retry_base_delay_ms: int = retry_base_delay_ms
@@ -65,10 +71,30 @@ class NexusSchedulerAsyncRetryPolicy:
         self._retry_exhaust_error_type: type[BaseException] | None = retry_exhaust_error_type
         self._logger: LoggerInterface = logger
 
+    @property
+    def retry_count(self) -> int:
+        return self._retry_count
+
+    @property
+    def retry_base_delay_ms(self) -> int:
+        return self._retry_base_delay_ms
+
+    @property
+    def error_types(self) -> list[type[BaseException]]:
+        return self._error_types
+
+    @property
+    def retry_exhaust_error_type(self) -> type[BaseException]:
+        return self._retry_exhaust_error_type
+
     @classmethod
     def create(
-            cls, retry_count: int, retry_base_delay_ms: int, error_types: list[type[RuntimeError]],
-            retry_exhaust_error_type: type[BaseException], logger: LoggerInterface
+        cls,
+        retry_count: int,
+        retry_base_delay_ms: int,
+        error_types: list[type[BaseException]],
+        retry_exhaust_error_type: type[BaseException],
+        logger: LoggerInterface,
     ) -> Self:
         """
          Create a new NexusSchedulerAsyncRetryPolicy.
@@ -80,8 +106,11 @@ class NexusSchedulerAsyncRetryPolicy:
         :return:
         """
         return cls(
-            retry_count=retry_count, retry_base_delay_ms=retry_base_delay_ms, error_types=error_types,
-            retry_exhaust_error_type=retry_exhaust_error_type, logger=logger
+            retry_count=retry_count,
+            retry_base_delay_ms=retry_base_delay_ms,
+            error_types=error_types,
+            retry_exhaust_error_type=retry_exhaust_error_type,
+            logger=logger,
         )
 
     def for_error(self, error: type[BaseException]) -> Self:
@@ -100,11 +129,16 @@ class NexusSchedulerAsyncRetryPolicy:
         :param logger: Logger instance
         :return:
         """
-        return cls(retry_count=3, retry_base_delay_ms=5000, error_types=[NetworkError],
-                   retry_exhaust_error_type=NexusSchedulerRuntimeError, logger=logger)
+        return cls(
+            retry_count=3,
+            retry_base_delay_ms=5000,
+            error_types=[NetworkError],
+            retry_exhaust_error_type=NexusSchedulerRuntimeError,
+            logger=logger,
+        )
 
     async def execute(
-            self, runnable: Callable[[], TExecuteResult], on_retry_exhaust_message: str
+        self, runnable: Callable[[], TExecuteResult], on_retry_exhaust_message: str
     ) -> TExecuteResult | None:
         """
          Execute a runnable using the retry policy.
@@ -149,3 +183,45 @@ class NexusSchedulerAsyncRetryPolicy:
                 raise ex
 
         return await _execute(0)
+
+
+@final
+class NexusAsyncRetryPolicyBuilder:
+    """
+    Retry policy builder for Nexus API calls.
+    """
+
+    def __init__(self, logger: LoggerInterface) -> None:
+        self._logger = logger
+
+        default_policy = NexusSchedulerAsyncRetryPolicy.default(self._logger)
+
+        self._retry_base_delay_ms = default_policy.retry_base_delay_ms
+        self._retry_count = default_policy.retry_count
+        self._retry_exhaust_error_type = default_policy.retry_exhaust_error_type
+        self._error_types: list[type[BaseException]] = default_policy.error_types
+
+    def with_retries(self, count: int) -> Self:
+        self._retry_count = count
+        return self
+
+    def with_retry_base_delay_ms(self, delay: int) -> Self:
+        self._retry_base_delay_ms = delay
+        return self
+
+    def with_retry_exhaust_error_type(self, error: type[BaseException] | None) -> Self:
+        self._retry_exhaust_error_type = error
+        return self
+
+    def with_error_types(self, *errors: type[BaseException]) -> Self:
+        self._error_types.extend(errors)
+        return self
+
+    def build(self) -> NexusSchedulerAsyncRetryPolicy:
+        return NexusSchedulerAsyncRetryPolicy.create(
+            retry_count=self._retry_count,
+            retry_base_delay_ms=self._retry_base_delay_ms,
+            error_types=self._error_types,
+            retry_exhaust_error_type=self._retry_exhaust_error_type,
+            logger=self._logger,
+        )

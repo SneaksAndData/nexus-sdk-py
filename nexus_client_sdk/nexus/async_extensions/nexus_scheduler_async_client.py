@@ -29,8 +29,10 @@ from nexus_client_sdk.models.scheduler import (
     RunResult,
     RequestLifeCycleStage,
 )
-from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import NexusSchedulerAsyncRetryPolicy, \
-    NexusSchedulingError
+from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
+    NexusSchedulingError,
+    NexusAsyncRetryPolicyBuilder,
+)
 
 
 @final
@@ -46,7 +48,7 @@ class NexusSchedulerAsyncClient:
         token_provider: Callable[[], AccessToken] | None = None,
     ):
         self._sync_client = NexusSchedulerClient(url=url, logger=logger, token_provider=token_provider)
-        self._retry_policy = NexusSchedulerAsyncRetryPolicy.default(logger=logger)
+        self._retry_policy_builder = NexusAsyncRetryPolicyBuilder(logger=logger)
 
     def __del__(self):
         self._sync_client.__del__()
@@ -72,7 +74,7 @@ class NexusSchedulerAsyncClient:
         :param dry_run: If True, will buffer but skip creating an actual algorithm job.
         :return:
         """
-        return await self._retry_policy.execute(
+        return await self._retry_policy_builder.build().execute(
             partial(
                 self._sync_client.create_run,
                 algorithm_parameters=algorithm_parameters,
@@ -94,11 +96,15 @@ class NexusSchedulerAsyncClient:
         :param poll_interval_seconds: Time between status checks
         :return:
         """
-        return await self._retry_policy.execute(partial(self._sync_client.await_run,
-            request_id=request_id,
-            algorithm=algorithm,
-            poll_interval_seconds=poll_interval_seconds,
-        ), f"Fatal error when awaiting request {algorithm}/{request_id}")
+        return await self._retry_policy_builder.build().execute(
+            partial(
+                self._sync_client.await_run,
+                request_id=request_id,
+                algorithm=algorithm,
+                poll_interval_seconds=poll_interval_seconds,
+            ),
+            f"Fatal error when awaiting request {algorithm}/{request_id}",
+        )
 
     async def create_and_await(
         self,
@@ -109,6 +115,7 @@ class NexusSchedulerAsyncClient:
         tag: str | None = None,
         payload_valid_for: str = "24h",
         dry_run: bool = False,
+        propagate_error: bool = True,
     ) -> RunResult | None:
         """
         Creates a new run for a given algorithm, and then awaits result for it. Can re-schedule in case a SCHEDULING_FAILURE occurs.
@@ -120,6 +127,7 @@ class NexusSchedulerAsyncClient:
         :param tag: Client side assigned run tag.
         :param payload_valid_for: Payload pre-signed URL validity period.
         :param dry_run: If True, will buffer but skip creating an actual algorithm job.
+        :param propagate_error: If True, error in this method will be propagated to the caller. If False, will return an empty value.
         :return:
         """
 
@@ -135,9 +143,13 @@ class NexusSchedulerAsyncClient:
             )
 
             result = await self.await_run(request_id=run_id, algorithm=algorithm_name)
-            if result.status == RequestLifeCycleStage.SCHEDULING_FAILED and self._retry_policy is not None:
+            if result.status == RequestLifeCycleStage.SCHEDULING_FAILED and self._retry_policy_builder is not None:
                 raise NexusSchedulingError()
 
             return result
 
-        return await self._retry_policy.execute(partial(_create_and_await), "Fatal error when creating a run")
+        retry_policy_builder = self._retry_policy_builder.with_error_types(NexusSchedulingError)
+        if not propagate_error:
+            retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
+
+        return await retry_policy_builder.build().execute(partial(_create_and_await), "Fatal error when creating a run")
