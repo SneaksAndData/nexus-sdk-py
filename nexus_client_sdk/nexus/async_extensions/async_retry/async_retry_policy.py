@@ -101,7 +101,7 @@ class NexusSchedulerAsyncRetryPolicy:
         :param retry_count: Number of times to retry each method.
         :param retry_base_delay_ms: Base delay for each retry.
         :param error_types: Errors to retry
-        :param retry_exhaust_error_type: Errors to retry if an error occurs.
+        :param retry_exhaust_error_type: Error type to raise when retries are exhausted.
         :param logger: Logger instance
         :return:
         """
