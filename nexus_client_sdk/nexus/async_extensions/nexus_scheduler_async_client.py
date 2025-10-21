@@ -16,10 +16,10 @@
 
 from typing import final, Any
 from collections.abc import Callable
+from functools import partial
 
 from adapta.logs import LoggerInterface
 
-from functools import partial
 
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.access_token import AccessToken
