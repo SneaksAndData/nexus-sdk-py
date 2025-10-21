@@ -27,6 +27,7 @@ from nexus_client_sdk.models.client_errors.go_http_errors import (
     UnauthorizedError,
     BadRequestError,
     NotFoundError,
+    NetworkError,
 )
 
 
@@ -53,6 +54,8 @@ class PySdkType:
                 return BadRequestError(self.client_error_message)
             case "*models.NotFoundError":
                 return NotFoundError(self.client_error_message)
+            case "*models.NetworkError":
+                return NetworkError(self.client_error_message)
         return None
 
 
