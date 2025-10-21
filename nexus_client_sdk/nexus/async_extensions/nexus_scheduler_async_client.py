@@ -32,6 +32,7 @@ from nexus_client_sdk.models.scheduler import (
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
     NexusSchedulingError,
     NexusAsyncRetryPolicyBuilder,
+    NexusSchedulerRuntimeError,
 )
 
 
@@ -62,7 +63,7 @@ class NexusSchedulerAsyncClient:
         tag: str | None = None,
         payload_valid_for: str = "24h",
         dry_run: bool = False,
-    ) -> str | None:
+    ) -> str:
         """
          Creates a new run for a given algorithm.
         :param algorithm_parameters: Algorithm parameters.
