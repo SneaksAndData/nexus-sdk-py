@@ -129,6 +129,14 @@ class NexusSchedulerClient:
                 case _:
                     raise maybe_result.error()
 
+    @property
+    def logger(self) -> LoggerInterface:
+        """
+         Logger (Python) used by this instance.
+        :return:
+        """
+        return self._logger
+
     def get_run_result(self, request_id: str, algorithm: str) -> RunResult:
         """
          Retrieves result of a specified run
@@ -212,6 +220,11 @@ class NexusSchedulerClient:
 
         match converted.error():
             case None:
+                self._logger.info(
+                    "New run initiated: {algorithm_template_name}/{request_identifier}",
+                    algorithm_template_name=algorithm_name,
+                    request_identifier=converted.request_id,
+                )
                 return converted.request_id
             case _:
                 raise converted.error()
