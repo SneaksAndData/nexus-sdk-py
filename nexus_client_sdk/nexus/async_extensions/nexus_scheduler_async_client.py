@@ -120,7 +120,8 @@ class NexusSchedulerAsyncClient:
         dry_run: bool = False,
         retries: int = 3,
         retry_base_delay_ms: int = 1000,
-    ) -> RunResult:
+        raise_on_retries_exceeded: bool = True,
+    ) -> RunResult | None:
         """
         Creates a new run for a given algorithm, and then awaits result for it. Can re-schedule in case a SCHEDULING_FAILURE occurs.
 
@@ -133,10 +134,11 @@ class NexusSchedulerAsyncClient:
         :param dry_run: If True, will buffer but skip creating an actual algorithm job.
         :param retries: Number of times to re-schedule, if the submission fails with SCHEDULING_FAILED
         :param retry_base_delay_ms: Minimum delay between retries.
+        :param raise_on_retries_exceeded: Raise NexusSchedulerRuntimeError if retries were exceeded.
         :return:
         """
 
-        async def _execute_run(try_number: int) -> RunResult:
+        async def _execute_run(try_number: int) -> RunResult | None:
             run_id = await self.create_run(
                 algorithm_parameters=algorithm_parameters,
                 algorithm_name=algorithm_name,
@@ -150,11 +152,14 @@ class NexusSchedulerAsyncClient:
             result = await self.await_run(request_id=run_id, algorithm=algorithm_name)
             if result.status == RequestLifeCycleStage.SCHEDULING_FAILED and retries > 0:
                 if try_number >= retries:  # first + 3 more
-                    raise NexusSchedulerRuntimeError(algorithm_name=algorithm_name)
+                    if raise_on_retries_exceeded:
+                        raise NexusSchedulerRuntimeError(algorithm_name=algorithm_name)
+
+                    return None
 
                 delay = retry_base_delay_ms / 1000 + (random.random() * retry_base_delay_ms) / 1000
                 self._sync_client.logger.info(
-                    "Attempt {try_number} failed to schedule. Retrying in {try_delay}",
+                    "Attempt {try_number} failed to schedule. Retrying in {try_delay} seconds",
                     try_number=try_number,
                     try_delay=int(delay),
                 )
