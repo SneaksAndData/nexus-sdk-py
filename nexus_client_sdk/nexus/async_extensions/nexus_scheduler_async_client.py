@@ -32,7 +32,6 @@ from nexus_client_sdk.models.scheduler import (
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
     NexusSchedulingError,
     NexusAsyncRetryPolicyBuilder,
-    NexusSchedulerRuntimeError,
 )
 
 
