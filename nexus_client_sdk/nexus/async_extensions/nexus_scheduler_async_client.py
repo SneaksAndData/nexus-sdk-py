@@ -143,7 +143,7 @@ class NexusSchedulerAsyncClient:
             )
 
             result = await self.await_run(request_id=run_id, algorithm=algorithm_name)
-            if result.status == RequestLifeCycleStage.SCHEDULING_FAILED and self._retry_policy_builder is not None:
+            if result.status == RequestLifeCycleStage.SCHEDULING_FAILED:
                 raise NexusSchedulingError()
 
             return result
