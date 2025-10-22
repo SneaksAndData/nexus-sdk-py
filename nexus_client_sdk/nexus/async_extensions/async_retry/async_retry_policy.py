@@ -1,6 +1,4 @@
 """Framework level retry policy"""
-import asyncio
-import random
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
@@ -17,6 +15,8 @@ import random
 #  limitations under the License.
 #
 
+import asyncio
+import random
 from typing import TypeVar, final, Self, Callable, Coroutine, Any
 
 from adapta.logs import LoggerInterface
@@ -149,7 +149,7 @@ class NexusSchedulerAsyncRetryPolicy:
     ) -> TExecuteResult | None:
         """
          Execute a runnable using the retry policy.
-        :param runnable: A method to execute
+        :param runnable: A method to execute, or a factory for coroutines.
         :param on_retry_exhaust_message: Message for the error thrown when retries are exhausted
         :param method_alias: Method alias for logging purposes
         :return:
@@ -173,8 +173,10 @@ class NexusSchedulerAsyncRetryPolicy:
                 self._logger.debug(
                     "Executing {method}, attempt #{try_number}", method=method_alias, try_number=try_number
                 )
+                # either run or materialize coroutine
                 result = runnable()
 
+                # if a coroutine, await result
                 if isinstance(result, Coroutine):
                     return await result
 

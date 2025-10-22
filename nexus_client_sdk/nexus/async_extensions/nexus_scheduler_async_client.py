@@ -108,27 +108,25 @@ class NexusSchedulerAsyncClient:
             method_alias="await_run",
         )
 
-    async def _create_and_await(
-        self,
-        algorithm_parameters: dict[str, Any],
-        algorithm_name: str,
-        custom_configuration: SdkCustomRunConfiguration | None = None,
-        parent_request: SdkParentRequest | None = None,
-        tag: str | None = None,
-        payload_valid_for: str = "24h",
-        dry_run: bool = False,
-    ) -> RunResult | None:
+    async def _create_and_await(self, **kwargs) -> RunResult | None:
         run_id = await self.create_run(
-            algorithm_parameters=algorithm_parameters,
-            algorithm_name=algorithm_name,
-            custom_configuration=custom_configuration,
-            parent_request=parent_request,
-            payload_valid_for=payload_valid_for,
-            tag=tag,
-            dry_run=dry_run,
+            algorithm_parameters=kwargs.get("algorithm_parameters"),
+            algorithm_name=kwargs.get("algorithm_name"),
+            custom_configuration=kwargs.get("custom_configuration"),
+            parent_request=kwargs.get("parent_request"),
+            payload_valid_for=kwargs.get("payload_valid_for"),
+            tag=kwargs.get("tag"),
+            dry_run=kwargs.get("dry_run"),
         )
 
-        result = await self.await_run(request_id=run_id, algorithm=algorithm_name)
+        if "post_create_callback" in kwargs:
+            kwargs["post_create_callback"](run_id)
+
+        result = await self.await_run(
+            request_id=run_id,
+            algorithm=kwargs.get("algorithm_name"),
+            poll_interval_seconds=kwargs.get("poll_interval_seconds"),
+        )
         if result.status == RequestLifeCycleStage.SCHEDULING_FAILED.value:
             raise NexusSchedulingError()
 
@@ -143,7 +141,9 @@ class NexusSchedulerAsyncClient:
         tag: str | None = None,
         payload_valid_for: str = "24h",
         dry_run: bool = False,
+        poll_interval_seconds: int = 5,
         propagate_error: bool = True,
+        post_create_callback: Callable[[str], Any] | None = None,
     ) -> RunResult | None:
         """
         Creates a new run for a given algorithm, and then awaits result for it. Can re-schedule in case a SCHEDULING_FAILURE occurs.
@@ -155,7 +155,9 @@ class NexusSchedulerAsyncClient:
         :param tag: Client side assigned run tag.
         :param payload_valid_for: Payload pre-signed URL validity period.
         :param dry_run: If True, will buffer but skip creating an actual algorithm job.
+        :param poll_interval_seconds: Time between status checks
         :param propagate_error: If True, error in this method will be propagated to the caller. If False, will return an empty value.
+        :param post_create_callback: Optional callback function that will be called after a run is successfully created.
         :return:
         """
 
@@ -171,9 +173,11 @@ class NexusSchedulerAsyncClient:
                 custom_configuration=custom_configuration,
                 parent_request=parent_request,
                 payload_valid_for=payload_valid_for,
+                poll_interval_seconds=poll_interval_seconds,
                 tag=tag,
                 dry_run=dry_run,
+                post_create_callback=post_create_callback,
             )(),
-            "Fatal error when creating a run",
+            "Fatal error when creating/awaiting a run",
             method_alias="create_and_await",
         )
