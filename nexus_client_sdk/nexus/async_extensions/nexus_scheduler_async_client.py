@@ -119,8 +119,8 @@ class NexusSchedulerAsyncClient:
             dry_run=kwargs.get("dry_run"),
         )
 
-        if "post_create_callback" in kwargs:
-            kwargs["post_create_callback"](run_id)
+        if "post_create_callback" in kwargs and kwargs["post_create_callback"] is not None:
+            kwargs.get("post_create_callback")(run_id)
 
         result = await self.await_run(
             request_id=run_id,
