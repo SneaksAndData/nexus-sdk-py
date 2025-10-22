@@ -90,7 +90,7 @@ def scheduler():
     logger.stop()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def async_scheduler():
     logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
     logger.start()
