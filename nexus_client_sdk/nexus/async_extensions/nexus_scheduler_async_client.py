@@ -166,7 +166,7 @@ class NexusSchedulerAsyncClient:
             retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
 
         return await retry_policy_builder.build().execute(
-            lambda: partial(
+            lambda: partial(  # pylint: disable=unnecessary-lambda
                 self._create_and_await,
                 algorithm_parameters=algorithm_parameters,
                 algorithm_name=algorithm_name,
