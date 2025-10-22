@@ -86,6 +86,7 @@ class NexusSchedulerAsyncClient:
                 dry_run=dry_run,
             ),
             f"Fatal error when creating a run for template {algorithm_name}",
+            method_alias="create_run",
         )
 
     async def await_run(self, request_id: str, algorithm: str, poll_interval_seconds: int = 5) -> RunResult:
@@ -104,7 +105,34 @@ class NexusSchedulerAsyncClient:
                 poll_interval_seconds=poll_interval_seconds,
             ),
             f"Fatal error when awaiting request {algorithm}/{request_id}",
+            method_alias="await_run",
         )
+
+    async def _create_and_await(
+        self,
+        algorithm_parameters: dict[str, Any],
+        algorithm_name: str,
+        custom_configuration: SdkCustomRunConfiguration | None = None,
+        parent_request: SdkParentRequest | None = None,
+        tag: str | None = None,
+        payload_valid_for: str = "24h",
+        dry_run: bool = False,
+    ) -> RunResult | None:
+        run_id = await self.create_run(
+            algorithm_parameters=algorithm_parameters,
+            algorithm_name=algorithm_name,
+            custom_configuration=custom_configuration,
+            parent_request=parent_request,
+            payload_valid_for=payload_valid_for,
+            tag=tag,
+            dry_run=dry_run,
+        )
+
+        result = await self.await_run(request_id=run_id, algorithm=algorithm_name)
+        if result.status == RequestLifeCycleStage.SCHEDULING_FAILED.value:
+            raise NexusSchedulingError()
+
+        return result
 
     async def create_and_await(
         self,
@@ -131,8 +159,13 @@ class NexusSchedulerAsyncClient:
         :return:
         """
 
-        async def _create_and_await() -> RunResult | None:
-            run_id = await self.create_run(
+        retry_policy_builder = self._retry_policy_builder.fork().with_error_types(NexusSchedulingError)
+        if not propagate_error:
+            retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
+
+        return await retry_policy_builder.build().execute(
+            lambda: partial(
+                self._create_and_await,
                 algorithm_parameters=algorithm_parameters,
                 algorithm_name=algorithm_name,
                 custom_configuration=custom_configuration,
@@ -140,16 +173,7 @@ class NexusSchedulerAsyncClient:
                 payload_valid_for=payload_valid_for,
                 tag=tag,
                 dry_run=dry_run,
-            )
-
-            result = await self.await_run(request_id=run_id, algorithm=algorithm_name)
-            if result.status == RequestLifeCycleStage.SCHEDULING_FAILED:
-                raise NexusSchedulingError()
-
-            return result
-
-        retry_policy_builder = self._retry_policy_builder.with_error_types(NexusSchedulingError)
-        if not propagate_error:
-            retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
-
-        return await retry_policy_builder.build().execute(partial(_create_and_await), "Fatal error when creating a run")
+            )(),
+            "Fatal error when creating a run",
+            method_alias="create_and_await",
+        )

@@ -17,7 +17,7 @@ import random
 #  limitations under the License.
 #
 
-from typing import TypeVar, final, Self, Callable
+from typing import TypeVar, final, Self, Callable, Coroutine, Any
 
 from adapta.logs import LoggerInterface
 
@@ -142,12 +142,16 @@ class NexusSchedulerAsyncRetryPolicy:
         )
 
     async def execute(
-        self, runnable: Callable[[], TExecuteResult], on_retry_exhaust_message: str
+        self,
+        runnable: Callable[[], TExecuteResult] | Callable[[], Coroutine[Any, Any, TExecuteResult]],
+        on_retry_exhaust_message: str,
+        method_alias: str,
     ) -> TExecuteResult | None:
         """
          Execute a runnable using the retry policy.
         :param runnable: A method to execute
         :param on_retry_exhaust_message: Message for the error thrown when retries are exhausted
+        :param method_alias: Method alias for logging purposes
         :return:
         """
 
@@ -155,28 +159,33 @@ class NexusSchedulerAsyncRetryPolicy:
             if try_number >= self._retry_count:
                 if self._retry_exhaust_error_type is not None:
                     self._logger.error(
-                        "Retries exhausted for {method}, raising provided exception", method=runnable.__name__
+                        "Retries exhausted for {method}, raising provided exception", method=method_alias
                     )
                     raise self._retry_exhaust_error_type(on_retry_exhaust_message)
 
                 self._logger.error(
                     "Retries exhausted for {method}, exception not provided, returning empty result",
-                    method=runnable.__name__,
+                    method=method_alias,
                 )
                 return None
 
             try:
                 self._logger.debug(
-                    "Executing {method}, attempt #{try_number}", method=runnable.__name__, try_number=try_number
+                    "Executing {method}, attempt #{try_number}", method=method_alias, try_number=try_number
                 )
-                return runnable()
-            except Exception as ex:
+                result = runnable()
+
+                if isinstance(result, Coroutine):
+                    return await result
+
+                return result
+            except BaseException as ex:
                 for err_type in self._error_types:
                     if isinstance(ex, err_type):
                         delay = self._retry_base_delay_ms / 1000 + (random.random() * self._retry_base_delay_ms) / 1000
                         self._logger.info(
                             "Method {method} raised a transient error {exception}, retrying in {delay}",
-                            method=runnable.__name__,
+                            method=method_alias,
                             exception=str(ex),
                             delay=delay,
                         )
@@ -204,6 +213,13 @@ class NexusAsyncRetryPolicyBuilder:
         self._retry_count = default_policy.retry_count
         self._retry_exhaust_error_type = default_policy.retry_exhaust_error_type
         self._error_types: list[type[BaseException]] = default_policy.error_types
+
+    def fork(self) -> Self:
+        """
+         Creates a new instance of NexusAsyncRetryPolicyBuilder using the same logger.
+        :return:
+        """
+        return NexusAsyncRetryPolicyBuilder(self._logger)
 
     def with_retries(self, count: int) -> Self:
         """
