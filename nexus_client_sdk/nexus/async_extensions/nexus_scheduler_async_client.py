@@ -161,11 +161,11 @@ class NexusSchedulerAsyncClient:
         :return:
         """
 
-        retry_policy_builder = self._retry_policy_builder.fork().with_error_types(NexusSchedulingError)
-        if not propagate_error:
-            retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
+        # retry_policy_builder = self._retry_policy_builder.fork().with_error_types(NexusSchedulingError)
+        # if not propagate_error:
+        #     retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
 
-        return await retry_policy_builder.build().execute(
+        return await self._retry_policy_builder.build().execute(
             lambda: partial(  # pylint: disable=unnecessary-lambda
                 self._create_and_await,
                 algorithm_parameters=algorithm_parameters,
