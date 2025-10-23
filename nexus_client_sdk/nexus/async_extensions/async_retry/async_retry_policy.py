@@ -17,9 +17,12 @@
 
 import asyncio
 import random
+import sys
+from logging import StreamHandler
 from typing import TypeVar, final, Self, Callable, Coroutine, Any
 
-from adapta.logs import LoggerInterface
+from adapta.logs import LoggerInterface, create_async_logger
+from adapta.logs.models import LogLevel
 
 from nexus_client_sdk.models.client_errors.go_http_errors import NetworkError
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
@@ -221,7 +224,9 @@ class NexusAsyncRetryPolicyBuilder:
          Creates a new instance of NexusAsyncRetryPolicyBuilder using the same logger.
         :return:
         """
-        return NexusAsyncRetryPolicyBuilder(self._logger)
+        logger = create_async_logger(logger_type=self.__class__, log_handlers=[StreamHandler(sys.stdout)], min_log_level=LogLevel.INFO)
+        with logger:
+            return NexusAsyncRetryPolicyBuilder(logger)
 
     def with_retries(self, count: int) -> Self:
         """
