@@ -201,11 +201,11 @@ class NexusSchedulerClient:
         :return:
         """
         self._init_client()
-        # self._logger.info(
-        #     "Creating a new run for {algorithm_template_name} with tag '{client_runtime_tag}'",
-        #     algorithm_template_name=algorithm_name,
-        #     client_runtime_tag=tag or "tag not provided",
-        # )
+        self._logger.info(
+            "Creating a new run for {algorithm_template_name} with tag '{client_runtime_tag}'",
+            algorithm_template_name=algorithm_name,
+            client_runtime_tag=tag or "tag not provided",
+        )
         maybe_result = self._create_run(
             bytes(algorithm_name, encoding="utf-8"),
             bytes(json.dumps(algorithm_parameters), encoding="utf-8"),
@@ -229,24 +229,26 @@ class NexusSchedulerClient:
             case _:
                 raise converted.error()
 
-    def await_run(self, request_id: str, algorithm: str, poll_interval_seconds=5) -> RunResult:
+    def await_run(self, request_id: str, algorithm: str, poll_interval_seconds: int=5, wait_timeout_seconds: int | None = None) -> RunResult:
         """
           Awaits result for a given run for a given algorithm.
         :param request_id: Run request ID.
         :param algorithm: Algorithm name.
         :param poll_interval_seconds: Time between status checks
+        :param wait_timeout_seconds: Optional timeout for the wait. Can wait infinite time if not provided and submission status is never updated.
         :return:
         """
         self._init_client()
-        # self._logger.info(
-        #     "Awaiting run for {algorithm_template_name}/{request_identifier}",
-        #     algorithm_template_name=algorithm,
-        #     request_identifier=request_id,
-        # )
+        self._logger.info(
+            "Awaiting run for {algorithm_template_name}/{request_identifier}",
+            algorithm_template_name=algorithm,
+            request_identifier=request_id,
+        )
         maybe_result = self._await_run(
             bytes(request_id, encoding="utf-8"),
             bytes(algorithm, encoding="utf-8"),
             ctypes.c_int32(poll_interval_seconds),
+            ctypes.c_int32(wait_timeout_seconds) if wait_timeout_seconds else None,
         )
 
         converted = RunResult.from_sdk_result(maybe_result)
@@ -276,6 +278,7 @@ class NexusSchedulerClient:
                     bytes(algorithm, encoding="utf-8") if algorithm else None,
                     ctypes.c_int32(poll_interval_seconds),
                     None if not report_progress else progress_counter,
+                    None
                 )
             )
 

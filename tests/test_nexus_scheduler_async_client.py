@@ -40,8 +40,7 @@ runtime_config_stub = (
 @pytest.mark.asyncio
 async def test_create_and_await_manual(async_scheduler: NexusSchedulerAsyncClient):
     run_id = await async_scheduler.create_run(algorithm_parameters={}, algorithm_name="hello-world")
-    await asyncio.sleep(1)
-    result = await async_scheduler.await_run(request_id=run_id, algorithm="hello-world")
+    result = await async_scheduler.await_run(request_id=run_id, algorithm="hello-world", wait_timeout_seconds=30)
 
     assert async_scheduler._sync_client.is_finished(result) and not async_scheduler._sync_client.has_succeeded(result)
 

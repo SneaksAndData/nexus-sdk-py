@@ -91,12 +91,13 @@ class NexusSchedulerAsyncClient:
             method_alias="create_run",
         )
 
-    async def await_run(self, request_id: str, algorithm: str, poll_interval_seconds: int = 5) -> RunResult:
+    async def await_run(self, request_id: str, algorithm: str, poll_interval_seconds: int = 5, wait_timeout_seconds: int | None = None) -> RunResult:
         """
         Awaits result for a given run for a given algorithm.
         :param request_id: Run request ID.
         :param algorithm: Algorithm name.
         :param poll_interval_seconds: Time between status checks
+        :param wait_timeout_seconds: Optional timeout for the wait. Can wait infinite time if not provided and submission status is never updated.
         :return:
         """
 
@@ -106,6 +107,7 @@ class NexusSchedulerAsyncClient:
                 request_id=request_id,
                 algorithm=algorithm,
                 poll_interval_seconds=poll_interval_seconds,
+                wait_timeout=wait_timeout_seconds,
             ),
             f"Fatal error when awaiting request {algorithm}/{request_id}",
             method_alias="await_run",
