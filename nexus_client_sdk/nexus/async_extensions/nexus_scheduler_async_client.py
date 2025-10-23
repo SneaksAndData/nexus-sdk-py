@@ -75,9 +75,8 @@ class NexusSchedulerAsyncClient:
         :param dry_run: If True, will buffer but skip creating an actual algorithm job.
         :return:
         """
-        return await self._retry_policy_builder.build().execute(
-            partial(
-                self._sync_client.create_run,
+
+        return self._sync_client.create_run(
                 algorithm_parameters=algorithm_parameters,
                 algorithm_name=algorithm_name,
                 custom_configuration=custom_configuration,
@@ -85,10 +84,22 @@ class NexusSchedulerAsyncClient:
                 payload_valid_for=payload_valid_for,
                 tag=tag,
                 dry_run=dry_run,
-            ),
-            f"Fatal error when creating a run for template {algorithm_name}",
-            method_alias="create_run",
-        )
+            )
+
+        # return await self._retry_policy_builder.build().execute(
+        #     partial(
+        #         self._sync_client.create_run,
+        #         algorithm_parameters=algorithm_parameters,
+        #         algorithm_name=algorithm_name,
+        #         custom_configuration=custom_configuration,
+        #         parent_request=parent_request,
+        #         payload_valid_for=payload_valid_for,
+        #         tag=tag,
+        #         dry_run=dry_run,
+        #     ),
+        #     f"Fatal error when creating a run for template {algorithm_name}",
+        #     method_alias="create_run",
+        # )
 
     async def await_run(self, request_id: str, algorithm: str, poll_interval_seconds: int = 5) -> RunResult:
         """
@@ -98,16 +109,23 @@ class NexusSchedulerAsyncClient:
         :param poll_interval_seconds: Time between status checks
         :return:
         """
-        return await self._retry_policy_builder.build().execute(
-            partial(
-                self._sync_client.await_run,
+        return self._sync_client.await_run(
                 request_id=request_id,
                 algorithm=algorithm,
                 poll_interval_seconds=poll_interval_seconds,
-            ),
-            f"Fatal error when awaiting request {algorithm}/{request_id}",
-            method_alias="await_run",
-        )
+            )
+
+
+        # return await self._retry_policy_builder.build().execute(
+        #     partial(
+        #         self._sync_client.await_run,
+        #         request_id=request_id,
+        #         algorithm=algorithm,
+        #         poll_interval_seconds=poll_interval_seconds,
+        #     ),
+        #     f"Fatal error when awaiting request {algorithm}/{request_id}",
+        #     method_alias="await_run",
+        # )
 
     async def create_and_await(
         self,
