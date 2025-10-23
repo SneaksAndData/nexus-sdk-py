@@ -13,7 +13,7 @@ permissions:
 jobs:
   validate_commit_py311:
     name: Validate commit on Python 3.11
-    runs-on: ubuntu-latest-16-cores-public
+    runs-on: macos-latest
     if: ${{ github.ref != 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v5
@@ -36,11 +36,11 @@ jobs:
       - name: Install Nexus Stack
         run: |
           helm dependency build ./.helm \
-          && helm install nexus-test-stack --kube-context kind-nexus-controller --namespace nexus --create-namespace --version 0.0.0 --set dockerServiceType=linux --no-hooks ./.helm \
-          && helm upgrade nexus-test-stack --kube-context kind-nexus-controller --namespace nexus --create-namespace --set dockerServiceType=linux ./.helm
+          && helm install nexus-test-stack --kube-context kind-nexus-controller --namespace nexus --create-namespace --version 0.0.0 --set dockerServiceType=mac --no-hooks ./.helm \
+          && helm upgrade nexus-test-stack --kube-context kind-nexus-controller --namespace nexus --create-namespace --set dockerServiceType=mac ./.helm
           
-          helm install nexus-test-stack --kube-context kind-nexus-shard-0 --namespace nexus --create-namespace --version 0.0.0 --set dockerServiceType=linux --no-hooks ./.helm \
-          && helm upgrade nexus-test-stack --kube-context kind-nexus-shard-0 --namespace nexus --create-namespace --set dockerServiceType=linux ./.helm
+          helm install nexus-test-stack --kube-context kind-nexus-shard-0 --namespace nexus --create-namespace --version 0.0.0 --set dockerServiceType=mac --no-hooks ./.helm \
+          && helm upgrade nexus-test-stack --kube-context kind-nexus-shard-0 --namespace nexus --create-namespace --set dockerServiceType=mac ./.helm
 
       - name: Launch Compose Stack
         run: |
