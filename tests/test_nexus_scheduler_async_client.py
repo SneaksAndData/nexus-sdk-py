@@ -14,21 +14,21 @@ runtime_config_stub = (
 )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.xdist_group(name="async_scheduler")
 async def test_create_run_propagates(async_scheduler: NexusSchedulerAsyncClient):
     with pytest.raises(BadRequestError):
         _ = await async_scheduler.create_run(algorithm_parameters={}, algorithm_name="non-existing")
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.xdist_group(name="async_scheduler")
 async def test_create_run_retries(broken_async_scheduler: NexusSchedulerAsyncClient):
     with pytest.raises(NexusSchedulerRuntimeError):
         _ = await broken_async_scheduler.create_run(algorithm_parameters={}, algorithm_name="hello-world")
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.xdist_group(name="async_scheduler")
 async def test_await_run_retries(broken_async_scheduler: NexusSchedulerAsyncClient):
     with pytest.raises(NexusSchedulerRuntimeError):
@@ -38,7 +38,7 @@ async def test_await_run_retries(broken_async_scheduler: NexusSchedulerAsyncClie
         )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.xdist_group(name="async_scheduler")
 async def test_create_and_await(async_scheduler: NexusSchedulerAsyncClient):
     result = await async_scheduler.create_and_await(algorithm_parameters={}, algorithm_name="hello-world")
