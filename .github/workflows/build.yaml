@@ -81,10 +81,6 @@ jobs:
           
           poetry run pytest -n auto --dist loadgroup --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=term-missing:skip-covered | tee pytest-coverage.txt
 
-      - name: Get Kind Logs
-        if: always()
-        run: kubectl get jobs -n nexus && kubectl get pods -n nexus
-
       - name: Publish Code Coverage
         uses: MishaKav/pytest-coverage-comment@main
         with:
