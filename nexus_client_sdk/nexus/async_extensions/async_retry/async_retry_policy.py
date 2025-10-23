@@ -17,12 +17,9 @@
 
 import asyncio
 import random
-import sys
-from logging import StreamHandler
 from typing import TypeVar, final, Self, Callable, Coroutine, Any
 
-from adapta.logs import LoggerInterface, create_async_logger
-from adapta.logs.models import LogLevel
+from adapta.logs import LoggerInterface
 
 from nexus_client_sdk.models.client_errors.go_http_errors import NetworkError
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
