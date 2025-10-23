@@ -3,7 +3,6 @@ from pathlib import Path
 import pytest
 from cassandra.cluster import Session
 
-from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.client_errors.go_http_errors import BadRequestError
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
     NexusSchedulerRuntimeError,
@@ -22,27 +21,15 @@ async def test_create_run_propagates(async_scheduler: NexusSchedulerAsyncClient)
 
 
 @pytest.mark.asyncio
-async def test_create_run_retries(async_scheduler: NexusSchedulerAsyncClient):
-    async_scheduler._sync_client = NexusSchedulerClient.create(
-        url="http://localhost:1234",
-        logger=async_scheduler._sync_client.logger,
-        token_provider=async_scheduler._sync_client._token_provider,
-    )
-
+async def test_create_run_retries(broken_async_scheduler: NexusSchedulerAsyncClient):
     with pytest.raises(NexusSchedulerRuntimeError):
-        _ = await async_scheduler.create_run(algorithm_parameters={}, algorithm_name="hello-world")
+        _ = await broken_async_scheduler.create_run(algorithm_parameters={}, algorithm_name="hello-world")
 
 
 @pytest.mark.asyncio
-async def test_await_run_retries(async_scheduler: NexusSchedulerAsyncClient):
-    async_scheduler._sync_client = NexusSchedulerClient.create(
-        url="http://localhost:1234",
-        logger=async_scheduler._sync_client.logger,
-        token_provider=async_scheduler._sync_client._token_provider,
-    )
-
+async def test_await_run_retries(broken_async_scheduler: NexusSchedulerAsyncClient):
     with pytest.raises(NexusSchedulerRuntimeError):
-        _ = await async_scheduler.await_run(
+        _ = await broken_async_scheduler.await_run(
             request_id="test",
             algorithm="test",
         )

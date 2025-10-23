@@ -99,6 +99,15 @@ def async_scheduler():
     logger.stop()
 
 
+@pytest.fixture
+def broken_async_scheduler():
+    logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
+    logger.start()
+    yield NexusSchedulerAsyncClient("http://localhost:1234", logger, lambda: AccessToken.empty())
+
+    logger.stop()
+
+
 @pytest.fixture(scope="session")
 def cql_session():
     cluster = Cluster()
