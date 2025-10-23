@@ -86,6 +86,10 @@ jobs:
         run: |
           kubectl get jobs -n nexus --context kind-nexus-shard-0 && kubectl get pods -n nexus --context kind-nexus-shard-0 && kubectl logs -n nexus --context kind-nexus-shard-0 -l science.sneaksanddata.com/algorithm-template-name=hello-world
 
+      - name: Get Compose Logs (2)
+        if: always()
+        run: docker compose logs
+
       - name: Publish Code Coverage
         uses: MishaKav/pytest-coverage-comment@main
         with:
