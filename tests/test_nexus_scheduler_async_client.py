@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from nexus_client_sdk.models.client_errors.go_http_errors import BadRequestError
