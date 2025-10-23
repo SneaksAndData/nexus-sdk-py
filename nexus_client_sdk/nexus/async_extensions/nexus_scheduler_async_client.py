@@ -108,30 +108,6 @@ class NexusSchedulerAsyncClient:
             method_alias="await_run",
         )
 
-    async def _create_and_await(self, **kwargs) -> RunResult | None:
-        run_id = await self.create_run(
-            algorithm_parameters=kwargs.get("algorithm_parameters"),
-            algorithm_name=kwargs.get("algorithm_name"),
-            custom_configuration=kwargs.get("custom_configuration"),
-            parent_request=kwargs.get("parent_request"),
-            payload_valid_for=kwargs.get("payload_valid_for"),
-            tag=kwargs.get("tag"),
-            dry_run=kwargs.get("dry_run"),
-        )
-
-        if "post_create_callback" in kwargs and kwargs["post_create_callback"] is not None:
-            kwargs.get("post_create_callback")(run_id)
-
-        result = await self.await_run(
-            request_id=run_id,
-            algorithm=kwargs.get("algorithm_name"),
-            poll_interval_seconds=kwargs.get("poll_interval_seconds"),
-        )
-        if result.status == RequestLifeCycleStage.SCHEDULING_FAILED.value:
-            raise NexusSchedulingError()
-
-        return result
-
     async def create_and_await(
         self,
         algorithm_parameters: dict[str, Any],
@@ -160,9 +136,34 @@ class NexusSchedulerAsyncClient:
         :param post_create_callback: Optional callback function that will be called after a run is successfully created.
         :return:
         """
+
+        async def _create_and_await(**kwargs) -> RunResult | None:
+            run_id = await self.create_run(
+                algorithm_parameters=kwargs.get("algorithm_parameters"),
+                algorithm_name=kwargs.get("algorithm_name"),
+                custom_configuration=kwargs.get("custom_configuration"),
+                parent_request=kwargs.get("parent_request"),
+                payload_valid_for=kwargs.get("payload_valid_for"),
+                tag=kwargs.get("tag"),
+                dry_run=kwargs.get("dry_run"),
+            )
+
+            if "post_create_callback" in kwargs and kwargs["post_create_callback"] is not None:
+                kwargs.get("post_create_callback")(run_id)
+
+            result = await self.await_run(
+                request_id=run_id,
+                algorithm=kwargs.get("algorithm_name"),
+                poll_interval_seconds=kwargs.get("poll_interval_seconds"),
+            )
+            if result.status == RequestLifeCycleStage.SCHEDULING_FAILED.value:
+                raise NexusSchedulingError()
+
+            return result
+
         def _wrapped() -> Coroutine[Any, Any, RunResult]:
             return partial(
-                self._create_and_await,
+                _create_and_await,
                 algorithm_parameters=algorithm_parameters,
                 algorithm_name=algorithm_name,
                 custom_configuration=custom_configuration,

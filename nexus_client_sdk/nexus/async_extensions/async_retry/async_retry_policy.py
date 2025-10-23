@@ -224,9 +224,7 @@ class NexusAsyncRetryPolicyBuilder:
          Creates a new instance of NexusAsyncRetryPolicyBuilder using the same logger.
         :return:
         """
-        logger = create_async_logger(logger_type=self.__class__, log_handlers=[StreamHandler(sys.stdout)], min_log_level=LogLevel.INFO)
-        with logger:
-            return NexusAsyncRetryPolicyBuilder(logger)
+        return NexusAsyncRetryPolicyBuilder(self._logger)
 
     def with_retries(self, count: int) -> Self:
         """
