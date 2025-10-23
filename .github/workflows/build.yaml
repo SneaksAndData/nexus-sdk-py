@@ -84,7 +84,7 @@ jobs:
       - name: Get Nexus Job/Pod Data
         if: always()
         run: |
-          kubectl get jobs -n nexus --context kind-nexus-shard-0 && kubectl get pods -n nexus --context kind-nexus-shard-0 && kubectl logs -l science.sneaksanddata.com/algorithm-template-name=hello-world
+          kubectl get jobs -n nexus --context kind-nexus-shard-0 && kubectl get pods -n nexus --context kind-nexus-shard-0 && kubectl logs -n nexus --context kind-nexus-shard-0 -l science.sneaksanddata.com/algorithm-template-name=hello-world
 
       - name: Publish Code Coverage
         uses: MishaKav/pytest-coverage-comment@main
