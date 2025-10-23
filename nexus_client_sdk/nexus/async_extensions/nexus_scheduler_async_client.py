@@ -137,8 +137,8 @@ class NexusSchedulerAsyncClient:
         :return:
         """
 
-        async def _create_and_await(**kwargs) -> RunResult | None:
-            run_id = await self.create_run(
+        def _create_and_await(**kwargs) -> RunResult | None:
+            run_id = self._sync_client.create_run(
                 algorithm_parameters=kwargs.get("algorithm_parameters"),
                 algorithm_name=kwargs.get("algorithm_name"),
                 custom_configuration=kwargs.get("custom_configuration"),
@@ -151,18 +151,22 @@ class NexusSchedulerAsyncClient:
             if "post_create_callback" in kwargs and kwargs["post_create_callback"] is not None:
                 kwargs.get("post_create_callback")(run_id)
 
-            result = await self.await_run(
+            result = self._sync_client.await_run(
                 request_id=run_id,
                 algorithm=kwargs.get("algorithm_name"),
-                poll_interval_seconds=kwargs.get("poll_interval_seconds"),
-            )
+                poll_interval_seconds=poll_interval_seconds,)
+
             if result.status == RequestLifeCycleStage.SCHEDULING_FAILED.value:
                 raise NexusSchedulingError()
 
             return result
 
-        def _wrapped() -> Coroutine[Any, Any, RunResult]:
-            return partial(
+
+        retry_policy_builder = self._retry_policy_builder.fork().with_error_types(NexusSchedulingError)
+        if not propagate_error:
+            retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
+
+        return await retry_policy_builder.build().execute(partial(
                 _create_and_await,
                 algorithm_parameters=algorithm_parameters,
                 algorithm_name=algorithm_name,
@@ -173,13 +177,7 @@ class NexusSchedulerAsyncClient:
                 tag=tag,
                 dry_run=dry_run,
                 post_create_callback=post_create_callback,
-            )()
-
-        retry_policy_builder = self._retry_policy_builder.fork().with_error_types(NexusSchedulingError)
-        if not propagate_error:
-            retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
-
-        return await retry_policy_builder.build().execute(_wrapped,
+            ),
             "Fatal error when creating/awaiting a run",
             method_alias="create_and_await",
         )
