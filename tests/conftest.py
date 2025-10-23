@@ -81,7 +81,7 @@ def run_configuration():
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def scheduler():
     logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
     logger.start()
@@ -108,15 +108,16 @@ def broken_async_scheduler():
     logger.stop()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def cql_session():
     cluster = Cluster()
     session = cluster.connect("nexus")
     yield session
     session.shutdown()
+    cluster.shutdown()
 
 
-def payloads() -> list[tuple[str, str]]:
+def payloads(compress: bool = False) -> list[tuple[str, str]]:
     upload_path = S3Path(bucket="nexus", path="units")
 
     def _rand_range(limit: int) -> list[int]:
@@ -129,30 +130,7 @@ def payloads() -> list[tuple[str, str]]:
         for _ in range(10)
     ]
     return [
-        generate_payload_url(upload_path, payload, S3StorageClient.for_storage_path(upload_path.to_hdfs_path()))
-        for payload in generated
-    ]
-
-
-def compressed_payloads() -> list[tuple[str, str]]:
-    upload_path = S3Path(bucket="nexus", path="units")
-
-    def _rand_range(limit: int) -> list[int]:
-        return [random.randint(0, 10) for _ in range(limit)]
-
-    generated = [
-        TestAlgorithmPayload(
-            x=_rand_range(10), y=_rand_range(10), z=_rand_range(10), enum_value=random.choice(list(TestEnum))
-        )
-        for _ in range(10)
-    ]
-    return [
-        generate_payload_url(
-            base_path=upload_path,
-            payload_object=payload,
-            storage_client=S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
-            compress_payload=True,
-        )
+        generate_payload_url(upload_path, payload, S3StorageClient.for_storage_path(upload_path.to_hdfs_path()), compress_payload=compress)
         for payload in generated
     ]
 
