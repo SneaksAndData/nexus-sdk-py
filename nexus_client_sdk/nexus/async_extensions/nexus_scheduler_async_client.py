@@ -107,7 +107,7 @@ class NexusSchedulerAsyncClient:
                 request_id=request_id,
                 algorithm=algorithm,
                 poll_interval_seconds=poll_interval_seconds,
-                wait_timeout=wait_timeout_seconds,
+                wait_timeout_seconds=wait_timeout_seconds,
             ),
             f"Fatal error when awaiting request {algorithm}/{request_id}",
             method_alias="await_run",
