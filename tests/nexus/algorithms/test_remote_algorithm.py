@@ -53,7 +53,6 @@ payload = {
 }
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("inputs"),
     [
@@ -89,7 +88,7 @@ payload = {
         ),
     ],
 )
-def test__remote_algorithm__compress_remote_payload(inputs: TestInput):
+def test_remote_algorithm__compress_remote_payload(inputs: TestInput):
     """
     Asserts that the RemoteAlgorithm correctly compresses and decompresses the payload using the specified compression algorithm.
     This test verifies that the payload can be compressed and then decompressed back to its original form.
