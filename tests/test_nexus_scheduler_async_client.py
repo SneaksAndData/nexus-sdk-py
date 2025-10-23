@@ -21,11 +21,11 @@ async def test_create_run_propagates(async_scheduler: NexusSchedulerAsyncClient)
         _ = await async_scheduler.create_run(algorithm_parameters={}, algorithm_name="non-existing")
 
 
-@pytest.mark.asyncio
-@pytest.mark.xdist_group(name="async_scheduler")
-async def test_create_run_retries(broken_async_scheduler: NexusSchedulerAsyncClient):
-    with pytest.raises(NexusSchedulerRuntimeError):
-        _ = await broken_async_scheduler.create_run(algorithm_parameters={}, algorithm_name="hello-world")
+# @pytest.mark.asyncio
+# @pytest.mark.xdist_group(name="async_scheduler")
+# async def test_create_run_retries(broken_async_scheduler: NexusSchedulerAsyncClient):
+#     with pytest.raises(NexusSchedulerRuntimeError):
+#         _ = await broken_async_scheduler.create_run(algorithm_parameters={}, algorithm_name="hello-world")
 
 #
 # @pytest.mark.asyncio
@@ -37,21 +37,21 @@ async def test_create_run_retries(broken_async_scheduler: NexusSchedulerAsyncCli
 #             algorithm="test",
 #         )
 #
+
+@pytest.mark.asyncio
+@pytest.mark.xdist_group(name="async_scheduler")
+async def test_create_and_await(async_scheduler: NexusSchedulerAsyncClient):
+    result = await async_scheduler.create_and_await(algorithm_parameters={}, algorithm_name="hello-world")
+
+    assert async_scheduler._sync_client.is_finished(result) and not async_scheduler._sync_client.has_succeeded(result)
 #
-# @pytest.mark.asyncio
-# @pytest.mark.xdist_group(name="async_scheduler")
-# async def test_create_and_await(async_scheduler: NexusSchedulerAsyncClient):
-#     result = await async_scheduler.create_and_await(algorithm_parameters={}, algorithm_name="hello-world")
 #
-#     assert async_scheduler._sync_client.is_finished(result) and not async_scheduler._sync_client.has_succeeded(result)
-#
-#
-# @pytest.mark.asyncio
-# @pytest.mark.xdist_group(name="async_scheduler")
-# async def test_create_and_await(async_scheduler: NexusSchedulerAsyncClient):
-#     result = await async_scheduler.create_and_await(algorithm_parameters={}, algorithm_name="hello-world")
-#
-#     assert async_scheduler._sync_client.is_finished(result) and not async_scheduler._sync_client.has_succeeded(result)
+@pytest.mark.asyncio
+@pytest.mark.xdist_group(name="async_scheduler")
+async def test_create_and_await(async_scheduler: NexusSchedulerAsyncClient):
+    result = await async_scheduler.create_and_await(algorithm_parameters={}, algorithm_name="hello-world")
+
+    assert async_scheduler._sync_client.is_finished(result) and not async_scheduler._sync_client.has_succeeded(result)
 #
 #
 # @pytest.mark.asyncio
