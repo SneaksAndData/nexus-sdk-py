@@ -74,6 +74,8 @@ jobs:
           install_extras: all
 
       - name: Unit test
+        env:
+          NEXUS__SDK_LOG_LEVEL: INFO
         run: |
           set -euxo pipefail
           
