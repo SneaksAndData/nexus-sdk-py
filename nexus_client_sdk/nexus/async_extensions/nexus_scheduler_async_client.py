@@ -138,23 +138,23 @@ class NexusSchedulerAsyncClient:
         """
 
         def _create_and_await(**kwargs) -> RunResult | None:
-            run_id = self._sync_client.create_run(
-                algorithm_parameters=kwargs.get("algorithm_parameters"),
-                algorithm_name=kwargs.get("algorithm_name"),
-                custom_configuration=kwargs.get("custom_configuration"),
-                parent_request=kwargs.get("parent_request"),
-                payload_valid_for=kwargs.get("payload_valid_for"),
-                tag=kwargs.get("tag"),
-                dry_run=kwargs.get("dry_run"),
-            )
-
-            if "post_create_callback" in kwargs and kwargs["post_create_callback"] is not None:
-                kwargs.get("post_create_callback")(run_id)
+            # run_id = self._sync_client.create_run(
+            #     algorithm_parameters=kwargs.get("algorithm_parameters"),
+            #     algorithm_name=kwargs.get("algorithm_name"),
+            #     custom_configuration=kwargs.get("custom_configuration"),
+            #     parent_request=kwargs.get("parent_request"),
+            #     payload_valid_for=kwargs.get("payload_valid_for"),
+            #     tag=kwargs.get("tag"),
+            #     dry_run=kwargs.get("dry_run"),
+            # )
+            #
+            # if "post_create_callback" in kwargs and kwargs["post_create_callback"] is not None:
+            #     kwargs.get("post_create_callback")(run_id)
 
             result = self._sync_client.await_run(
-                request_id=run_id,
+                request_id="test",
                 algorithm=kwargs.get("algorithm_name"),
-                poll_interval_seconds=1,)
+                poll_interval_seconds=kwargs.get("poll_interval_seconds"),)
 
             if result.status == RequestLifeCycleStage.SCHEDULING_FAILED.value:
                 raise NexusSchedulingError()
