@@ -13,7 +13,7 @@ permissions:
 jobs:
   validate_commit_py311:
     name: Validate commit on Python 3.11
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
     if: ${{ github.ref != 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v5
@@ -65,8 +65,8 @@ jobs:
           
           cext_version=$(cat nexus_client_sdk/.extensions/cext_version)
           
-          curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_linux_arm64.tar.gz > nexus_sdk_linux_arm64.tar.gz
-          mkdir cext && tar -xvzf nexus_sdk_linux_arm64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_arm64.so nexus_client_sdk/.extensions/nexus_sdk.so   
+          curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_linux_amd64.tar.gz > nexus_sdk_linux_amd64.tar.gz
+          mkdir cext && tar -xvzf nexus_sdk_linux_amd64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_amd64.so nexus_client_sdk/.extensions/nexus_sdk.so   
 
       - name: Install Poetry and dependencies
         uses: SneaksAndData/github-actions/install_poetry@v0.1.11
