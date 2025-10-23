@@ -154,9 +154,7 @@ class NexusSchedulerAsyncClient:
             result = self._sync_client.await_run(
                 request_id=run_id,
                 algorithm=kwargs.get("algorithm_name"),
-                poll_interval_seconds=poll_interval_seconds,)
-
-            raise RuntimeError("test")
+                poll_interval_seconds=1,)
 
             if result.status == RequestLifeCycleStage.SCHEDULING_FAILED.value:
                 raise NexusSchedulingError()
