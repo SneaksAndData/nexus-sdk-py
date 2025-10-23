@@ -105,7 +105,7 @@ def broken_async_scheduler():
     logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
     logger.start()
     try:
-        yield NexusSchedulerAsyncClient("http://localhost:1234", logger, lambda: AccessToken.empty())
+        yield NexusSchedulerAsyncClient("http://non-existing:1234", logger, lambda: AccessToken.empty())
 
     finally:
         logger.stop()
