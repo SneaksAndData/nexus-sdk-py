@@ -148,17 +148,15 @@ class NexusSchedulerAsyncClient:
                 dry_run=kwargs.get("dry_run"),
             )
 
-            print(run_id)
-
-            raise RuntimeError("test")
-
-            # if "post_create_callback" in kwargs and kwargs["post_create_callback"] is not None:
-            #     kwargs.get("post_create_callback")(run_id)
+            if "post_create_callback" in kwargs and kwargs["post_create_callback"] is not None:
+                kwargs.get("post_create_callback")(run_id)
 
             result = self._sync_client.await_run(
                 request_id=run_id,
                 algorithm=kwargs.get("algorithm_name"),
                 poll_interval_seconds=poll_interval_seconds,)
+
+            raise RuntimeError("test")
 
             if result.status == RequestLifeCycleStage.SCHEDULING_FAILED.value:
                 raise NexusSchedulingError()
@@ -166,11 +164,11 @@ class NexusSchedulerAsyncClient:
             return result
 
 
-        # retry_policy_builder = self._retry_policy_builder.fork().with_error_types(NexusSchedulingError)
-        # if not propagate_error:
-        #     retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
+        retry_policy_builder = self._retry_policy_builder.fork().with_error_types(NexusSchedulingError)
+        if not propagate_error:
+            retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
 
-        return await self._retry_policy_builder.build().execute(partial(
+        return await retry_policy_builder.build().execute(partial(
                 _create_and_await,
                 algorithm_parameters=algorithm_parameters,
                 algorithm_name=algorithm_name,
