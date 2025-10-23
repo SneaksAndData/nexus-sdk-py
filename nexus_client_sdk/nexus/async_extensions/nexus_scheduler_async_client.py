@@ -1,4 +1,5 @@
 """Scheduler"""
+import time
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -147,6 +148,8 @@ class NexusSchedulerAsyncClient:
                 tag=kwargs.get("tag"),
                 dry_run=kwargs.get("dry_run"),
             )
+
+            time.sleep(poll_interval_seconds)
 
             if "post_create_callback" in kwargs and kwargs["post_create_callback"] is not None:
                 kwargs.get("post_create_callback")(run_id)
