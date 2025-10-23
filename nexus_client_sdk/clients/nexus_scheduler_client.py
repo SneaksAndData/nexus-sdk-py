@@ -201,11 +201,11 @@ class NexusSchedulerClient:
         :return:
         """
         self._init_client()
-        self._logger.info(
-            "Creating a new run for {algorithm_template_name} with tag '{client_runtime_tag}'",
-            algorithm_template_name=algorithm_name,
-            client_runtime_tag=tag or "tag not provided",
-        )
+        # self._logger.info(
+        #     "Creating a new run for {algorithm_template_name} with tag '{client_runtime_tag}'",
+        #     algorithm_template_name=algorithm_name,
+        #     client_runtime_tag=tag or "tag not provided",
+        # )
         maybe_result = self._create_run(
             bytes(algorithm_name, encoding="utf-8"),
             bytes(json.dumps(algorithm_parameters), encoding="utf-8"),
@@ -238,11 +238,11 @@ class NexusSchedulerClient:
         :return:
         """
         self._init_client()
-        self._logger.info(
-            "Awaiting run for {algorithm_template_name}/{request_identifier}",
-            algorithm_template_name=algorithm,
-            request_identifier=request_id,
-        )
+        # self._logger.info(
+        #     "Awaiting run for {algorithm_template_name}/{request_identifier}",
+        #     algorithm_template_name=algorithm,
+        #     request_identifier=request_id,
+        # )
         maybe_result = self._await_run(
             bytes(request_id, encoding="utf-8"),
             bytes(algorithm, encoding="utf-8"),
