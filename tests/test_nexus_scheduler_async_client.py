@@ -39,6 +39,7 @@ async def test_await_run_retries(broken_async_scheduler: NexusSchedulerAsyncClie
 
 
 @pytest.mark.asyncio(loop_scope="package")
+@pytest.mark.timeout(30)
 @pytest.mark.xdist_group(name="async_scheduler")
 async def test_create_and_await(async_scheduler: NexusSchedulerAsyncClient):
     result = await async_scheduler.create_and_await(algorithm_parameters={}, algorithm_name="hello-world")
