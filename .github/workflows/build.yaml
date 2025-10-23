@@ -13,8 +13,7 @@ permissions:
 jobs:
   validate_commit_py311:
     name: Validate commit on Python 3.11
-    runs-on:
-      labels: ubuntu-latest-32-cores
+    runs-on: ubuntu-latest
     if: ${{ github.ref != 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v5
