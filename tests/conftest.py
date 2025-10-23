@@ -2,6 +2,7 @@ import json
 import os
 import random
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
 from logging import StreamHandler
@@ -99,13 +100,15 @@ def async_scheduler():
     logger.stop()
 
 
-@pytest.fixture
+@contextmanager
 def broken_async_scheduler():
     logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
     logger.start()
-    yield NexusSchedulerAsyncClient("http://localhost:1234", logger, lambda: AccessToken.empty())
+    try:
+        yield NexusSchedulerAsyncClient("http://localhost:1234", logger, lambda: AccessToken.empty())
 
-    logger.stop()
+    finally:
+        logger.stop()
 
 
 @pytest.fixture

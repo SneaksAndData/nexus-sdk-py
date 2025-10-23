@@ -173,9 +173,9 @@ class NexusSchedulerAsyncRetryPolicy:
                 return None
 
             try:
-                # self._logger.debug(
-                #     "Executing {method}, attempt #{try_number}", method=method_alias, try_number=try_number
-                # )
+                self._logger.debug(
+                    "Executing {method}, attempt #{try_number}", method=method_alias, try_number=try_number
+                )
                 # either run or materialize coroutine
                 result = runnable()
 
