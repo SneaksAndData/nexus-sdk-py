@@ -161,23 +161,38 @@ class NexusSchedulerAsyncClient:
         :return:
         """
 
-        # retry_policy_builder = self._retry_policy_builder.fork().with_error_types(NexusSchedulingError)
-        # if not propagate_error:
-        #     retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
+        retry_policy_builder = self._retry_policy_builder.fork().with_error_types(NexusSchedulingError)
+        if not propagate_error:
+            retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
 
-        return await self._retry_policy_builder.build().execute(
-            lambda: partial(  # pylint: disable=unnecessary-lambda
-                self._create_and_await,
+        await retry_policy_builder.build().execute(
+            partial(
+                self._sync_client.create_run,
                 algorithm_parameters=algorithm_parameters,
                 algorithm_name=algorithm_name,
                 custom_configuration=custom_configuration,
                 parent_request=parent_request,
                 payload_valid_for=payload_valid_for,
-                poll_interval_seconds=poll_interval_seconds,
                 tag=tag,
                 dry_run=dry_run,
-                post_create_callback=post_create_callback,
-            )(),
-            "Fatal error when creating/awaiting a run",
-            method_alias="create_and_await",
+            ),
+            f"Fatal error when creating a run for template {algorithm_name}",
+            method_alias="create_run",
         )
+
+        # return await self._retry_policy_builder.build().execute(
+        #     lambda: partial(  # pylint: disable=unnecessary-lambda
+        #         self._create_and_await,
+        #         algorithm_parameters=algorithm_parameters,
+        #         algorithm_name=algorithm_name,
+        #         custom_configuration=custom_configuration,
+        #         parent_request=parent_request,
+        #         payload_valid_for=payload_valid_for,
+        #         poll_interval_seconds=poll_interval_seconds,
+        #         tag=tag,
+        #         dry_run=dry_run,
+        #         post_create_callback=post_create_callback,
+        #     )(),
+        #     "Fatal error when creating/awaiting a run",
+        #     method_alias="create_and_await",
+        # )
