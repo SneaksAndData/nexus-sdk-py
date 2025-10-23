@@ -14,7 +14,7 @@
 #  limitations under the License.
 #
 
-from typing import final, Any, Coroutine
+from typing import final, Any
 from collections.abc import Callable
 from functools import partial
 
