@@ -81,15 +81,6 @@ jobs:
           
           poetry run pytest -n auto --dist loadgroup --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=term-missing:skip-covered | tee pytest-coverage.txt
 
-      - name: Get Nexus Job/Pod Data
-        if: always()
-        run: |
-          kubectl get jobs -n nexus --context kind-nexus-shard-0 && kubectl get pods -n nexus --context kind-nexus-shard-0 && kubectl logs -n nexus --context kind-nexus-shard-0 -l science.sneaksanddata.com/algorithm-template-name=hello-world
-
-      - name: Get Compose Logs (2)
-        if: always()
-        run: docker compose logs
-
       - name: Publish Code Coverage
         uses: MishaKav/pytest-coverage-comment@main
         with:
