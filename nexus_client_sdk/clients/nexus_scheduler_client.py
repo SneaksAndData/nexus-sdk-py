@@ -229,7 +229,9 @@ class NexusSchedulerClient:
             case _:
                 raise converted.error()
 
-    def await_run(self, request_id: str, algorithm: str, poll_interval_seconds: int=5, wait_timeout_seconds: int | None = None) -> RunResult:
+    def await_run(
+        self, request_id: str, algorithm: str, poll_interval_seconds: int = 5, wait_timeout_seconds: int | None = None
+    ) -> RunResult:
         """
           Awaits result for a given run for a given algorithm.
         :param request_id: Run request ID.
@@ -278,7 +280,7 @@ class NexusSchedulerClient:
                     bytes(algorithm, encoding="utf-8") if algorithm else None,
                     ctypes.c_int32(poll_interval_seconds),
                     None if not report_progress else progress_counter,
-                    None
+                    None,
                 )
             )
 

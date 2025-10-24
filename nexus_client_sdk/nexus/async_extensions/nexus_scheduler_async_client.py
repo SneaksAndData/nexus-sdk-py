@@ -1,5 +1,6 @@
 """Scheduler"""
 import time
+
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -91,7 +92,9 @@ class NexusSchedulerAsyncClient:
             method_alias="create_run",
         )
 
-    async def await_run(self, request_id: str, algorithm: str, poll_interval_seconds: int = 5, wait_timeout_seconds: int | None = None) -> RunResult:
+    async def await_run(
+        self, request_id: str, algorithm: str, poll_interval_seconds: int = 5, wait_timeout_seconds: int | None = None
+    ) -> RunResult:
         """
         Awaits result for a given run for a given algorithm.
         :param request_id: Run request ID.
