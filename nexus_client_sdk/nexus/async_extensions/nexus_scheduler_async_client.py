@@ -1,6 +1,4 @@
 """Scheduler"""
-import asyncio
-import random
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
@@ -19,8 +17,10 @@ import random
 
 from typing import final, Any
 from collections.abc import Callable
+from functools import partial
 
 from adapta.logs import LoggerInterface
+
 
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.access_token import AccessToken
@@ -30,21 +30,10 @@ from nexus_client_sdk.models.scheduler import (
     RunResult,
     RequestLifeCycleStage,
 )
-from nexus_client_sdk.nexus.exceptions import FatalNexusError
-
-
-@final
-class NexusSchedulerRuntimeError(FatalNexusError):
-    """
-    Fatal error to be thrown from the scheduler client, to prevent Nexus apps from retrying.
-    """
-
-    def __init__(self, algorithm_name: str) -> None:
-        super().__init__()
-        self._algorithm_name = algorithm_name
-
-    def __str__(self) -> str:
-        return f"Nexus client failed to create and execute a run for algorithm template {self._algorithm_name}"
+from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
+    NexusSchedulingError,
+    NexusAsyncRetryPolicyBuilder,
+)
 
 
 @final
@@ -60,6 +49,7 @@ class NexusSchedulerAsyncClient:
         token_provider: Callable[[], AccessToken] | None = None,
     ):
         self._sync_client = NexusSchedulerClient(url=url, logger=logger, token_provider=token_provider)
+        self._retry_policy_builder = NexusAsyncRetryPolicyBuilder(logger=logger)
 
     def __del__(self):
         self._sync_client.__del__()
@@ -85,28 +75,44 @@ class NexusSchedulerAsyncClient:
         :param dry_run: If True, will buffer but skip creating an actual algorithm job.
         :return:
         """
-        return self._sync_client.create_run(
-            algorithm_parameters=algorithm_parameters,
-            algorithm_name=algorithm_name,
-            custom_configuration=custom_configuration,
-            parent_request=parent_request,
-            payload_valid_for=payload_valid_for,
-            tag=tag,
-            dry_run=dry_run,
+
+        return await self._retry_policy_builder.build().execute(
+            partial(
+                self._sync_client.create_run,
+                algorithm_parameters=algorithm_parameters,
+                algorithm_name=algorithm_name,
+                custom_configuration=custom_configuration,
+                parent_request=parent_request,
+                payload_valid_for=payload_valid_for,
+                tag=tag,
+                dry_run=dry_run,
+            ),
+            f"Fatal error when creating a run for template {algorithm_name}",
+            method_alias="create_run",
         )
 
-    async def await_run(self, request_id: str, algorithm: str, poll_interval_seconds: int = 5) -> RunResult:
+    async def await_run(
+        self, request_id: str, algorithm: str, poll_interval_seconds: int = 5, wait_timeout_seconds: int = 0
+    ) -> RunResult:
         """
         Awaits result for a given run for a given algorithm.
         :param request_id: Run request ID.
         :param algorithm: Algorithm name.
         :param poll_interval_seconds: Time between status checks
+        :param wait_timeout_seconds: Optional timeout for the wait, 0 stands for no timeout. Can wait infinite time if not provided and submission status is never updated.
         :return:
         """
-        return self._sync_client.await_run(
-            request_id=request_id,
-            algorithm=algorithm,
-            poll_interval_seconds=poll_interval_seconds,
+
+        return await self._retry_policy_builder.build().execute(
+            partial(
+                self._sync_client.await_run,
+                request_id=request_id,
+                algorithm=algorithm,
+                poll_interval_seconds=poll_interval_seconds,
+                wait_timeout_seconds=wait_timeout_seconds,
+            ),
+            f"Fatal error when awaiting request {algorithm}/{request_id}",
+            method_alias="await_run",
         )
 
     async def create_and_await(
@@ -118,9 +124,9 @@ class NexusSchedulerAsyncClient:
         tag: str | None = None,
         payload_valid_for: str = "24h",
         dry_run: bool = False,
-        retries: int = 3,
-        retry_base_delay_ms: int = 1000,
-        raise_on_retries_exceeded: bool = True,
+        poll_interval_seconds: int = 5,
+        propagate_error: bool = True,
+        post_create_callback: Callable[[str], Any] | None = None,
     ) -> RunResult | None:
         """
         Creates a new run for a given algorithm, and then awaits result for it. Can re-schedule in case a SCHEDULING_FAILURE occurs.
@@ -132,41 +138,54 @@ class NexusSchedulerAsyncClient:
         :param tag: Client side assigned run tag.
         :param payload_valid_for: Payload pre-signed URL validity period.
         :param dry_run: If True, will buffer but skip creating an actual algorithm job.
-        :param retries: Number of times to re-schedule, if the submission fails with SCHEDULING_FAILED
-        :param retry_base_delay_ms: Minimum delay between retries.
-        :param raise_on_retries_exceeded: Raise NexusSchedulerRuntimeError if retries were exceeded.
+        :param poll_interval_seconds: Time between status checks
+        :param propagate_error: If True, error in this method will be propagated to the caller. If False, will return an empty value.
+        :param post_create_callback: Optional callback function that will be called after a run is successfully created.
         :return:
         """
 
-        async def _execute_run(try_number: int) -> RunResult | None:
-            run_id = await self.create_run(
+        def _create_and_await(**kwargs) -> RunResult | None:
+            run_id = self._sync_client.create_run(
+                algorithm_parameters=kwargs["algorithm_parameters"],
+                algorithm_name=kwargs["algorithm_name"],
+                custom_configuration=kwargs["custom_configuration"],
+                parent_request=kwargs["parent_request"],
+                payload_valid_for=kwargs["payload_valid_for"],
+                tag=kwargs["tag"],
+                dry_run=kwargs["dry_run"],
+            )
+
+            if "post_create_callback" in kwargs and kwargs["post_create_callback"] is not None:
+                kwargs["post_create_callback"](run_id)
+
+            result = self._sync_client.await_run(
+                request_id=run_id,
+                algorithm=kwargs["algorithm_name"],
+                poll_interval_seconds=kwargs["poll_interval_seconds"],
+            )
+
+            if result.status == RequestLifeCycleStage.SCHEDULING_FAILED.value:
+                raise NexusSchedulingError()
+
+            return result
+
+        retry_policy_builder = self._retry_policy_builder.fork().with_error_types(NexusSchedulingError)
+        if not propagate_error:
+            retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
+
+        return await retry_policy_builder.build().execute(
+            partial(
+                _create_and_await,
                 algorithm_parameters=algorithm_parameters,
                 algorithm_name=algorithm_name,
                 custom_configuration=custom_configuration,
                 parent_request=parent_request,
                 payload_valid_for=payload_valid_for,
+                poll_interval_seconds=poll_interval_seconds,
                 tag=tag,
                 dry_run=dry_run,
-            )
-
-            result = await self.await_run(request_id=run_id, algorithm=algorithm_name)
-            if result.status == RequestLifeCycleStage.SCHEDULING_FAILED and retries > 0:
-                if try_number >= retries:  # first + 3 more
-                    if raise_on_retries_exceeded:
-                        raise NexusSchedulerRuntimeError(algorithm_name=algorithm_name)
-
-                    return None
-
-                delay = retry_base_delay_ms / 1000 + (random.random() * retry_base_delay_ms) / 1000
-                self._sync_client.logger.info(
-                    "Attempt {try_number} failed to schedule. Retrying in {try_delay} seconds",
-                    try_number=try_number,
-                    try_delay=int(delay),
-                )
-
-                await asyncio.sleep(delay)
-                return await _execute_run(try_number + 1)
-
-            return result
-
-        return await _execute_run(0)
+                post_create_callback=post_create_callback,
+            ),
+            "Fatal error when creating/awaiting a run",
+            method_alias="create_and_await",
+        )

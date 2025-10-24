@@ -31,6 +31,15 @@ scylla-driver = "^3"
 [tool.black]
 line-length = 120
 
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+asyncio_mode = "auto"
+asyncio_debug = "false"
+testpaths = [
+    "tests"
+]
+
 [tool.coverage.report]
 exclude_also = [
     # Don't complain about missing debug-only code:

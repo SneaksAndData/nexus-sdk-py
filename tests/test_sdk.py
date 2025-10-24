@@ -11,7 +11,7 @@ from cassandra.cluster import Session
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.scheduler import RequestLifeCycleStage
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
-from tests.conftest import payloads, negative_z_payload, compressed_payloads
+from tests.conftest import payloads, negative_z_payload
 from tests.sample_algorithm.sample_main import main as sample_algorithm_main, NegativeZError
 
 os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
@@ -25,7 +25,7 @@ test_cases = [
 
 compressed_test_cases = [
     NexusDefaultArguments(sas_uri=payload_url, request_id=request_id)
-    for payload_url, request_id in compressed_payloads()
+    for payload_url, request_id in payloads(compress=True)
 ]
 
 runtime_config_stub = (

@@ -2,6 +2,7 @@ import json
 import os
 import random
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
 from logging import StreamHandler
@@ -15,6 +16,7 @@ from dataclasses_json import DataClassJsonMixin
 
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.access_token import AccessToken
+from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.configurations.algorithm_configuration import NexusConfiguration
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 from nexus_client_sdk.testing import generate_payload_url
@@ -80,7 +82,7 @@ def run_configuration():
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def scheduler():
     logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
     logger.start()
@@ -89,33 +91,36 @@ def scheduler():
     logger.stop()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
+def async_scheduler():
+    logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
+    logger.start()
+    yield NexusSchedulerAsyncClient("http://localhost:8080", logger, lambda: AccessToken.empty())
+
+    logger.stop()
+
+
+@contextmanager
+def broken_async_scheduler():
+    logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
+    logger.start()
+    try:
+        yield NexusSchedulerAsyncClient("http://non-existing:1234", logger, lambda: AccessToken.empty())
+
+    finally:
+        logger.stop()
+
+
+@pytest.fixture
 def cql_session():
     cluster = Cluster()
     session = cluster.connect("nexus")
     yield session
     session.shutdown()
+    cluster.shutdown()
 
 
-def payloads() -> list[tuple[str, str]]:
-    upload_path = S3Path(bucket="nexus", path="units")
-
-    def _rand_range(limit: int) -> list[int]:
-        return [random.randint(0, 10) for _ in range(limit)]
-
-    generated = [
-        TestAlgorithmPayload(
-            x=_rand_range(10), y=_rand_range(10), z=_rand_range(10), enum_value=random.choice(list(TestEnum))
-        )
-        for _ in range(10)
-    ]
-    return [
-        generate_payload_url(upload_path, payload, S3StorageClient.for_storage_path(upload_path.to_hdfs_path()))
-        for payload in generated
-    ]
-
-
-def compressed_payloads() -> list[tuple[str, str]]:
+def payloads(compress: bool = False) -> list[tuple[str, str]]:
     upload_path = S3Path(bucket="nexus", path="units")
 
     def _rand_range(limit: int) -> list[int]:
@@ -129,10 +134,10 @@ def compressed_payloads() -> list[tuple[str, str]]:
     ]
     return [
         generate_payload_url(
-            base_path=upload_path,
-            payload_object=payload,
-            storage_client=S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
-            compress_payload=True,
+            upload_path,
+            payload,
+            S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
+            compress_payload=compress,
         )
         for payload in generated
     ]
