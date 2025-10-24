@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from cassandra.cluster import Session
 
 from nexus_client_sdk.models.client_errors.go_http_errors import BadRequestError
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
