@@ -92,14 +92,14 @@ class NexusSchedulerAsyncClient:
         )
 
     async def await_run(
-        self, request_id: str, algorithm: str, poll_interval_seconds: int = 5, wait_timeout_seconds: int | None = None
+        self, request_id: str, algorithm: str, poll_interval_seconds: int = 5, wait_timeout_seconds: int = 0
     ) -> RunResult:
         """
         Awaits result for a given run for a given algorithm.
         :param request_id: Run request ID.
         :param algorithm: Algorithm name.
         :param poll_interval_seconds: Time between status checks
-        :param wait_timeout_seconds: Optional timeout for the wait. Can wait infinite time if not provided and submission status is never updated.
+        :param wait_timeout_seconds: Optional timeout for the wait, 0 stands for no timeout. Can wait infinite time if not provided and submission status is never updated.
         :return:
         """
 
