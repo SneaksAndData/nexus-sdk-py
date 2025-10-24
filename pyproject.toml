@@ -15,6 +15,7 @@ include = [
 python = ">=3.11, <3.13"
 adapta = { version = "^3.5.7", extras = ["aws", "storage", "datadog"] }
 injector = "^0.22.0"
+dynaconf = "^3.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8"

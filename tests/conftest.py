@@ -48,7 +48,6 @@ class TestAlgorithmPayload(AlgorithmPayload, DataClassJsonMixin):
 
 @pytest.fixture(scope="session", autouse=True)
 def run_configuration():
-    os.environ["IS_LOCAL_RUN"] = "1"
     os.environ["NEXUS__LOG_LEVEL"] = "INFO"
     os.environ["NEXUS__RECEIVER_URL"] = "http://localhost:8081"
     os.environ["NEXUS__SCHEDULER_URL"] = "http://localhost:8080"
@@ -69,7 +68,6 @@ def run_configuration():
             {"alias": "localfile", "data_path": "local+file:///tmp/file.json", "data_format": "text"},
         ]
     )
-    os.environ["ALGORITHM_STORAGE_TYPE"] = "S3"
     os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
     os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
     os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"] = "minioadmin"
