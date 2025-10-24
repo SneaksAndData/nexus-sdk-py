@@ -6,6 +6,19 @@ SDK is tested against a Nexus stack in a `docker-compose` deployment, backed by 
 
 ## Quickstart
 
+Install CGO library from [Go SDK](https://github.com/SneaksAndData/nexus-sdk-go) by running:
+```shell
+chmod +x ./sdk-installer.sh
+./sdk-installer.sh
+```
+
+In case you are testing changes for Go SDK, clone branch you are testing and compile the `.so` file from source:
+```shell
+go build -v -buildmode=c-shared -o nexus_sdk.so main.go
+```
+
+Afterwards, copy the `nexus_sdk.so` under `nexus_client_sdk/.extensions/nexus_sdk.so`. 
+
 Initialize a client and retrieve results for a tagged submission:
 
 ```python
