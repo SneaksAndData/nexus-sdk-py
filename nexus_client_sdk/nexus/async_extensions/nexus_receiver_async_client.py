@@ -1,4 +1,5 @@
 """Receiver"""
+from functools import partial
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
@@ -23,6 +24,7 @@ from adapta.logs import LoggerInterface
 from nexus_client_sdk.clients.nexus_receiver_client import NexusReceiverClient
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
+from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import NexusAsyncRetryPolicyBuilder
 
 
 @final
@@ -38,6 +40,7 @@ class NexusReceiverAsyncClient:
         token_provider: Callable[[], AccessToken] | None = None,
     ):
         self._sync_client = NexusReceiverClient(url=url, logger=logger, token_provider=token_provider)
+        self._retry_policy_builder = NexusAsyncRetryPolicyBuilder(logger=logger)
 
     def __del__(self):
         self._sync_client.__del__()
@@ -50,4 +53,8 @@ class NexusReceiverAsyncClient:
         :param request_id: Run request identifier
         :return:
         """
-        return self._sync_client.complete_run(result=result, algorithm=algorithm, request_id=request_id)
+        return await self._retry_policy_builder.build().execute(
+            partial(self._sync_client.complete_run, result=result, algorithm=algorithm, request_id=request_id),
+            on_retry_exhaust_message=f"Fatal error when submitting result {algorithm}/{request_id}",
+            method_alias="complete_run",
+        )
