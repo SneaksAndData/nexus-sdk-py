@@ -16,7 +16,7 @@ from functools import partial
 #  limitations under the License.
 #
 
-from typing import final
+from typing import final, Any
 from collections.abc import Callable
 
 from adapta.logs import LoggerInterface
@@ -55,12 +55,19 @@ class NexusReceiverAsyncClient:
     def __del__(self):
         self._sync_client.__del__()
 
-    async def complete_run(self, result: SdkCompletedRunResult, algorithm: str, request_id: str):
+    async def complete_run(
+        self,
+        result: SdkCompletedRunResult,
+        algorithm: str,
+        request_id: str,
+        on_complete_callback: Callable[[], Any] | None = None,
+    ):
         """
          Async wrapper for NexusReceiverClient.complete_run.
         :param result: Run result metadata
         :param algorithm: Algorithm name
         :param request_id: Run request identifier
+        :param on_complete_callback: Callback function to execute before checking the run
         :return:
         """
 
@@ -79,11 +86,14 @@ class NexusReceiverAsyncClient:
             method_alias="complete_run",
         )
 
+        if on_complete_callback is not None:
+            on_complete_callback()
+
         ack_await_policy = (
             self._retry_policy_builder.fork()
             .with_error_types(NexusReceiverResultNotCommittedError)
             .with_retries(10)
-            .with_retry_base_delay_ms(2)
+            .with_retry_base_delay_ms(2000)
             .with_retry_exhaust_error_type(NexusClientRuntimeError)
         )
 
