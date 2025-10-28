@@ -5,7 +5,7 @@ from cassandra.cluster import Session
 
 from nexus_client_sdk.models.client_errors.go_http_errors import BadRequestError
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
-    NexusSchedulerRuntimeError,
+    NexusClientRuntimeError,
 )
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from tests.conftest import broken_async_scheduler
@@ -24,14 +24,14 @@ async def test_create_run_propagates(async_scheduler: NexusSchedulerAsyncClient)
 @pytest.mark.asyncio
 async def test_create_run_retries():
     with broken_async_scheduler() as scheduler:
-        with pytest.raises(NexusSchedulerRuntimeError):
+        with pytest.raises(NexusClientRuntimeError):
             _ = await scheduler.create_run(algorithm_parameters={}, algorithm_name="hello-world")
 
 
 @pytest.mark.asyncio
 async def test_await_run_retries():
     with broken_async_scheduler() as scheduler:
-        with pytest.raises(NexusSchedulerRuntimeError):
+        with pytest.raises(NexusClientRuntimeError):
             _ = await scheduler.await_run(
                 request_id="test",
                 algorithm="test",
@@ -57,7 +57,7 @@ async def test_create_and_await(async_scheduler: NexusSchedulerAsyncClient):
 @pytest.mark.parametrize("propagate", [True, False])
 async def test_custom_error(propagate: bool, async_scheduler: NexusSchedulerAsyncClient, cql_session: Session):
     if propagate:
-        with pytest.raises(NexusSchedulerRuntimeError):
+        with pytest.raises(NexusClientRuntimeError):
             _ = await async_scheduler.create_and_await(
                 algorithm_parameters={},
                 algorithm_name="hello-world",
