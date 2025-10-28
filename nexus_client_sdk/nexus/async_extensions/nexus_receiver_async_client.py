@@ -87,7 +87,7 @@ class NexusReceiverAsyncClient:
             .with_retry_exhaust_error_type(NexusClientRuntimeError)
         )
 
-        return ack_await_policy.build().execute(
+        return await ack_await_policy.build().execute(
             partial(_check_run, algorithm=algorithm, request_id=request_id),
             on_retry_exhaust_message=f"Result for the run {algorithm}/{request_id} was not processed by the receiver within the expected time frame",
             method_alias="complete_run",
