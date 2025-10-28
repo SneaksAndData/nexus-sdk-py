@@ -28,7 +28,6 @@ from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy impo
     NexusAsyncRetryPolicyBuilder,
     NexusClientRuntimeError,
 )
-from nexus_client_sdk.nexus.exceptions import FatalNexusError
 
 
 @final
