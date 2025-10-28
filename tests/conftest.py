@@ -16,6 +16,7 @@ from dataclasses_json import DataClassJsonMixin
 
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.access_token import AccessToken
+from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.configurations.algorithm_configuration import NexusConfiguration
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
@@ -96,6 +97,15 @@ def async_scheduler():
     logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
     logger.start()
     yield NexusSchedulerAsyncClient("http://localhost:8080", logger, lambda: AccessToken.empty())
+
+    logger.stop()
+
+
+@pytest.fixture
+def async_receiver():
+    logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
+    logger.start()
+    yield NexusReceiverAsyncClient("http://localhost:8081", logger, lambda: AccessToken.empty())
 
     logger.stop()
 
