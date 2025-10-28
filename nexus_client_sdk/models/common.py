@@ -72,3 +72,19 @@ class SdkErrorResponse(ctypes.Structure):
 
     def __del__(self):
         CLIB.FreeErrorResponse(self)
+
+
+@final
+class SdkBoolResult(ctypes.Structure):
+    """
+    Error response Golang-side struct.
+    """
+
+    _fields_ = [
+        ("result", ctypes.c_int32),
+        ("client_error_type", ctypes.c_char_p),
+        ("client_error_message", ctypes.c_char_p),
+    ]
+
+    def __del__(self):
+        CLIB.FreeBoolResult(self)
