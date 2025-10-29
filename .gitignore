@@ -134,4 +134,4 @@ test-resources/kubecfg/
 .helm/charts/
 
 # Ignore dynaconf secret files
-nexus_client_sdk/nexus/.secrets.toml
+tests/.secrets.toml

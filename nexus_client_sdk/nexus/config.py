@@ -1,5 +1,7 @@
 """Framework configuration"""
-from dynaconf import Dynaconf
+import pathlib
+
+from dynaconf import Dynaconf, Validator
 
 NEXUS_CONFIGURATION = Dynaconf(
     envvar_prefix="NEXUS_",
@@ -8,10 +10,13 @@ NEXUS_CONFIGURATION = Dynaconf(
     apply_default_on_none=False,
     auto_cast=True,
     commentjson_enabled=False,
-    core_loaders=["YAML"],
-    default_env="local",
+    core_loaders=["TOML"],
     encoding="utf-8",
+    validators=[
+      Validator("ALGORITHM_NAME", required=True),
+      Validator("LOGGING.LOG_LEVEL", required=True),
+    ],
 )
 
-# `envvar_prefix` = export envvars with `export DYNACONF_FOO=bar`.
+# `envvar_prefix` = export envvars with `export NEXUS__FOO=bar`.
 # `settings_files` = Load these files in the order.

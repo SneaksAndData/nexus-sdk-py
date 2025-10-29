@@ -1,11 +1,13 @@
-[algorithm]
 # Name of this algorithm in the Nexus deployment
-name = "hello-world"
+algorithm_name = "hello-world"
 
+# Nexus client configuration
+[client]
+# Nexus Receiver address
+receiver = "http://localhost:8081"
 
-[nexus_client]
-receiver_url = "http://localhost:8081"
-scheduler_url = "http://localhost:8080"
+# Nexus Scheduler address
+scheduler = "http://localhost:8080"
 
 [result]
 # Storage client to use when saving serialized result and generating pre-signed URL for it
@@ -40,6 +42,9 @@ fixed_template_delimiter = ""
 
 # framework log level
 log_level = "INFO"
+
+# log level for Go SDK methods. Disabled by default.
+cgo_log_level = "DISABLED"
 
 [logging.datadog]
 logger_configuration = "{'buffer_size': 1}"

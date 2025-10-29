@@ -29,6 +29,8 @@ from adapta.logs.handlers.datadog_api_handler import DataDogApiHandler
 from adapta.logs.handlers.safe_stream_handler import SafeStreamHandler
 from adapta.logs.models import LogLevel
 
+from nexus_client_sdk.nexus.config import NEXUS_CONFIGURATION
+
 TLogger = TypeVar("TLogger")
 
 
@@ -60,7 +62,7 @@ class BootstrapLoggerFactory:
         return create_async_logger(
             logger_type=BootstrapLogger.__class__,
             log_handlers=self._log_handlers,
-            min_log_level=LogLevel(os.getenv("NEXUS__LOG_LEVEL", "INFO")),
+            min_log_level=LogLevel(NEXUS_CONFIGURATION.logging.log_level),
             global_tags={
                 "request_id": request_id,
                 "algorithm": algorithm_name,
@@ -104,7 +106,7 @@ class LoggerFactory:
         return create_async_logger(
             logger_type=logger_type,
             log_handlers=self._log_handlers,
-            min_log_level=LogLevel(os.getenv("NEXUS__LOG_LEVEL", "INFO")),
+            min_log_level=LogLevel(NEXUS_CONFIGURATION.logging.log_level),
             fixed_template=self._fixed_template,
             fixed_template_delimiter=self._fixed_template_delimiter,
             global_tags=self._global_tags,

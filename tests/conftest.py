@@ -1,5 +1,6 @@
 import json
 import os
+import pathlib
 import random
 import sys
 from contextlib import contextmanager
@@ -49,7 +50,7 @@ class TestAlgorithmPayload(AlgorithmPayload, DataClassJsonMixin):
 
 @pytest.fixture(scope="session", autouse=True)
 def run_configuration():
-    os.environ["NEXUS__LOG_LEVEL"] = "INFO"
+    os.environ["ROOT_PATH_FOR_DYNACONF"] = str(pathlib.Path(__file__).parent.resolve())
     os.environ["NEXUS__RECEIVER_URL"] = "http://localhost:8081"
     os.environ["NEXUS__SCHEDULER_URL"] = "http://localhost:8080"
     os.environ["NEXUS__METRICS_PROVIDER_CLASS"] = "adapta.metrics.providers.datadog_provider.DatadogMetricsProvider"
@@ -126,7 +127,6 @@ def cql_session():
     yield session
     session.shutdown()
     cluster.shutdown()
-
 
 def payloads(compress: bool = False) -> list[tuple[str, str]]:
     upload_path = S3Path(bucket="nexus", path="units")

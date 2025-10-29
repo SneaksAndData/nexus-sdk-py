@@ -50,6 +50,7 @@ from nexus_client_sdk.nexus.algorithms import (
 )
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
+from nexus_client_sdk.nexus.config import NEXUS_CONFIGURATION
 from nexus_client_sdk.nexus.configurations.algorithm_configuration import (
     NexusConfiguration,
 )
@@ -318,20 +319,20 @@ class Nexus:
                         result_uri=save_result(result),
                         error=None,
                     ),
-                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    algorithm=NEXUS_CONFIGURATION.algorithm_name,
                     request_id=self._run_args.request_id,
                 )
                 metrics_provider.increment("successful_runs")
                 root_logger.info(
                     "Algorithm {algorithm} run completed on Nexus version {version}",
-                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    algorithm=NEXUS_CONFIGURATION.algorithm_name,
                     version=__version__,
                 )
             case True:
                 root_logger.warning(
                     "Algorithm {algorithm} run transiently failed on Nexus version {version}",
                     ex,
-                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    algorithm=NEXUS_CONFIGURATION.algorithm_name,
                     version=__version__,
                 )
                 sys.exit(1)
@@ -341,13 +342,13 @@ class Nexus:
                         result_uri=None,
                         error=ex,
                     ),
-                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    algorithm=NEXUS_CONFIGURATION.algorithm_name,
                     request_id=self._run_args.request_id,
                 )
                 root_logger.error(
                     "Algorithm {algorithm} run failed on Nexus version {version}",
                     ex,
-                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    algorithm=NEXUS_CONFIGURATION.algorithm_name,
                     version=__version__,
                 )
                 metrics_provider.increment("failed_runs")
@@ -369,7 +370,7 @@ class Nexus:
                 result_uri=None,
                 error=error,
             ),
-            algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+            algorithm=NEXUS_CONFIGURATION.algorithm_name,
             request_id=self._run_args.request_id,
         )
 
@@ -468,7 +469,7 @@ class Nexus:
 
         bootstrap_logger: LoggerInterface = self._injector.get(BootstrapLoggerFactory).create_logger(
             request_id=self._run_args.request_id,
-            algorithm_name=os.getenv("NEXUS__ALGORITHM_NAME"),
+            algorithm_name=NEXUS_CONFIGURATION.algorithm_name,
         )
 
         bootstrap_logger.start()

@@ -23,6 +23,7 @@ from typing import final
 from adapta.storage.distributed_object_store.v3.datastax_astra import AstraClient
 from injector import Module, singleton, provider
 
+from nexus_client_sdk.nexus.config import NEXUS_CONFIGURATION
 from nexus_client_sdk.nexus.exceptions.startup_error import (
     FatalStartupConfigurationError,
 )
@@ -51,7 +52,7 @@ class AstraClientModule(Module):
 
         if all(map(lambda v: v in os.environ, required_env_vars)):
             return AstraClient(
-                client_name=os.getenv("NEXUS__ALGORITHM_NAME"),
+                client_name=NEXUS_CONFIGURATION.algorithm_name,
                 keyspace=os.getenv("NEXUS__ASTRA_KEYSPACE"),
                 secure_connect_bundle_bytes=os.getenv("NEXUS__ASTRA_BUNDLE_BYTES"),
                 client_id=os.getenv("NEXUS__ASTRA_CLIENT_ID"),
