@@ -5,10 +5,10 @@ import sys
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from logging import StreamHandler
 
 import pytest
 from adapta.logs import create_async_logger
+from adapta.logs.handlers.safe_stream_handler import SafeStreamHandler
 from adapta.storage.blob.s3_storage_client import S3StorageClient
 from adapta.storage.models import S3Path
 from cassandra.cluster import Cluster
@@ -85,7 +85,7 @@ def run_configuration():
 
 @pytest.fixture
 def scheduler():
-    logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
     yield NexusSchedulerClient.create("http://localhost:8080", logger, lambda: AccessToken.empty())
 
@@ -94,7 +94,7 @@ def scheduler():
 
 @pytest.fixture
 def async_scheduler():
-    logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
     yield NexusSchedulerAsyncClient("http://localhost:8080", logger, lambda: AccessToken.empty())
 
@@ -103,7 +103,7 @@ def async_scheduler():
 
 @pytest.fixture
 def async_receiver():
-    logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
     yield NexusReceiverAsyncClient("http://localhost:8081", logger, lambda: AccessToken.empty())
 
@@ -112,7 +112,7 @@ def async_receiver():
 
 @contextmanager
 def broken_async_scheduler():
-    logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
     try:
         yield NexusSchedulerAsyncClient("http://non-existing:1234", logger, lambda: AccessToken.empty())
