@@ -28,7 +28,7 @@ TExecuteResult = TypeVar("TExecuteResult")
 
 
 @final
-class NexusSchedulerRuntimeError(FatalNexusError):
+class NexusClientRuntimeError(FatalNexusError):
     """
     Fatal error to be thrown from the scheduler client, to prevent Nexus apps from retrying.
     """
@@ -137,7 +137,7 @@ class NexusSchedulerAsyncRetryPolicy:
             retry_count=3,
             retry_base_delay_ms=5000,
             error_types=[NetworkError],
-            retry_exhaust_error_type=NexusSchedulerRuntimeError,
+            retry_exhaust_error_type=NexusClientRuntimeError,
             logger=logger,
         )
 

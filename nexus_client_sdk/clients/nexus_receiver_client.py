@@ -22,8 +22,8 @@ from adapta.logs import LoggerInterface
 from nexus_client_sdk.clients.cwrapper import CLIB
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.client_errors.go_http_errors import SdkError
-from nexus_client_sdk.models.common import SdkErrorResponse
-from nexus_client_sdk.models.receiver import SdkCompletedRunResult, ErrorResponse
+from nexus_client_sdk.models.common import SdkErrorResponse, SdkBoolResult
+from nexus_client_sdk.models.receiver import SdkCompletedRunResult, ErrorResponse, BoolResult
 
 
 class NexusReceiverClient:
@@ -48,6 +48,9 @@ class NexusReceiverClient:
 
         self._complete_run = CLIB.CompleteRun
         self._complete_run.restype = SdkErrorResponse
+
+        self._check_run = CLIB.CheckRun
+        self._check_run.restype = SdkBoolResult
 
     def __del__(self):
         CLIB.FreeClient(self._client)
@@ -95,3 +98,34 @@ class NexusReceiverClient:
                 return
             case _:
                 raise maybe_error.error()
+
+    def check_run(self, algorithm: str, request_id: str) -> bool | None:
+        """
+         Checks if specified run for the specified algorithm has been finished, i.e. processed by a receiver instance.
+        :param algorithm: Algorithm name
+        :param request_id: Run request identifier
+        :return:
+        """
+        self._init_client()
+        self._logger.info(
+            "Checking if a run {algorithm_template_name}/{request_identifier} has been processed",
+            algorithm_template_name=algorithm,
+            request_identifier=request_id,
+        )
+        result: SdkBoolResult = self._check_run(
+            bytes(algorithm, encoding="utf-8"),
+            bytes(request_id, encoding="utf-8"),
+        )
+
+        maybe_result = BoolResult.from_sdk_result(result)
+
+        if maybe_result is None:
+            raise SdkError(
+                "No result received from the SDK when trying to check a run. This is a bug in the SDK and should be reported to the project."
+            )
+
+        match maybe_result.error():
+            case None:
+                return maybe_result.result
+            case _:
+                raise maybe_result.error()

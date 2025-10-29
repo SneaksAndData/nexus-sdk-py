@@ -18,13 +18,15 @@
 #
 
 import json
+import logging
 import os
+import sys
 from abc import ABC
-from logging import StreamHandler
 from typing import final, TypeVar
 
 from adapta.logs import LoggerInterface, create_async_logger
 from adapta.logs.handlers.datadog_api_handler import DataDogApiHandler
+from adapta.logs.handlers.safe_stream_handler import SafeStreamHandler
 from adapta.logs.models import LogLevel
 
 TLogger = TypeVar("TLogger")
@@ -45,8 +47,8 @@ class BootstrapLoggerFactory:
     """
 
     def __init__(self):
-        self._log_handlers = [
-            StreamHandler(),
+        self._log_handlers: list[logging.Handler] = [
+            SafeStreamHandler(stream=sys.stdout),
         ]
         if "NEXUS__DATADOG_LOGGER_CONFIGURATION" in os.environ:
             self._log_handlers.append(DataDogApiHandler(**json.loads(os.getenv("NEXUS__DATADOG_LOGGER_CONFIGURATION"))))
@@ -81,8 +83,8 @@ class LoggerFactory:
         self._global_tags = global_tags
         self._fixed_template = fixed_template
         self._fixed_template_delimiter = fixed_template_delimiter or ", "
-        self._log_handlers = [
-            StreamHandler(),
+        self._log_handlers: list[logging.Handler] = [
+            SafeStreamHandler(stream=sys.stdout),
         ]
         if "NEXUS__DATADOG_LOGGER_CONFIGURATION" in os.environ:
             self._log_handlers.append(DataDogApiHandler(**json.loads(os.getenv("NEXUS__DATADOG_LOGGER_CONFIGURATION"))))

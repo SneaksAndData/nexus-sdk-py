@@ -5,10 +5,10 @@ import sys
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from logging import StreamHandler
 
 import pytest
 from adapta.logs import create_async_logger
+from adapta.logs.handlers.safe_stream_handler import SafeStreamHandler
 from adapta.storage.blob.s3_storage_client import S3StorageClient
 from adapta.storage.models import S3Path
 from cassandra.cluster import Cluster
@@ -16,6 +16,7 @@ from dataclasses_json import DataClassJsonMixin
 
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.access_token import AccessToken
+from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.configurations.algorithm_configuration import NexusConfiguration
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
@@ -82,7 +83,7 @@ def run_configuration():
 
 @pytest.fixture
 def scheduler():
-    logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
     yield NexusSchedulerClient.create("http://localhost:8080", logger, lambda: AccessToken.empty())
 
@@ -91,16 +92,25 @@ def scheduler():
 
 @pytest.fixture
 def async_scheduler():
-    logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
     yield NexusSchedulerAsyncClient("http://localhost:8080", logger, lambda: AccessToken.empty())
 
     logger.stop()
 
 
+@pytest.fixture
+def async_receiver():
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
+    logger.start()
+    yield NexusReceiverAsyncClient("http://localhost:8081", logger, lambda: AccessToken.empty())
+
+    logger.stop()
+
+
 @contextmanager
 def broken_async_scheduler():
-    logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
     try:
         yield NexusSchedulerAsyncClient("http://non-existing:1234", logger, lambda: AccessToken.empty())
