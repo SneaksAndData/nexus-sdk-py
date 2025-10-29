@@ -41,7 +41,10 @@ output_path = "s3a://nexus-sdk-tests/telemetry"
 
 sockets = []
 
-[inputs.qes]
+# Query Enabled Store configuration
+[inputs.query_enabled_store]
+
+# Connection string for QES
 connection_string = "qes://engine=LOCAL;plaintext_credentials={};settings={}"
 
 [logging]
