@@ -51,8 +51,6 @@ class TestAlgorithmPayload(AlgorithmPayload, DataClassJsonMixin):
 @pytest.fixture(scope="session", autouse=True)
 def run_configuration():
     os.environ["ROOT_PATH_FOR_DYNACONF"] = str(pathlib.Path(__file__).parent.resolve())
-    os.environ["NEXUS__RECEIVER_URL"] = "http://localhost:8081"
-    os.environ["NEXUS__SCHEDULER_URL"] = "http://localhost:8080"
     os.environ["NEXUS__METRICS_PROVIDER_CLASS"] = "adapta.metrics.providers.datadog_provider.DatadogMetricsProvider"
     os.environ["NEXUS__QES_CONNECTION_STRING"] = "qes://engine=LOCAL;plaintext_credentials={};settings={}"
     os.environ["NEXUS__ALGORITHM_NAME"] = "hello-world"
@@ -127,6 +125,7 @@ def cql_session():
     yield session
     session.shutdown()
     cluster.shutdown()
+
 
 def payloads(compress: bool = False) -> list[tuple[str, str]]:
     upload_path = S3Path(bucket="nexus", path="units")

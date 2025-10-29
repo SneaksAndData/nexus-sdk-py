@@ -9,6 +9,18 @@ receiver = "http://localhost:8081"
 # Nexus Scheduler address
 scheduler = "http://localhost:8080"
 
+# Configurations for nexus_client_sdk.nexus.algorithms.RemoteAlgorithm
+[remote_algorithm]
+
+# If set to "1" will only create run metadata
+dry_run = "0"
+
+# Import path to a compression method to use, if remote payload compression is required
+compression_import_path = ""
+
+# Import path to a decompression method to require on the receiving end, if remote payload is compressed
+decompression_import_path = ""
+
 [result]
 # Storage client to use when saving serialized result and generating pre-signed URL for it
 storage_client_class = "adapta.storage.blob.s3_storage_client.S3StorageClient"

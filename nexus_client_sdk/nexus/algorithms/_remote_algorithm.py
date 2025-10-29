@@ -36,7 +36,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
-from nexus_client_sdk.nexus.config import NEXUS_CONFIGURATION
+from nexus_client_sdk.nexus.config import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.core.app_dependencies import Compressor
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input.input_processor import (
@@ -117,8 +117,8 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         if self._compressor is None:
             raise FatalNexusError(
                 "Compressor is not configured for remote algorithm payload compression. "
-                "Configure using environment variable NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH "
-                "and NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH"
+                "Configure using environment variable NEXUS__REMOTE_ALGORITHM___COMPRESSION_IMPORT_PATH "
+                "and NEXUS__REMOTE_ALGORITHM___DECOMPRESSION_IMPORT_PATH"
             )
 
         payload_bytes = payload.to_json().encode(encoding="utf-8")
@@ -152,12 +152,12 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
                     algorithm_name=self._remote_name,
                     custom_configuration=self._remote_config,
                     parent_request=SdkParentRequest.create(
-                        algorithm_name=NEXUS_CONFIGURATION.algorithm_name, request_id=run_args["request_id"]
+                        algorithm_name=NEXUS_FRAMEWORK_CONFIGURATION.algorithm_name, request_id=run_args["request_id"]
                     )
                     if self._is_hard_dependency
                     else None,
                     tag=tag,
-                    dry_run=os.getenv("NEXUS__REMOTE_DRY_RUN", "0") == "1",
+                    dry_run=NEXUS_FRAMEWORK_CONFIGURATION.remote_algorithm.dry_run == "1",
                 )
                 for payload in payloads
             ]

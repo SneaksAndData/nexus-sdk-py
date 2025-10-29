@@ -32,6 +32,7 @@ from nexus_client_sdk.nexus.abstractions.logger_factory import (
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
     ExternalSocketProvider,
 )
+from nexus_client_sdk.nexus.config import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.configurations.algorithm_configuration import (
     NexusConfiguration,
 )
@@ -202,11 +203,11 @@ class Compressor:
 
         if not self._compress_function:
             raise FatalStartupConfigurationError(
-                f"Compression function '{self._compress_import_path}' from NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH could not be located."
+                f"Compression function '{self._compress_import_path}' could not be located."
             )
         if not self._decompress_function:
             raise FatalStartupConfigurationError(
-                f"Decompression function '{self._decompress_import_path}' from NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH could not be located."
+                f"Decompression function '{self._decompress_import_path}' could not be located."
             )
 
     @classmethod
@@ -258,21 +259,11 @@ class CompressorModule(Module):
         """
         Returns a compressor if configured, else None.
         """
-        compress_path = os.getenv("NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH")
-        decompress_path = os.getenv("NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH")
+        compress_path = NEXUS_FRAMEWORK_CONFIGURATION.remote_algorithm.compression_import_path
+        decompress_path = NEXUS_FRAMEWORK_CONFIGURATION.remote_algorithm.decompression_import_path
 
-        if compress_path is None and decompress_path is None:
+        if not compress_path and not decompress_path:
             return None
-
-        if compress_path is None and decompress_path is not None:
-            raise FatalStartupConfigurationError(
-                "NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH must be set if NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH is set."
-            )
-
-        if compress_path is not None and decompress_path is None:
-            raise FatalStartupConfigurationError(
-                "NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH must be set if NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH is set."
-            )
 
         return Compressor.create(compress_path, decompress_path)
 
