@@ -26,6 +26,7 @@ from typing import final, Self
 from collections.abc import Callable
 
 import backoff
+import dynaconf
 import requests.exceptions
 import urllib3.exceptions
 from adapta.logs import LoggerInterface
@@ -364,7 +365,7 @@ class Nexus:
 
     async def _complete_with_error(self, logger: LoggerInterface, error: BaseException) -> None:
         await NexusReceiverAsyncClient(
-            url=os.getenv("NEXUS__RECEIVER_URL"), token_provider=None, logger=logger
+            url=NEXUS_FRAMEWORK_CONFIGURATION.client.receiver, token_provider=None, logger=logger
         ).complete_run(
             result=SdkCompletedRunResult.create(
                 result_uri=None,
@@ -379,6 +380,10 @@ class Nexus:
             logger_fixed_template = {}
             logger_tags = {}
             metric_tags = {}
+
+            # trigger config validation before reading the payload
+            # ALGORITHM_NAME and CLIENT.RECEIVER_URL are available at this point, so module configuration errors can be registered
+            NEXUS_FRAMEWORK_CONFIGURATION.validators.validate_all()
 
             for payload_type in self._payload_types:
                 payload = await self._get_payload(payload_type=payload_type)
@@ -436,6 +441,10 @@ class Nexus:
                 scope=singleton,
             )
 
+        except dynaconf.ValidationError as config_error:
+            await self._complete_with_error(logger, config_error)
+            logger.stop()
+            sys.exit(0)
         except FatalStartupConfigurationError as startup_error:
             await self._complete_with_error(logger, startup_error)
             logger.stop()

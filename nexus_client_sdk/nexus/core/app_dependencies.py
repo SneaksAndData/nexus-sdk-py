@@ -75,8 +75,8 @@ class QueryEnabledStoreModule(Module):
         """
         DI factory method.
         """
-        connection_string = NEXUS_FRAMEWORK_CONFIGURATION.inputs.query_enabled_store.connection_string
-        if connection_string:
+        if NEXUS_FRAMEWORK_CONFIGURATION.inputs.query_enabled_store.enabled == "1":
+            connection_string = NEXUS_FRAMEWORK_CONFIGURATION.inputs.query_enabled_store.connection_string
             return QueryEnabledStore.from_string(connection_string, lazy_init=False)
 
         return None

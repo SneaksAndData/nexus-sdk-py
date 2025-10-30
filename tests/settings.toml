@@ -41,11 +41,31 @@ output_path = "s3a://nexus-sdk-tests/telemetry"
 
 sockets = []
 
-# Query Enabled Store configuration
-[inputs.query_enabled_store]
+    # Query Enabled Store configuration
+    [inputs.query_enabled_store]
 
-# Connection string for QES
-connection_string = "qes://engine=LOCAL;plaintext_credentials={};settings={}"
+    enabled = "1"
+
+    # Connection string for QES
+    connection_string = "qes://engine=LOCAL;plaintext_credentials={};settings={}"
+
+    # Settings for AstraClientModule
+    [inputs.astra_client]
+
+    # Enabled injection of AstraClientModule
+    enabled = "0"
+
+    # Astra Keyspace
+    # keyspace = ""
+
+    # Secure Connection Bundle, base64-encoded
+    # bundle = ""
+
+    # Astra Client ID
+    # client_id = ""
+
+    # Astra Client Secret
+    # client_secret = ""
 
 [logging]
 # Global template to apply to ALL log messages emitted by framework loggers. This setting conflicts with
@@ -55,14 +75,11 @@ fixed_template = ""
 # Delimiter to use for global template
 fixed_template_delimiter = ""
 
-# framework log level
-log_level = "INFO"
+# Framework log level. Defaults to INFO if not provided
+# log_level = "ERROR"
 
-# log level for Go SDK methods. Disabled by default.
-cgo_log_level = "DISABLED"
-
-[logging.datadog]
-logger_configuration = "{'buffer_size': 1}"
+    [logging.datadog]
+    logger_configuration = "{'buffer_size': 1}"
 
 [metrics]
 # Implementation of MetricsProvider used to submit default framework runtime and user-level metrics
