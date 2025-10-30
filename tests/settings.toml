@@ -21,6 +21,7 @@ compression_import_path = ""
 # Import path to a decompression method to require on the receiving end, if remote payload is compressed
 decompression_import_path = ""
 
+# Result processing and serialization
 [result]
 # Storage client to use when saving serialized result and generating pre-signed URL for it
 storage_client_class = "adapta.storage.blob.s3_storage_client.S3StorageClient"
@@ -28,29 +29,37 @@ storage_client_class = "adapta.storage.blob.s3_storage_client.S3StorageClient"
 # Base path to use when recording results. Protocol must be supported by storage_client_class
 output_path = "s3a://nexus-sdk-tests/result"
 
-# RESULT SERIALIZERS - classes used to serialize AlgorithmResult objects to desired formats
-[result.serializers]
-json_format = "adapta.storage.models.formatters.PandasDataFrameJsonSerializationFormat"
+# RESULT SERIALIZERS - classes available to serialize AlgorithmResult objects to desired formats
+serializers = [
+    "adapta.storage.models.formatters.PandasDataFrameJsonSerializationFormat"
+]
 
+# Run telemetry recording
 [telemetry]
 # Base path to use when recording input and user telemetry
 output_path = "s3a://nexus-sdk-tests/telemetry"
 
+# TELEMETRY SERIALIZERS - classes available to serialize Algorithm inputs and UserTelemetry classes
+serializers = [
+    "adapta.storage.models.formatters.PandasDataFrameJsonSerializationFormat"
+]
+
 # INPUTS - configuration for data read interfaces
 [inputs]
 
-# External data sockets to be available to InputReader instances
-[[inputs.sockets]]
-alias = "localfile1"
-data_path = "local+file:///tmp/file1.json"
-data_format = "text"
+# External data sockets to be injected into InputReader instances
+#[[inputs.sockets]]
+#alias = "localfile1"
+#data_path = "local+file:///tmp/file1.json"
+#data_format = "text"
+#
+#[[inputs.sockets]]
+#alias = "localfile2"
+#data_path = "local+file:///tmp/file2.json"
+#data_format = "text"
 
-[[inputs.sockets]]
-alias = "localfile2"
-data_path = "local+file:///tmp/file2.json"
-data_format = "text"
-
-#sockets = []
+# default is empty list
+sockets = []
 
     # Query Enabled Store configuration
     [inputs.query_enabled_store]

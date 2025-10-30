@@ -135,8 +135,8 @@ class ResultSerializerModule(Module):
         DI factory method.
         """
         serializer = ResultSerializer()
-        for serialization_format in locate_classes(re.compile(r"NEXUS__RESULT_SERIALIZATION_FORMAT_(.+)_CLASS")):
-            serializer = serializer.with_format(serialization_format)
+        for serializer_class in NEXUS_FRAMEWORK_CONFIGURATION.result.serializers:
+            serializer = serializer.with_format(locate(serializer_class))
 
         return serializer
 
@@ -154,8 +154,8 @@ class TelemetrySerializerModule(Module):
         DI factory method.
         """
         serializer = TelemetrySerializer()
-        for serialization_format in locate_classes(re.compile(r"NEXUS__TELEMETRY_SERIALIZATION_FORMAT_(.+)_CLASS")):
-            serializer = serializer.with_format(serialization_format)
+        for serializer_class in NEXUS_FRAMEWORK_CONFIGURATION.result.serializers:
+            serializer = serializer.with_format(locate(serializer_class))
 
         return serializer
 

@@ -53,12 +53,6 @@ def run_configuration():
     if "ROOT_PATH_FOR_DYNACONF" not in os.environ:
         os.environ["ROOT_PATH_FOR_DYNACONF"] = str(pathlib.Path(__file__).parent.resolve())
     os.environ["NEXUS__METRICS_PROVIDER_CLASS"] = "adapta.metrics.providers.datadog_provider.DatadogMetricsProvider"
-    os.environ["NEXUS__STORAGE_CLIENT_CLASS"] = "adapta.storage.blob.s3_storage_client.S3StorageClient"
-    os.environ["NEXUS__ALGORITHM_OUTPUT_PATH"] = f"s3a://nexus-sdk-tests/result"  # Used to store response
-    os.environ["NEXUS__TELEMETRY_PATH"] = f"s3a://nexus-sdk-tests/telemetry"
-    os.environ[
-        "NEXUS__RESULT_SERIALIZATION_FORMAT_JSON_CLASS"
-    ] = "adapta.storage.models.formatters.PandasDataFrameJsonSerializationFormat"
     os.environ["NEXUS__METRICS_PROVIDER_CONFIGURATION"] = json.dumps(
         {"init_args": {"metric_namespace": "sdk"}, "protocol": "uds"}
     )
