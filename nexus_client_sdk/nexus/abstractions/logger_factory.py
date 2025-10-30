@@ -52,8 +52,8 @@ class BootstrapLoggerFactory:
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
-        if "NEXUS__DATADOG_LOGGER_CONFIGURATION" in os.environ:
-            self._log_handlers.append(DataDogApiHandler(**json.loads(os.getenv("NEXUS__DATADOG_LOGGER_CONFIGURATION"))))
+        if "datadog" in NEXUS_FRAMEWORK_CONFIGURATION.logging:
+            self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.logging.datadog))
 
     def create_logger(self, request_id: str, algorithm_name: str) -> LoggerInterface:
         """
