@@ -39,7 +39,18 @@ output_path = "s3a://nexus-sdk-tests/telemetry"
 # INPUTS - configuration for data read interfaces
 [inputs]
 
-sockets = []
+# External data sockets to be available to InputReader instances
+[[inputs.sockets]]
+alias = "localfile1"
+data_path = "local+file:///tmp/file1.json"
+data_format = "text"
+
+[[inputs.sockets]]
+alias = "localfile2"
+data_path = "local+file:///tmp/file2.json"
+data_format = "text"
+
+#sockets = []
 
     # Query Enabled Store configuration
     [inputs.query_enabled_store]

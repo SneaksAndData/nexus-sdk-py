@@ -8,7 +8,6 @@ try:
         envvar_prefix="NEXUS_",
         settings_files=["settings.toml", ".secrets.toml"],
         nested_separator="___",
-        apply_default_on_none=False,
         auto_cast=True,
         commentjson_enabled=False,
         core_loaders=["TOML"],
@@ -16,12 +15,26 @@ try:
         validators=[
             Validator("ALGORITHM_NAME", required=True),
             Validator("CLIENT.RECEIVER", required=True),
-            Validator("LOGGING.LOG_LEVEL", required=True, apply_default_on_none=True, default="INFO", condition=lambda v: v != ""),
+            Validator(
+                "LOGGING.LOG_LEVEL",
+                required=True,
+                apply_default_on_none=True,
+                default="INFO",
+                condition=lambda v: v != "",
+            ),
         ],
     )
 
     NEXUS_FRAMEWORK_CONFIGURATION.validators.register(
         *[
+            Validator(
+                "RESULT.STORAGE_CLIENT_CLASS",
+                required=True,
+            ),
+            Validator(
+                "RESULT.OUTPUT_PATH",
+                required=True,
+            ),
             Validator(
                 "REMOTE_ALGORITHM.COMPRESSION_IMPORT_PATH",
                 required=True,

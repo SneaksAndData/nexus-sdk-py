@@ -94,18 +94,10 @@ class StorageClientModule(Module):
         """
         DI factory method.
         """
-        storage_client_class: type[StorageClient] = locate(
-            os.getenv(
-                "NEXUS__STORAGE_CLIENT_CLASS",
-            )
-        )
-        if not storage_client_class:
-            raise FatalStartupConfigurationError("NEXUS__STORAGE_CLIENT_CLASS")
-        if "NEXUS__ALGORITHM_OUTPUT_PATH" not in os.environ:
-            raise FatalStartupConfigurationError("NEXUS__ALGORITHM_OUTPUT_PATH")
+        storage_client_class: type[StorageClient] = locate(NEXUS_FRAMEWORK_CONFIGURATION.result.storage_client_class)
 
         try:
-            return storage_client_class.for_storage_path(path=os.getenv("NEXUS__ALGORITHM_OUTPUT_PATH"))
+            return storage_client_class.for_storage_path(path=NEXUS_FRAMEWORK_CONFIGURATION.result.output_path)
         except Exception as e:
             raise FatalStartupConfigurationError(
                 "StorageClient cannot be created, configuration missing or invalid. Review the underlying exception."
@@ -124,10 +116,10 @@ class ExternalSocketsModule(Module):
         """
         Dependency provider.
         """
-        if "NEXUS__ALGORITHM_INPUT_EXTERNAL_DATA_SOCKETS" not in os.environ:
-            raise FatalStartupConfigurationError("NEXUS__ALGORITHM_INPUT_EXTERNAL_DATA_SOCKETS")
+        if NEXUS_FRAMEWORK_CONFIGURATION.inputs.sockets and len(NEXUS_FRAMEWORK_CONFIGURATION.inputs.sockets) > 0:
+            return ExternalSocketProvider.from_dynaconf(NEXUS_FRAMEWORK_CONFIGURATION.inputs.sockets)
 
-        return ExternalSocketProvider.from_serialized(os.getenv("NEXUS__ALGORITHM_INPUT_EXTERNAL_DATA_SOCKETS"))
+        return ExternalSocketProvider.empty()
 
 
 @final

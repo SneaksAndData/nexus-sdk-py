@@ -18,8 +18,9 @@
 #
 
 import json
-from typing import final
+from typing import final, Self
 
+import dynaconf
 from adapta.process_communication import DataSocket
 
 from nexus_client_sdk.nexus.exceptions.startup_error import (
@@ -46,8 +47,20 @@ class ExternalSocketProvider:
         raise FatalStartupConfigurationError(missing_entry=f"socket with alias `{name}`")
 
     @classmethod
-    def from_serialized(cls, socket_list_ser: str) -> "ExternalSocketProvider":
+    def from_serialized(cls, socket_list_ser: str) -> Self:
         """
         Creates a SocketProvider from a list of serialized sockets
         """
         return cls(*[DataSocket.from_dict(socket_dict) for socket_dict in json.loads(socket_list_ser)])
+
+    @classmethod
+    def from_dynaconf(cls, sockets_list: list[dynaconf.utils.boxing.DynaBox]) -> Self:
+        return cls(*[DataSocket.from_dict(socket_dict) for socket_dict in sockets_list])
+
+    @classmethod
+    def empty(cls) -> Self:
+        """
+        Returns an empty SocketProvider with no sockets
+        :return:
+        """
+        return cls(*[])
