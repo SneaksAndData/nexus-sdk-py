@@ -1,8 +1,6 @@
 """
  Remotely executed algorithm
 """
-import base64
-import os
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
@@ -20,6 +18,7 @@ import os
 #
 
 from abc import abstractmethod
+import base64
 from functools import partial
 
 from adapta.metrics import MetricsProvider

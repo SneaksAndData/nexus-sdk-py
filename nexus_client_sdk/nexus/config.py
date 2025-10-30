@@ -1,6 +1,4 @@
 """Framework configuration"""
-import pathlib
-
 from dynaconf import Dynaconf, Validator
 
 NEXUS_FRAMEWORK_CONFIGURATION = Dynaconf(

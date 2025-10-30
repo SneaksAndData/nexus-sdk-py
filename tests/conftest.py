@@ -50,7 +50,8 @@ class TestAlgorithmPayload(AlgorithmPayload, DataClassJsonMixin):
 
 @pytest.fixture(scope="session", autouse=True)
 def run_configuration():
-    os.environ["ROOT_PATH_FOR_DYNACONF"] = str(pathlib.Path(__file__).parent.resolve())
+    if "ROOT_PATH_FOR_DYNACONF" not in os.environ:
+        os.environ["ROOT_PATH_FOR_DYNACONF"] = str(pathlib.Path(__file__).parent.resolve())
     os.environ["NEXUS__METRICS_PROVIDER_CLASS"] = "adapta.metrics.providers.datadog_provider.DatadogMetricsProvider"
     os.environ["NEXUS__QES_CONNECTION_STRING"] = "qes://engine=LOCAL;plaintext_credentials={};settings={}"
     os.environ["NEXUS__ALGORITHM_NAME"] = "hello-world"
