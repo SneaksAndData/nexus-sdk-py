@@ -300,7 +300,7 @@ class Nexus:
             result_ = data.result()
             serializer = self._injector.get(ResultSerializer)
             storage_client = self._injector.get(StorageClient)
-            output_path = f"{os.getenv('NEXUS__ALGORITHM_OUTPUT_PATH')}/{self._run_args.request_id}.json"
+            output_path = f"{NEXUS_FRAMEWORK_CONFIGURATION.result.output_path}/{self._run_args.request_id}.json"
             blob_path = DataSocket(data_path=output_path, alias="output", data_format="null").parse_data_path()
             storage_client.save_data_as_blob(
                 data=result_,
