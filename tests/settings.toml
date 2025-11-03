@@ -105,7 +105,7 @@ sockets = []
     #debug = "False"
     #max_flush_retry_time = "30"
     #ignore_flush_failure = "True"
-    #fixed_tags = {'key': 'value'}
+    #fixed_tags = {'key' = 'value'}
 
 [metrics]
 # Implementation of MetricsProvider used to submit default framework runtime and user-level metrics
