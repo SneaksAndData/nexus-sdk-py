@@ -3,6 +3,7 @@
 """
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
+from typing import Self
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -31,7 +32,7 @@ class NexusConfiguration(DataClassJsonMixin, ABC):
 
     @classmethod
     @abstractmethod
-    def from_environment(cls) -> "NexusConfiguration":
+    def from_environment(cls) -> Self:
         """
         Instantiates this configuration from the environment variable.
         """
