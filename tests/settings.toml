@@ -110,5 +110,14 @@ fixed_template_delimiter = ""
 # Implementation of MetricsProvider used to submit default framework runtime and user-level metrics
 provider = "adapta.metrics.providers.datadog_provider.DatadogMetricsProvider"
 
+# Initialization configuration for the MetricsProvider defined under `provider`
+init_args = {"metric_namespace" = "sdk"}
+
+# Protocol to use when sending metrics. Provider-speicifc setting. `udp`, `uds` are supported for DatadogMetricsProvider
+protocol = "uds"
+
+# Tags to assign to all metrics globally
+global_tags = {}
+
 # Configuration for the metrics provider (JSON string)
 provider_configuration = '{"init_args": {"metric_namespace": "sdk"}, "protocol": "uds"}'

@@ -52,10 +52,6 @@ class TestAlgorithmPayload(AlgorithmPayload, DataClassJsonMixin):
 def run_configuration():
     if "ROOT_PATH_FOR_DYNACONF" not in os.environ:
         os.environ["ROOT_PATH_FOR_DYNACONF"] = str(pathlib.Path(__file__).parent.resolve())
-    os.environ["NEXUS__METRICS_PROVIDER_CLASS"] = "adapta.metrics.providers.datadog_provider.DatadogMetricsProvider"
-    os.environ["NEXUS__METRICS_PROVIDER_CONFIGURATION"] = json.dumps(
-        {"init_args": {"metric_namespace": "sdk"}, "protocol": "uds"}
-    )
     os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
     os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
     os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"] = "minioadmin"

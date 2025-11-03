@@ -36,6 +36,10 @@ try:
                 required=True,
             ),
             Validator(
+                "METRICS.PROVIDER",
+                required=True,
+            ),
+            Validator(
                 "REMOTE_ALGORITHM.COMPRESSION_IMPORT_PATH",
                 required=True,
                 when=Validator(

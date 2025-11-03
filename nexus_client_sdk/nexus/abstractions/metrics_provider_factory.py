@@ -26,6 +26,7 @@ from adapta.metrics import MetricsProvider
 from adapta.metrics.providers.datadog_provider import DatadogMetricsProvider
 from dataclasses_json import DataClassJsonMixin
 
+from nexus_client_sdk.nexus.config import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.exceptions.startup_error import (
     FatalStartupConfigurationError,
 )
@@ -64,21 +65,16 @@ class MetricsProviderFactory:
         global_tags: dict[str, str] | None = None,
     ):
         self._global_tags = global_tags
-        self._metrics_class: type[MetricsProvider] = locate(
-            os.getenv(
-                "NEXUS__METRICS_PROVIDER_CLASS",
-                "adapta.metrics.providers.datadog_provider.DatadogMetricsProvider",
-            )
-        )
+        try:
+            self._metrics_class: type[MetricsProvider] = locate(NEXUS_FRAMEWORK_CONFIGURATION.metrics.provider)
 
-        if "NEXUS__METRICS_PROVIDER_CONFIGURATION" not in os.environ:
-            raise FatalStartupConfigurationError(
-                "NEXUS__METRICS_PROVIDER_CONFIGURATION is not provided, cannot initialize a metrics provider instance"
+            self._metrics_settings: MetricsProviderSettings = MetricsProviderSettings(
+                init_args=NEXUS_FRAMEWORK_CONFIGURATION.metrics.init_args,
+                protocol=NEXUS_FRAMEWORK_CONFIGURATION.metrics.protocol,
+                fixed_tags=NEXUS_FRAMEWORK_CONFIGURATION.metrics.global_tags,
             )
-
-        self._metrics_settings: MetricsProviderSettings = MetricsProviderSettings.from_json(
-            os.getenv("NEXUS__METRICS_PROVIDER_CONFIGURATION")
-        )
+        except BaseException as ex:
+            raise FatalStartupConfigurationError('MetricsProviderFactory.__init__') from ex
 
     def create_provider(
         self,
@@ -101,4 +97,4 @@ class MetricsProviderFactory:
 
             return self._metrics_class(**init_args)
         except Exception as e:
-            raise FatalStartupConfigurationError("metrics provider implementation") from e
+            raise FatalStartupConfigurationError("create_provider -> MetricsProvider") from e
