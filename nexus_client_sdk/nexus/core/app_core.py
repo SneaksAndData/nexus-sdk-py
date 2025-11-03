@@ -18,7 +18,6 @@
 #
 
 import asyncio
-import os
 import platform
 import signal
 import sys
@@ -374,7 +373,6 @@ class Nexus:
             algorithm=NEXUS_FRAMEWORK_CONFIGURATION.algorithm_name,
             request_id=self._run_args.request_id,
         )
-
 
     async def _bootstrap(self, logger: LoggerInterface) -> None:
         try:

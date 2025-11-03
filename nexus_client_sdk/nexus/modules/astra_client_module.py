@@ -17,16 +17,12 @@
 Astra Client module that provides the astra client to the Nexus framework.
 """
 
-import os
 from typing import final
 
 from adapta.storage.distributed_object_store.v3.datastax_astra import AstraClient
 from injector import Module, singleton, provider
 
 from nexus_client_sdk.nexus.config import NEXUS_FRAMEWORK_CONFIGURATION
-from nexus_client_sdk.nexus.exceptions.startup_error import (
-    FatalStartupConfigurationError,
-)
 
 
 @final

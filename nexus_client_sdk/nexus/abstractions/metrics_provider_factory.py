@@ -17,7 +17,6 @@
 #  limitations under the License.
 #
 
-import os
 from dataclasses import dataclass
 from pydoc import locate
 from typing import final
@@ -74,7 +73,7 @@ class MetricsProviderFactory:
                 fixed_tags=NEXUS_FRAMEWORK_CONFIGURATION.metrics.global_tags,
             )
         except BaseException as ex:
-            raise FatalStartupConfigurationError('MetricsProviderFactory.__init__') from ex
+            raise FatalStartupConfigurationError("MetricsProviderFactory.__init__") from ex
 
     def create_provider(
         self,

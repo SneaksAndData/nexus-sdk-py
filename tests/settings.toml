@@ -87,6 +87,7 @@ sockets = []
     # Astra Client Secret
     # client_secret = ""
 
+# Framework-powered logging
 [logging]
 # Global template to apply to ALL log messages emitted by framework loggers. This setting conflicts with
 # with_log_enricher() and might be removed in the future
@@ -108,7 +109,7 @@ sockets = []
 
 [metrics]
 # Implementation of MetricsProvider used to submit default framework runtime and user-level metrics
-provider = "adapta.metrics.providers.datadog_provider.DatadogMetricsProvider"
+provider = "adapta.metrics.providers.void_provider.VoidMetricsProvider"
 
 # Initialization configuration for the MetricsProvider defined under `provider`
 init_args = {"metric_namespace" = "sdk"}
@@ -118,6 +119,3 @@ protocol = "uds"
 
 # Tags to assign to all metrics globally
 global_tags = {}
-
-# Configuration for the metrics provider (JSON string)
-provider_configuration = '{"init_args": {"metric_namespace": "sdk"}, "protocol": "uds"}'

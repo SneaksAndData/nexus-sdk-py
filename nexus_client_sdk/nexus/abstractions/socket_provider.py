@@ -55,6 +55,11 @@ class ExternalSocketProvider:
 
     @classmethod
     def from_dynaconf(cls, sockets_list: list[dynaconf.utils.boxing.DynaBox]) -> Self:
+        """
+        Creates a SocketProvider from a Dynaconf entry list
+        :param sockets_list:
+        :return:
+        """
         return cls(*[DataSocket.from_dict(socket_dict) for socket_dict in sockets_list])
 
     @classmethod

@@ -17,9 +17,7 @@
 #  limitations under the License.
 #
 
-import json
 import logging
-import os
 import sys
 from abc import ABC
 from typing import final, TypeVar
@@ -95,7 +93,9 @@ class LoggerFactory:
             self._fixed_template = self._fixed_template | NEXUS_FRAMEWORK_CONFIGURATION.logging.fixed_template
 
         if "fixed_template_delimiter" in NEXUS_FRAMEWORK_CONFIGURATION.logging:
-            self._fixed_template_delimiter = self._fixed_template_delimiter or NEXUS_FRAMEWORK_CONFIGURATION.logging.fixed_template_delimiter
+            self._fixed_template_delimiter = (
+                self._fixed_template_delimiter or NEXUS_FRAMEWORK_CONFIGURATION.logging.fixed_template_delimiter
+            )
 
     def create_logger(
         self,
