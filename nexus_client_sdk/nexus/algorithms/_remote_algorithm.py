@@ -143,23 +143,8 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             payloads = await self._run(**run_args)
             tag = self._generate_tag(**run_args)
 
-            request_ids = [
-                await self._remote_client.create_run(
-                    algorithm_parameters=self._compress_remote_payload(payload=payload)
-                    if self._compress_payload
-                    else DictJsonSerializationFormat().deserialize(payload.to_json().encode(encoding="utf-8")),
-                    algorithm_name=self._remote_name,
-                    custom_configuration=self._remote_config,
-                    parent_request=SdkParentRequest.create(
-                        algorithm_name=os.getenv("NEXUS__ALGORITHM_NAME"), request_id=run_args["request_id"]
-                    )
-                    if self._is_hard_dependency
-                    else None,
-                    tag=tag,
-                    dry_run=os.getenv("NEXUS__REMOTE_DRY_RUN", "0") == "1",
-                )
-                for payload in payloads
-            ]
+            request_ids = [await self._create_remote_run(payload=payload, tag=tag, **run_args) for payload in payloads]
+
             return self._transform_submission_result(request_ids, tag)
 
         results = await self._cache.resolve(*self._input_processors, **kwargs)
@@ -172,3 +157,33 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             metrics_provider=self._metrics_provider,
             logger=self._logger,
         )()
+
+    async def _create_remote_run(self, payload: AlgorithmPayload, tag: str, **run_args) -> str:
+        """
+        Creates a fork run for the given payload and tag.
+        """
+
+        request_id = await self._remote_client.create_run(
+            algorithm_parameters=self._compress_remote_payload(payload=payload)
+            if self._compress_payload
+            else DictJsonSerializationFormat().deserialize(payload.to_json().encode(encoding="utf-8")),
+            algorithm_name=self._remote_name,
+            custom_configuration=self._remote_config,
+            parent_request=SdkParentRequest.create(
+                algorithm_name=os.getenv("NEXUS__ALGORITHM_NAME"), request_id=run_args["request_id"]
+            )
+            if self._is_hard_dependency
+            else None,
+            tag=tag,
+            dry_run=os.getenv("NEXUS__REMOTE_DRY_RUN", "0") == "1",
+        )
+
+        self._logger.info(
+            "Fork '{fork_algorithm_name}' to remote algorithm '{remote_algorithm}' successfully created with request id '{request_id}' and tag '{tag}'",
+            fork_algorithm_name=self.__class__.alias(),
+            remote_algorithm=self._remote_name,
+            request_id=request_id,
+            tag=tag,
+        )
+
+        return request_id
