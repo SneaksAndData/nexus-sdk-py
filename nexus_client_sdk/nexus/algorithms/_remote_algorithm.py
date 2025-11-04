@@ -160,6 +160,16 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
                 )
                 for payload in payloads
             ]
+
+            for request_id in request_ids:
+                self._logger.info(
+                    "Fork '{fork_algorithm_name}' to remote algorithm '{remote_algorithm}' successfully created with request id '{request_id}' and tag '{tag}'",
+                    fork_algorithm_name=self.__class__.alias(),
+                    remote_algorithm=self._remote_name,
+                    request_id=request_id,
+                    tag=tag,
+                )
+
             return self._transform_submission_result(request_ids, tag)
 
         results = await self._cache.resolve(*self._input_processors, **kwargs)
