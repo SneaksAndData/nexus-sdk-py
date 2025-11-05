@@ -1,5 +1,4 @@
 """Scheduler"""
-from threading import Thread
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
@@ -31,7 +30,7 @@ from nexus_client_sdk.models.scheduler import (
     RunResult,
     RequestLifeCycleStage,
 )
-from nexus_client_sdk.nexus.async_extensions.async_exec import run_threadsafe
+from nexus_client_sdk.nexus.async_extensions.async_exec import run_blocking
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
     NexusSchedulingError,
     NexusAsyncRetryPolicyBuilder,
@@ -79,7 +78,7 @@ class NexusSchedulerAsyncClient:
         """
 
         return await self._retry_policy_builder.build().execute(
-            lambda: run_threadsafe(
+            lambda: run_blocking(
                 partial(
                     self._sync_client.create_run,
                     algorithm_parameters=algorithm_parameters,
@@ -108,7 +107,7 @@ class NexusSchedulerAsyncClient:
         """
 
         return await self._retry_policy_builder.build().execute(
-            lambda: run_threadsafe(
+            lambda: run_blocking(
                 partial(
                     self._sync_client.await_run,
                     request_id=request_id,
@@ -180,7 +179,7 @@ class NexusSchedulerAsyncClient:
             retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
 
         return await retry_policy_builder.build().execute(
-            lambda: run_threadsafe(
+            lambda: run_blocking(
                 partial(
                     _create_and_await,
                     algorithm_parameters=algorithm_parameters,

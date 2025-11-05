@@ -25,7 +25,7 @@ from typing import Callable
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import TExecuteResult
 
 
-async def run_threadsafe(method: Callable[[...], TExecuteResult]) -> TExecuteResult:
+async def run_blocking(method: Callable[[...], TExecuteResult]) -> TExecuteResult:
     """
      Spawns a provided coroutine in a completely new event loop. Use this when parallelizing Nexus SDK operations, instead of using TaskGroup or asyncio.create_task
     :param method:
