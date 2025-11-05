@@ -1,4 +1,5 @@
 """Scheduler"""
+from threading import Thread
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
@@ -30,6 +31,7 @@ from nexus_client_sdk.models.scheduler import (
     RunResult,
     RequestLifeCycleStage,
 )
+from nexus_client_sdk.nexus.async_extensions.async_exec import run_threadsafe
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
     NexusSchedulingError,
     NexusAsyncRetryPolicyBuilder,
@@ -63,7 +65,7 @@ class NexusSchedulerAsyncClient:
         tag: str | None = None,
         payload_valid_for: str = "24h",
         dry_run: bool = False,
-    ) -> str:
+    ) -> str | None:
         """
          Creates a new run for a given algorithm.
         :param algorithm_parameters: Algorithm parameters.
@@ -77,15 +79,17 @@ class NexusSchedulerAsyncClient:
         """
 
         return await self._retry_policy_builder.build().execute(
-            partial(
-                self._sync_client.create_run,
-                algorithm_parameters=algorithm_parameters,
-                algorithm_name=algorithm_name,
-                custom_configuration=custom_configuration,
-                parent_request=parent_request,
-                payload_valid_for=payload_valid_for,
-                tag=tag,
-                dry_run=dry_run,
+            lambda: run_threadsafe(
+                partial(
+                    self._sync_client.create_run,
+                    algorithm_parameters=algorithm_parameters,
+                    algorithm_name=algorithm_name,
+                    custom_configuration=custom_configuration,
+                    parent_request=parent_request,
+                    payload_valid_for=payload_valid_for,
+                    tag=tag,
+                    dry_run=dry_run,
+                )
             ),
             f"Fatal error when creating a run for template {algorithm_name}",
             method_alias="create_run",
@@ -93,7 +97,7 @@ class NexusSchedulerAsyncClient:
 
     async def await_run(
         self, request_id: str, algorithm: str, poll_interval_seconds: int = 5, wait_timeout_seconds: int = 0
-    ) -> RunResult:
+    ) -> RunResult | None:
         """
         Awaits result for a given run for a given algorithm.
         :param request_id: Run request ID.
@@ -104,12 +108,14 @@ class NexusSchedulerAsyncClient:
         """
 
         return await self._retry_policy_builder.build().execute(
-            partial(
-                self._sync_client.await_run,
-                request_id=request_id,
-                algorithm=algorithm,
-                poll_interval_seconds=poll_interval_seconds,
-                wait_timeout_seconds=wait_timeout_seconds,
+            lambda: run_threadsafe(
+                partial(
+                    self._sync_client.await_run,
+                    request_id=request_id,
+                    algorithm=algorithm,
+                    poll_interval_seconds=poll_interval_seconds,
+                    wait_timeout_seconds=wait_timeout_seconds,
+                )
             ),
             f"Fatal error when awaiting request {algorithm}/{request_id}",
             method_alias="await_run",
@@ -174,17 +180,19 @@ class NexusSchedulerAsyncClient:
             retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
 
         return await retry_policy_builder.build().execute(
-            partial(
-                _create_and_await,
-                algorithm_parameters=algorithm_parameters,
-                algorithm_name=algorithm_name,
-                custom_configuration=custom_configuration,
-                parent_request=parent_request,
-                payload_valid_for=payload_valid_for,
-                poll_interval_seconds=poll_interval_seconds,
-                tag=tag,
-                dry_run=dry_run,
-                post_create_callback=post_create_callback,
+            lambda: run_threadsafe(
+                partial(
+                    _create_and_await,
+                    algorithm_parameters=algorithm_parameters,
+                    algorithm_name=algorithm_name,
+                    custom_configuration=custom_configuration,
+                    parent_request=parent_request,
+                    payload_valid_for=payload_valid_for,
+                    poll_interval_seconds=poll_interval_seconds,
+                    tag=tag,
+                    dry_run=dry_run,
+                    post_create_callback=post_create_callback,
+                )
             ),
             "Fatal error when creating/awaiting a run",
             method_alias="create_and_await",
