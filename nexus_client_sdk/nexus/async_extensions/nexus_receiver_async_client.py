@@ -24,6 +24,7 @@ from adapta.logs import LoggerInterface
 from nexus_client_sdk.clients.nexus_receiver_client import NexusReceiverClient
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
+from nexus_client_sdk.nexus.async_extensions.async_exec import run_blocking
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
     NexusAsyncRetryPolicyBuilder,
     NexusClientRuntimeError,
@@ -81,7 +82,9 @@ class NexusReceiverAsyncClient:
                 raise NexusReceiverResultNotCommittedError()
 
         await self._retry_policy_builder.build().execute(
-            partial(self._sync_client.complete_run, result=result, algorithm=algorithm, request_id=request_id),
+            lambda: run_blocking(
+                partial(self._sync_client.complete_run, result=result, algorithm=algorithm, request_id=request_id)
+            ),
             on_retry_exhaust_message=f"Fatal error when submitting result {algorithm}/{request_id}",
             method_alias="complete_run",
         )
@@ -98,7 +101,7 @@ class NexusReceiverAsyncClient:
         )
 
         return await ack_await_policy.build().execute(
-            partial(_check_run, algorithm=algorithm, request_id=request_id),
+            lambda: run_blocking(partial(_check_run, algorithm=algorithm, request_id=request_id)),
             on_retry_exhaust_message=f"Result for the run {algorithm}/{request_id} was not processed by the receiver within the expected time frame",
             method_alias="complete_run",
         )
