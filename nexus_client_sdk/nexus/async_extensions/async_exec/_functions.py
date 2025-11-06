@@ -27,6 +27,8 @@ async def run_blocking(method: Callable[[...], TExecuteResult]) -> TExecuteResul
     """
      Runs a provided blocking method in a separate thread and returns result to the asyncio app main thread.
      Use this function to avoid locking asyncio loop when calling external C libraries, or any code that might lock the asyncio event loop thread.
+     Remember to use `functools.partial` to wrap your call before feeding to run_blocking.
+
     :param method: A sync callable that contains blocking code, for example libc or other cdll imported library calls.
     :return:
     """

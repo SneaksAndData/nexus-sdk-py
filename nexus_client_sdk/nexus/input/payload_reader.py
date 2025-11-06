@@ -18,6 +18,7 @@
 
 from dataclasses import dataclass
 import base64
+from functools import partial
 from pydoc import locate
 from typing import final
 
@@ -81,7 +82,7 @@ class AlgorithmPayloadReader:
     async def __aenter__(self):
         if not self._http:
             self._http = session_with_retries()
-        http_response = await run_blocking(self._http.get(url=self._payload_uri))
+        http_response = await run_blocking(partial(self._http.get, url=self._payload_uri))
         http_response.raise_for_status()
 
         compressed_payload: CompressedPayload | None = None
