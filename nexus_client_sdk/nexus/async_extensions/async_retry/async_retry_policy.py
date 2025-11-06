@@ -17,14 +17,13 @@
 
 import asyncio
 import random
-from typing import TypeVar, final, Self, Callable, Coroutine, Any
+from typing import final, Self, Callable, Coroutine, Any
 
 from adapta.logs import LoggerInterface
 
 from nexus_client_sdk.models.client_errors.go_http_errors import NetworkError
+from nexus_client_sdk.nexus.async_extensions.extension_models import TExecuteResult
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
-
-TExecuteResult = TypeVar("TExecuteResult")
 
 
 @final

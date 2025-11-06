@@ -22,6 +22,7 @@ import os
 import platform
 import signal
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from typing import final, Self
 from collections.abc import Callable
 
@@ -469,6 +470,12 @@ class Nexus:
         bootstrap_logger: LoggerInterface = self._injector.get(BootstrapLoggerFactory).create_logger(
             request_id=self._run_args.request_id,
             algorithm_name=os.getenv("NEXUS__ALGORITHM_NAME"),
+        )
+
+        # configure blocking pool
+        loop = asyncio.get_event_loop()
+        loop.set_default_executor(
+            ThreadPoolExecutor(max_workers=int(os.getenv("NEXUS__BLOCKING_POOL_MAX_SIZE", "128")))
         )
 
         bootstrap_logger.start()

@@ -18,21 +18,20 @@
 #
 
 import asyncio
-import os
-from concurrent.futures.thread import ThreadPoolExecutor
 from typing import Callable
 
-from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import TExecuteResult
+from nexus_client_sdk.nexus.async_extensions.extension_models import TExecuteResult
 
 
 async def run_blocking(method: Callable[[...], TExecuteResult]) -> TExecuteResult:
     """
-     Spawns a provided coroutine in a completely new event loop. Use this when parallelizing Nexus SDK operations, instead of using TaskGroup or asyncio.create_task
-    :param method:
+     Runs a provided blocking method in a separate thread and returns result to the asyncio app main thread.
+     Use this function to avoid locking asyncio loop when calling external C libraries, or any code that might lock the asyncio event loop thread.
+     Remember to use `functools.partial` to wrap your call before feeding to run_blocking.
+
+    :param method: A sync callable that contains blocking code, for example libc or other cdll imported library calls.
     :return:
     """
 
     loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(
-        ThreadPoolExecutor(max_workers=int(os.getenv("NEXUS__BLOCKING_POOL_WORKERS", "128"))), method
-    )
+    return await loop.run_in_executor(None, method)

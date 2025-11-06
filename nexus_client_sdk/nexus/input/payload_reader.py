@@ -18,6 +18,7 @@
 
 from dataclasses import dataclass
 import base64
+from functools import partial
 from pydoc import locate
 from typing import final
 
@@ -25,6 +26,7 @@ from adapta.utils import session_with_retries
 
 from dataclasses_json import DataClassJsonMixin
 
+from nexus_client_sdk.nexus.async_extensions.async_exec import run_blocking
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 
 
@@ -80,7 +82,7 @@ class AlgorithmPayloadReader:
     async def __aenter__(self):
         if not self._http:
             self._http = session_with_retries()
-        http_response = self._http.get(url=self._payload_uri)
+        http_response = await run_blocking(partial(self._http.get, url=self._payload_uri))
         http_response.raise_for_status()
 
         compressed_payload: CompressedPayload | None = None
