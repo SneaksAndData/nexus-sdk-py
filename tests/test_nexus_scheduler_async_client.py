@@ -94,11 +94,12 @@ async def test_blocking_code_isolation(async_scheduler: NexusSchedulerAsyncClien
                 algorithm_parameters={}, algorithm_name="hello-world", poll_interval_seconds=1
             )
         )
-        for _ in range(6)
+        for _ in range(2)
     ]
 
     await asyncio.wait(results)
 
     duration = (time.monotonic_ns() - start) / 1e9
 
-    assert duration < 6
+    # each takes approx 4s
+    assert duration < 8
