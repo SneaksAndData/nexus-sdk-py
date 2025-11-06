@@ -1,9 +1,13 @@
+import asyncio
+import time
 from pathlib import Path
 
 import pytest
 from cassandra.cluster import Session
 
 from nexus_client_sdk.models.client_errors.go_http_errors import BadRequestError
+
+# from nexus_client_sdk.nexus.async_extensions.async_exec import create_isolated_task
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
     NexusClientRuntimeError,
 )
@@ -78,3 +82,24 @@ async def test_custom_error(propagate: bool, async_scheduler: NexusSchedulerAsyn
             )
             is None
         )
+
+
+@pytest.mark.asyncio
+async def test_blocking_code_isolation(async_scheduler: NexusSchedulerAsyncClient):
+    start = time.monotonic_ns()
+
+    results = [
+        asyncio.create_task(
+            async_scheduler.create_and_await(
+                algorithm_parameters={}, algorithm_name="hello-world", poll_interval_seconds=1
+            )
+        )
+        for _ in range(2)
+    ]
+
+    await asyncio.wait(results)
+
+    duration = (time.monotonic_ns() - start) / 1e9
+
+    # each takes approx 4s
+    assert duration < 8
