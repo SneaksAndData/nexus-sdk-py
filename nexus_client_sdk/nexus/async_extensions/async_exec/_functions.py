@@ -20,7 +20,7 @@
 import asyncio
 from typing import Callable
 
-from nexus_client_sdk.nexus.async_extensions.extension_models import TExecuteResult
+from nexus_client_sdk.clients.fault_tolerance.models import TExecuteResult
 
 
 async def run_blocking(method: Callable[[...], TExecuteResult]) -> TExecuteResult:

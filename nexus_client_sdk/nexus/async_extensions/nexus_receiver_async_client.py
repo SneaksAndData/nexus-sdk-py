@@ -1,5 +1,4 @@
 """Receiver"""
-from functools import partial
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
@@ -16,18 +15,20 @@ from functools import partial
 #  limitations under the License.
 #
 
+from functools import partial
 from typing import final, Any
 from collections.abc import Callable
 
 from adapta.logs import LoggerInterface
 
+from nexus_client_sdk.clients.fault_tolerance.retry_policy import NexusRetryPolicyBuilder
 from nexus_client_sdk.clients.nexus_receiver_client import NexusReceiverClient
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
 from nexus_client_sdk.nexus.async_extensions.async_exec import run_blocking
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
-    NexusAsyncRetryPolicyBuilder,
     NexusClientRuntimeError,
+    NexusClientAsyncRetryPolicy,
 )
 
 
@@ -51,7 +52,9 @@ class NexusReceiverAsyncClient:
         token_provider: Callable[[], AccessToken] | None = None,
     ):
         self._sync_client = NexusReceiverClient(url=url, logger=logger, token_provider=token_provider)
-        self._retry_policy_builder = NexusAsyncRetryPolicyBuilder(logger=logger)
+        self._retry_policy_builder = NexusRetryPolicyBuilder(
+            default_policy=NexusClientAsyncRetryPolicy.default(logger=logger),
+        )
 
     def __del__(self):
         self._sync_client.__del__()
