@@ -9,6 +9,10 @@ from nexus_client_sdk.clients.fault_tolerance.models import TExecuteResult
 
 
 class NexusClientRetryPolicy(abc.ABC):
+    """
+    Retry policy for Nexus clients API calls.
+    """
+
     def __init__(
         self,
         retry_count: int,
@@ -62,7 +66,7 @@ class NexusClientRetryPolicy(abc.ABC):
     def _get_delay(self) -> float:
         return self._retry_base_delay_ms / 1000 + (random.random() * self._retry_base_delay_ms) / 1000
 
-    def _handle_retry_exhaust(self, method_alias: str, exhaust_message: str):
+    def _handle_retry_exhaust(self, method_alias: str, exhaust_message: str) -> None:
         if self._retry_exhaust_error_type is not None:
             self._logger.error("Retries exhausted for {method}, raising provided exception", method=method_alias)
             raise self._retry_exhaust_error_type(exhaust_message)
@@ -71,7 +75,6 @@ class NexusClientRetryPolicy(abc.ABC):
             "Retries exhausted for {method}, exception not provided, returning empty result",
             method=method_alias,
         )
-        return None
 
     @abstractmethod
     def execute(

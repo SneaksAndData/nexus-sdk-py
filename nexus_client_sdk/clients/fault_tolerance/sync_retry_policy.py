@@ -11,15 +11,9 @@ from nexus_client_sdk.clients.fault_tolerance.models import TExecuteResult
 
 @final
 class NexusClientSyncRetryPolicy(NexusClientRetryPolicy):
-    def __init__(
-        self,
-        retry_count: int,
-        retry_base_delay_ms: int,
-        error_types: list[type[BaseException]],
-        retry_exhaust_error_type: type[BaseException],
-        logger: LoggerInterface,
-    ):
-        super().__init__(retry_count, retry_base_delay_ms, error_types, retry_exhaust_error_type, logger)
+    """
+    Sync retry policy for Nexus clients API calls.
+    """
 
     def execute(
         self,

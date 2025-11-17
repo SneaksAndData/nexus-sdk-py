@@ -53,16 +53,6 @@ class NexusClientAsyncRetryPolicy(NexusClientRetryPolicy):
     Retry policy for Nexus scheduler API calls.
     """
 
-    def __init__(
-        self,
-        retry_count: int,
-        retry_base_delay_ms: int,
-        error_types: list[type[BaseException]],
-        retry_exhaust_error_type: type[BaseException],
-        logger: LoggerInterface,
-    ):
-        super().__init__(retry_count, retry_base_delay_ms, error_types, retry_exhaust_error_type, logger)
-
     @classmethod
     def create(
         cls,
