@@ -27,6 +27,7 @@ from nexus_client_sdk.clients.fault_tolerance.models import (
 )
 from nexus_client_sdk.clients.fault_tolerance.retry_policy import NexusRetryPolicyBuilder
 from nexus_client_sdk.clients.nexus_receiver_client import NexusReceiverClient
+from nexus_client_sdk.clients.sync_helpers import check_run_committed
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
 from nexus_client_sdk.nexus.async_extensions.async_exec import run_blocking
@@ -71,15 +72,6 @@ class NexusReceiverAsyncClient:
         :return:
         """
 
-        def _check_run(**kwargs):
-            run_acked = self._sync_client.check_run(
-                algorithm=kwargs["algorithm"],
-                request_id=kwargs["request_id"],
-            )
-
-            if run_acked is None or not run_acked:
-                raise NexusReceiverResultNotCommittedError()
-
         await self._retry_policy_builder.build().execute(
             lambda: run_blocking(
                 partial(self._sync_client.complete_run, result=result, algorithm=algorithm, request_id=request_id)
@@ -100,7 +92,9 @@ class NexusReceiverAsyncClient:
         )
 
         return await ack_await_policy.build().execute(
-            lambda: run_blocking(partial(_check_run, algorithm=algorithm, request_id=request_id)),
+            lambda: run_blocking(
+                partial(check_run_committed, receiver=self._sync_client, algorithm=algorithm, request_id=request_id)
+            ),
             on_retry_exhaust_message=f"Result for the run {algorithm}/{request_id} was not processed by the receiver within the expected time frame",
             method_alias="complete_run",
         )

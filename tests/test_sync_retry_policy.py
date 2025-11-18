@@ -9,6 +9,7 @@ from nexus_client_sdk.clients.fault_tolerance.retry_policy import NexusRetryPoli
 from nexus_client_sdk.clients.fault_tolerance.sync_retry_policy import NexusClientSyncRetryPolicy
 from nexus_client_sdk.clients.nexus_receiver_client import NexusReceiverClient
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
+from nexus_client_sdk.clients.sync_helpers import complete_run
 from nexus_client_sdk.models.client_errors.go_http_errors import BadRequestError
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
 from nexus_client_sdk.clients.fault_tolerance.models import NexusClientRuntimeError
@@ -77,14 +78,10 @@ def test_run_never_completed(receiver: NexusReceiverClient, cql_session: Session
     )
 
     with pytest.raises(NexusClientRuntimeError):
-        policy.build().execute(
-            partial(
-                receiver.complete_run,
-                result=SdkCompletedRunResult.create(result_uri="http://localhost", error=None),
-                algorithm="hello-world",
-                request_id="never-finished-sync",
-                on_complete_callback=_hang,
-            ),
-            on_retry_exhaust_message="Failed to retry",
-            method_alias="complete_run",
+        complete_run(
+            receiver=receiver,
+            result=SdkCompletedRunResult.create(result_uri="http://localhost", error=None),
+            algorithm="hello-world",
+            request_id="never-finished-sync",
+            on_complete_callback=_hang,
         )

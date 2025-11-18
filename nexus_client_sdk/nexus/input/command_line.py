@@ -1,4 +1,4 @@
-"""Cli helpers for Nexus inputs"""
+"""Cli sync_helpers for Nexus inputs"""
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
