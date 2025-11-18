@@ -82,9 +82,9 @@ class NexusClientRetryPolicy(abc.ABC):
         runnable: Callable[[], TExecuteResult] | Callable[[], Coroutine[Any, Any, TExecuteResult]],
         on_retry_exhaust_message: str,
         method_alias: str,
-    ) -> TExecuteResult | None:
+    ) -> TExecuteResult | Coroutine[Any, Any, TExecuteResult] | None:
         """
-         Execute provided runnable or coroutine using retry settings.
+         Execute provided runnable or coroutine using retry settings, utilizing the asyncio event loop..
 
         :param runnable:
         :param on_retry_exhaust_message:

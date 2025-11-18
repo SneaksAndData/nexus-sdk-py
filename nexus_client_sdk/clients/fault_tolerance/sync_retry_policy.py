@@ -15,12 +15,25 @@ class NexusClientSyncRetryPolicy(NexusClientRetryPolicy):
     Sync retry policy for Nexus clients API calls.
     """
 
-    def execute(
+    async def execute_async(
         self,
         runnable: Callable[[], TExecuteResult] | Callable[[], Coroutine[Any, Any, TExecuteResult]],
         on_retry_exhaust_message: str,
         method_alias: str,
     ) -> TExecuteResult | None:
+        """
+
+        Not supported by this policy. Use NexusClientAsyncRetryPolicy instead.
+        :return:
+        """
+        raise NotImplementedError()
+
+    def execute(
+        self,
+        runnable: Callable[[], TExecuteResult],
+        on_retry_exhaust_message: str,
+        method_alias: str,
+    ) -> TExecuteResult | Coroutine[Any, Any, TExecuteResult] | None:
         def _execute(try_number: int) -> TExecuteResult | None:
             if try_number >= self._retry_count:
                 return self._handle_retry_exhaust(method_alias, on_retry_exhaust_message)
@@ -28,18 +41,8 @@ class NexusClientSyncRetryPolicy(NexusClientRetryPolicy):
                 self._logger.debug(
                     "Executing {method}, attempt #{try_number}", method=method_alias, try_number=try_number
                 )
-                # either run or materialize coroutine
-                result = runnable()
 
-                # if a coroutine, await result
-                if isinstance(result, Coroutine):
-                    # raise if coroutine is provided
-                    if isinstance(runnable, Coroutine):
-                        raise NexusClientRuntimeError(
-                            "Coroutine provided as runnable for a SyncRetryPolicy. Either provide a regular method or use AsyncRetryPolicy"
-                        )
-
-                return result
+                return runnable()
             except BaseException as ex:
                 for err_type in self._error_types:
                     if isinstance(ex, err_type):

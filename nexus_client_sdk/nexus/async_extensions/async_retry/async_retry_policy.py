@@ -95,12 +95,12 @@ class NexusClientAsyncRetryPolicy(NexusClientRetryPolicy):
             logger=logger,
         )
 
-    async def execute(
+    def execute(
         self,
         runnable: Callable[[], TExecuteResult] | Callable[[], Coroutine[Any, Any, TExecuteResult]],
         on_retry_exhaust_message: str,
         method_alias: str,
-    ) -> TExecuteResult | None:
+    ) -> TExecuteResult | Coroutine[Any, Any, TExecuteResult] | None:
         """
          Execute a runnable using the retry policy.
         :param runnable: A method to execute, or a factory for coroutines.
@@ -140,4 +140,4 @@ class NexusClientAsyncRetryPolicy(NexusClientRetryPolicy):
                 # unmapped exceptions always raise
                 raise ex
 
-        return await _execute(0)
+        return _execute(0)
