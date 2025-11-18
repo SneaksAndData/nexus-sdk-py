@@ -1,3 +1,5 @@
+"""Models for fault tolerance"""
+
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,4 +15,4 @@
 #  limitations under the License.
 #
 
-from nexus_client_sdk.nexus.async_extensions.extension_models._models import *
+from nexus_client_sdk.clients.fault_tolerance.models._models import *
