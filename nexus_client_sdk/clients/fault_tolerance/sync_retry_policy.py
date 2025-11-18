@@ -5,8 +5,7 @@ from adapta.logs import LoggerInterface
 
 from nexus_client_sdk.clients.fault_tolerance.retry_policy import NexusClientRetryPolicy
 from nexus_client_sdk.models.client_errors.go_http_errors import NetworkError
-from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import NexusClientRuntimeError
-from nexus_client_sdk.clients.fault_tolerance.models import TExecuteResult
+from nexus_client_sdk.clients.fault_tolerance.models import TExecuteResult, NexusClientRuntimeError
 
 
 @final

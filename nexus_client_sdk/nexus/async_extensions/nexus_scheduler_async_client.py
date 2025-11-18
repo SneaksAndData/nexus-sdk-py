@@ -32,9 +32,9 @@ from nexus_client_sdk.models.scheduler import (
 )
 from nexus_client_sdk.nexus.async_extensions.async_exec import run_blocking
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
-    NexusSchedulingError,
     NexusClientAsyncRetryPolicy,
 )
+from nexus_client_sdk.clients.fault_tolerance.models import NexusSchedulingError
 
 
 @final

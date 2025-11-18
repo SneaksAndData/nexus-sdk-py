@@ -21,22 +21,18 @@ from collections.abc import Callable
 
 from adapta.logs import LoggerInterface
 
+from nexus_client_sdk.clients.fault_tolerance.models import (
+    NexusReceiverResultNotCommittedError,
+    NexusClientRuntimeError,
+)
 from nexus_client_sdk.clients.fault_tolerance.retry_policy import NexusRetryPolicyBuilder
 from nexus_client_sdk.clients.nexus_receiver_client import NexusReceiverClient
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
 from nexus_client_sdk.nexus.async_extensions.async_exec import run_blocking
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
-    NexusClientRuntimeError,
     NexusClientAsyncRetryPolicy,
 )
-
-
-@final
-class NexusReceiverResultNotCommittedError(BaseException):
-    """
-    Error to raise when result is not committed
-    """
 
 
 @final

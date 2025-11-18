@@ -22,29 +22,7 @@ from adapta.logs import LoggerInterface
 
 from nexus_client_sdk.clients.fault_tolerance.retry_policy import NexusClientRetryPolicy
 from nexus_client_sdk.models.client_errors.go_http_errors import NetworkError
-from nexus_client_sdk.clients.fault_tolerance.models import TExecuteResult
-from nexus_client_sdk.nexus.exceptions import FatalNexusError
-
-
-@final
-class NexusClientRuntimeError(FatalNexusError):
-    """
-    Fatal error to be thrown from the scheduler client, to prevent Nexus apps from retrying.
-    """
-
-    def __init__(self, description: str) -> None:
-        super().__init__()
-        self._description = description
-
-    def __str__(self) -> str:
-        return self._description
-
-
-@final
-class NexusSchedulingError(BaseException):
-    """
-    Error raised for SCHEDULING_FAILED requests. This class is used to enable retries for this lifecycle stage in certain cases.
-    """
+from nexus_client_sdk.clients.fault_tolerance.models import TExecuteResult, NexusClientRuntimeError
 
 
 @final

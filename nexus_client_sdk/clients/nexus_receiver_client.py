@@ -129,3 +129,11 @@ class NexusReceiverClient:
                 return maybe_result.result
             case _:
                 raise maybe_result.error()
+
+    @property
+    def logger(self) -> LoggerInterface:
+        """
+         Logger used by this receiver instance.
+        :return:
+        """
+        return self._logger
