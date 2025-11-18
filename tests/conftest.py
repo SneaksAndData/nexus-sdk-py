@@ -92,6 +92,15 @@ def scheduler():
     logger.stop()
 
 
+@contextmanager
+def broken_scheduler():
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
+    logger.start()
+    yield NexusSchedulerClient.create("http://non-existing:1234", logger, lambda: AccessToken.empty())
+
+    logger.stop()
+
+
 @pytest.fixture
 def async_scheduler():
     logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])

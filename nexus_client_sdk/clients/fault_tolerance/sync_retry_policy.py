@@ -15,19 +15,6 @@ class NexusClientSyncRetryPolicy(NexusClientRetryPolicy):
     Sync retry policy for Nexus clients API calls.
     """
 
-    async def execute_async(
-        self,
-        runnable: Callable[[], TExecuteResult] | Callable[[], Coroutine[Any, Any, TExecuteResult]],
-        on_retry_exhaust_message: str,
-        method_alias: str,
-    ) -> TExecuteResult | None:
-        """
-
-        Not supported by this policy. Use NexusClientAsyncRetryPolicy instead.
-        :return:
-        """
-        raise NotImplementedError()
-
     def execute(
         self,
         runnable: Callable[[], TExecuteResult],
@@ -48,7 +35,7 @@ class NexusClientSyncRetryPolicy(NexusClientRetryPolicy):
                     if isinstance(ex, err_type):
                         delay = self._get_delay()
                         self._logger.info(
-                            "Method {method} raised a transient error {exception}, retrying in {delay}",
+                            "Method {method} raised a transient error {exception}, retrying in {delay:.2f}",
                             method=method_alias,
                             exception=str(ex),
                             delay=delay,

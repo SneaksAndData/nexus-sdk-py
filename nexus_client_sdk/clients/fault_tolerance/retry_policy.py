@@ -61,6 +61,10 @@ class NexusClientRetryPolicy(abc.ABC):
 
     @property
     def logger(self) -> LoggerInterface:
+        """
+         Return the logger used by this policy.
+        :return:
+        """
         return self._logger
 
     def _get_delay(self) -> float:

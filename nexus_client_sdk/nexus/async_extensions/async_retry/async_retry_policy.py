@@ -129,7 +129,7 @@ class NexusClientAsyncRetryPolicy(NexusClientRetryPolicy):
                     if isinstance(ex, err_type):
                         delay = self._get_delay()
                         self._logger.info(
-                            "Method {method} raised a transient error {exception}, retrying in {delay}",
+                            "Method {method} raised a transient error {exception}, retrying in {delay:.2f}",
                             method=method_alias,
                             exception=str(ex),
                             delay=delay,
