@@ -518,45 +518,47 @@ class Nexus:
                 run_id=self._run_args.request_id,
             )
             metrics_provider = self._injector.get(MetricsProvider)
-            if os.getenv("NEXUS__TELEMETRY_ENABLED", "1") == "1":
-                async with telemetry_recorder as recorder:
-                    await recorder.record(run_id=self._run_args.request_id, **algorithm.inputs)
-                    # only execute user telemetry if this run has succeeded
-                    if ex is None:
-                        on_complete_tasks = [
-                            recorder.record_user_telemetry(
-                                user_recorder=self._injector.get(on_complete_task_class),
-                                run_id=self._run_args.request_id,
-                                result=self._algorithm_run_task.result(),
-                                **algorithm.inputs,
-                            )
-                            for on_complete_task_class in self._on_complete_tasks
-                        ]
-                        if len(on_complete_tasks) > 0:
-                            done, pending = await asyncio.wait(on_complete_tasks, return_when=asyncio.FIRST_EXCEPTION)
-                            if len(pending) > 0:
-                                metrics_provider.increment("telemetry_reports_incomplete")
-                                root_logger.warning(
-                                    "Some post-processing operations did not complete or failed. Please review application logs for more information"
-                                )
 
-                            for done_on_complete_task in done:
-                                on_complete_task_exc = done_on_complete_task.exception()
-                                if on_complete_task_exc:
-                                    metrics_provider.increment("telemetry_reports_failed")
-                                    root_logger.warning(
-                                        "Post processing task failed",
-                                        exception=on_complete_task_exc,
-                                    )
-                                else:
-                                    metrics_provider.increment("telemetry_reports_succeeded")
-                        else:
-                            root_logger.info("No post processing tasks were defined for this run")
-                    else:
-                        root_logger.warning(
-                            "Skipping user telemetry recording as the run {run_id} has failed",
+            async with telemetry_recorder as recorder:
+                if os.getenv("NEXUS__ALGORITHM_TELEMETRY_ENABLED", "1") == "1":
+                    await recorder.record(run_id=self._run_args.request_id, **algorithm.inputs)
+
+                # only execute user telemetry if this run has succeeded
+                if ex is None and os.getenv("NEXUS__USER_TELEMETRY_ENABLED", "1") == "1":
+                    on_complete_tasks = [
+                        recorder.record_user_telemetry(
+                            user_recorder=self._injector.get(on_complete_task_class),
                             run_id=self._run_args.request_id,
+                            result=self._algorithm_run_task.result(),
+                            **algorithm.inputs,
                         )
+                        for on_complete_task_class in self._on_complete_tasks
+                    ]
+                    if len(on_complete_tasks) > 0:
+                        done, pending = await asyncio.wait(on_complete_tasks, return_when=asyncio.FIRST_EXCEPTION)
+                        if len(pending) > 0:
+                            metrics_provider.increment("telemetry_reports_incomplete")
+                            root_logger.warning(
+                                "Some post-processing operations did not complete or failed. Please review application logs for more information"
+                            )
+
+                        for done_on_complete_task in done:
+                            on_complete_task_exc = done_on_complete_task.exception()
+                            if on_complete_task_exc:
+                                metrics_provider.increment("telemetry_reports_failed")
+                                root_logger.warning(
+                                    "Post processing task failed",
+                                    exception=on_complete_task_exc,
+                                )
+                            else:
+                                metrics_provider.increment("telemetry_reports_succeeded")
+                    else:
+                        root_logger.info("No post processing tasks were defined for this run")
+                else:
+                    root_logger.warning(
+                        "Skipping user telemetry recording as the run {run_id} has failed",
+                        run_id=self._run_args.request_id,
+                    )
 
             # dispose of QES instance gracefully as it might hold open connections
             qes = self._injector.get(QueryEnabledStore)
