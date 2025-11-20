@@ -149,7 +149,7 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             delay = int(os.getenv("NEXUS__FORK_SPAWN_BASE_DELAY_SECONDS", "0"))
             if delay > 0:
                 jitter = delay + random.random() * delay
-                self._logger.info("Spawning fork in {jitter:.2f}", jitter)
+                self._logger.info(template="Spawning fork in {jitter:.2f}", jitter=jitter)
                 await asyncio.sleep(delay + random.random() * delay)
 
             return asyncio.create_task(remote_algorithm.run(**remote_args))
