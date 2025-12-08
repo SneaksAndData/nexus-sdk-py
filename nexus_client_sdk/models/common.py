@@ -21,7 +21,6 @@ import ctypes
 from dataclasses import dataclass
 from typing import final
 
-from nexus_client_sdk.clients.cwrapper import CLIB
 from nexus_client_sdk.models.client_errors.go_http_errors import (
     SdkError,
     UnauthorizedError,
@@ -70,9 +69,6 @@ class SdkErrorResponse(ctypes.Structure):
         ("client_error_message", ctypes.c_char_p),
     ]
 
-    def __del__(self):
-        CLIB.FreeErrorResponse(self)
-
 
 @final
 class SdkBoolResult(ctypes.Structure):
@@ -85,6 +81,3 @@ class SdkBoolResult(ctypes.Structure):
         ("client_error_type", ctypes.c_char_p),
         ("client_error_message", ctypes.c_char_p),
     ]
-
-    def __del__(self):
-        CLIB.FreeBoolResult(self)

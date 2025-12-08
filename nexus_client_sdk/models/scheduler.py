@@ -20,7 +20,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import final, Self
 
-from nexus_client_sdk.clients.cwrapper import CLIB
 from nexus_client_sdk.models.common import PySdkType
 
 
@@ -39,9 +38,6 @@ class SdkRunResult(ctypes.Structure):
         ("client_error_message", ctypes.c_char_p),
         ("status", ctypes.c_char_p),
     ]
-
-    def __del__(self):
-        CLIB.FreeRunResult(self)
 
 
 @final
@@ -124,9 +120,6 @@ class SdkAlgorithmRun(ctypes.Structure):
         ("client_error_type", ctypes.c_char_p),
         ("client_error_message", ctypes.c_char_p),
     ]
-
-    def __del__(self):
-        CLIB.FreeAlgorithmRun(self)
 
 
 @dataclass
@@ -270,9 +263,6 @@ class SdkRequestMetadata(ctypes.Structure):
         ("client_error_message", ctypes.c_char_p),
     ]
 
-    def __del__(self):
-        CLIB.FreeRequestMetadata(self)
-
 
 @dataclass
 class RequestMetadata(PySdkType):
@@ -348,9 +338,6 @@ class SdkStringResult(ctypes.Structure):
         ("client_error_type", ctypes.c_char_p),
         ("client_error_message", ctypes.c_char_p),
     ]
-
-    def __del__(self):
-        CLIB.FreeStringResult(self)
 
 
 @dataclass
