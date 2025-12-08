@@ -147,7 +147,7 @@ class NexusSchedulerClient:
         """
         self._init_client()
         result = self._get_run_result(bytes(request_id, encoding="utf-8"), bytes(algorithm, encoding="utf-8"))
-        result.__del__ = lambda s: self._sdk_lib.FreeRunResult(s)
+        result.__del__ = self._sdk_lib.FreeRunResult
 
         if not result:
             raise RuntimeError(
@@ -217,7 +217,7 @@ class NexusSchedulerClient:
             bytes(tag, encoding="utf-8") if tag else None,
             bytes(str(dry_run).lower(), encoding="utf-8"),
         )
-        maybe_result.__del__ = lambda s: self._sdk_lib.FreeAlgorithmRun(s)
+        maybe_result.__del__ = self._sdk_lib.FreeAlgorithmRun
 
         converted = AlgorithmRun.from_sdk_run(maybe_result)
 
@@ -331,7 +331,7 @@ class NexusSchedulerClient:
         """
         self._init_client()
         sdk_meta = self._get_request_metadata(bytes(request_id, encoding="utf-8"), bytes(algorithm, encoding="utf-8"))
-        sdk_meta.__del__ = lambda s: self._sdk_lib.FreeRequestMetadata(s)
+        sdk_meta.__del__ = self._sdk_lib.FreeRequestMetadata
         maybe_meta = RequestMetadata.from_sdk_result(sdk_meta)
 
         if maybe_meta is None:
@@ -365,7 +365,7 @@ class NexusSchedulerClient:
             bytes(initiator, encoding="utf-8"),
             bytes(reason, encoding="utf-8"),
         )
-        sdk_result.__del__ = lambda s: self._sdk_lib.FreeStringResult(s)
+        sdk_result.__del__ = self._sdk_lib.FreeStringResult
 
         maybe_result = StringResult.from_sdk_result(sdk_result)
 

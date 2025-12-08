@@ -86,7 +86,7 @@ class NexusReceiverClient:
             bytes(algorithm, encoding="utf-8"),
             bytes(request_id, encoding="utf-8"),
         )
-        response.__del__ = lambda s: self._sdk_lib.FreeErrorResponse(s)
+        response.__del__ = self._sdk_lib.FreeErrorResponse
 
         maybe_error = ErrorResponse.from_sdk_response(response)
 
@@ -118,7 +118,7 @@ class NexusReceiverClient:
             bytes(algorithm, encoding="utf-8"),
             bytes(request_id, encoding="utf-8"),
         )
-        result.__del__ = lambda s: self._sdk_lib.FreeBoolResult(s)
+        result.__del__ = self._sdk_lib.FreeBoolResult
 
         maybe_result = BoolResult.from_sdk_result(result)
 
