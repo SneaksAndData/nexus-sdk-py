@@ -25,7 +25,7 @@ from typing import final, Callable, Self, Iterator, Any
 from adapta.logs import LoggerInterface
 from adapta.utils.concurrent_task_runner import ConcurrentTaskRunner, Executable
 
-from nexus_client_sdk.clients.cwrapper import CLIB
+from nexus_client_sdk.clients.cwrapper import import_cgo_library
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.client_errors.go_http_errors import NotFoundError
 from nexus_client_sdk.models.scheduler import (
@@ -59,44 +59,45 @@ class NexusSchedulerClient:
         self._logger = logger
         self._client = None
         self._current_token: AccessToken | None = None
+        self._sdk_lib = import_cgo_library()
 
         # setup functions
-        self._get_run_results = CLIB.GetRunResults
+        self._get_run_results = self._sdk_lib.GetRunResults
         self._get_run_results.restype = ctypes.POINTER(SdkRunResult)
 
-        self._get_run_result = CLIB.GetRunResult
+        self._get_run_result = self._sdk_lib.GetRunResult
         self._get_run_result.restype = SdkRunResult
 
-        self._update_token = CLIB.UpdateToken
+        self._update_token = self._sdk_lib.UpdateToken
 
-        self._create_run = CLIB.CreateRun
+        self._create_run = self._sdk_lib.CreateRun
         self._create_run.restype = SdkAlgorithmRun
 
-        self._await_run = CLIB.AwaitRun
+        self._await_run = self._sdk_lib.AwaitRun
         self._await_run.restype = SdkRunResult
 
-        self._await_tagged_runs = CLIB.AwaitRuns
+        self._await_tagged_runs = self._sdk_lib.AwaitRuns
         self._await_tagged_runs.restype = ctypes.POINTER(SdkRunResult)
 
-        self._get_request_metadata = CLIB.GetRequestMetadata
+        self._get_request_metadata = self._sdk_lib.GetRequestMetadata
         self._get_request_metadata.restype = SdkRequestMetadata
 
-        self._free_results_array = CLIB.FreeRunResultsPointer
+        self._free_results_array = self._sdk_lib.FreeRunResultsPointer
 
-        self._cancel_run = CLIB.CancelRun
+        self._cancel_run = self._sdk_lib.CancelRun
         self._cancel_run.restype = SdkStringResult
 
-        self._get_buffered_run = CLIB.GetBufferedRun
+        self._get_buffered_run = self._sdk_lib.GetBufferedRun
         self._get_buffered_run.restype = SdkStringResult
 
-        self._is_run_finished = CLIB.IsRunFinished
+        self._is_run_finished = self._sdk_lib.IsRunFinished
         self._is_run_finished.restype = ctypes.c_int32
 
-        self._has_run_succeeded = CLIB.HasRunSucceeded
+        self._has_run_succeeded = self._sdk_lib.HasRunSucceeded
         self._has_run_succeeded.restype = ctypes.c_int32
 
     def __del__(self):
-        CLIB.FreeClient(self._client)
+        self._sdk_lib.FreeClient(self._client)
 
     def _c_string_array(self, strings: list[str]) -> ctypes.pointer:
         ptr = (ctypes.c_char_p * (len(strings) + 1))()
@@ -107,7 +108,7 @@ class NexusSchedulerClient:
     def _init_client(self):
         if self._client is None:
             self._current_token = self._token_provider() if self._token_provider is not None else AccessToken.empty()
-            self._client = CLIB.CreateSchedulerClient(
+            self._client = self._sdk_lib.CreateSchedulerClient(
                 bytes(self._url, encoding="utf-8"), bytes(self._current_token.value, encoding="utf-8")
             )
 
@@ -146,6 +147,7 @@ class NexusSchedulerClient:
         """
         self._init_client()
         result = self._get_run_result(bytes(request_id, encoding="utf-8"), bytes(algorithm, encoding="utf-8"))
+        result.__del__ = lambda s: self._sdk_lib.FreeRunResult(s)
 
         if not result:
             raise RuntimeError(
@@ -215,6 +217,7 @@ class NexusSchedulerClient:
             bytes(tag, encoding="utf-8") if tag else None,
             bytes(str(dry_run).lower(), encoding="utf-8"),
         )
+        maybe_result.__del__ = lambda s: self._sdk_lib.FreeAlgorithmRun(s)
 
         converted = AlgorithmRun.from_sdk_run(maybe_result)
 
@@ -328,6 +331,7 @@ class NexusSchedulerClient:
         """
         self._init_client()
         sdk_meta = self._get_request_metadata(bytes(request_id, encoding="utf-8"), bytes(algorithm, encoding="utf-8"))
+        sdk_meta.__del__ = lambda s: self._sdk_lib.FreeRequestMetadata(s)
         maybe_meta = RequestMetadata.from_sdk_result(sdk_meta)
 
         if maybe_meta is None:
@@ -361,6 +365,8 @@ class NexusSchedulerClient:
             bytes(initiator, encoding="utf-8"),
             bytes(reason, encoding="utf-8"),
         )
+        sdk_result.__del__ = lambda s: self._sdk_lib.FreeStringResult(s)
+
         maybe_result = StringResult.from_sdk_result(sdk_result)
 
         if maybe_result is None:
