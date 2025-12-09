@@ -29,6 +29,7 @@ from nexus_client_sdk.models.scheduler import (
     SdkParentRequest,
     RunResult,
     RequestLifeCycleStage,
+    RequestMetadata,
 )
 from nexus_client_sdk.nexus.async_extensions.async_exec import run_blocking
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
@@ -197,4 +198,24 @@ class NexusSchedulerAsyncClient:
             ),
             "Fatal error when creating/awaiting a run",
             method_alias="create_and_await",
+        )
+
+    async def get_request_metadata(self, request_id: str, algorithm: str) -> RequestMetadata | None:
+        """
+        Gets metadata for a given run for a given algorithm.
+        :param request_id: Run request ID.
+        :param algorithm: Algorithm name.
+        :return:
+        """
+
+        return await self._retry_policy_builder.build().execute(
+            lambda: run_blocking(
+                partial(
+                    self._sync_client.get_request_metadata,
+                    request_id=request_id,
+                    algorithm=algorithm,
+                )
+            ),
+            f"Fatal error when getting metadata for request {algorithm}/{request_id}",
+            method_alias="get_request_metadata",
         )

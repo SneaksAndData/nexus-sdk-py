@@ -54,6 +54,14 @@ async def test_create_and_await(async_scheduler: NexusSchedulerAsyncClient):
     assert async_scheduler._sync_client.is_finished(result) and not async_scheduler._sync_client.has_succeeded(result)
 
 
+async def test_get_request_metadata(async_scheduler: NexusSchedulerAsyncClient):
+    result = await async_scheduler.create_and_await(algorithm_parameters={}, algorithm_name="hello-world")
+    meta_data = await async_scheduler.get_request_metadata(request_id=result.request_id, algorithm="hello-world")
+
+    assert meta_data.id == result.request_id
+    assert meta_data.algorithm == "hello-world"
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("propagate", [True, False])
 async def test_custom_error(propagate: bool, async_scheduler: NexusSchedulerAsyncClient, cql_session: Session):
