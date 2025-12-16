@@ -25,7 +25,7 @@ from adapta.metrics import MetricsProvider
 from adapta.metrics.providers.datadog_provider import DatadogMetricsProvider
 from dataclasses_json import DataClassJsonMixin
 
-from nexus_client_sdk.nexus.config import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.exceptions.startup_error import (
     FatalStartupConfigurationError,
 )
@@ -65,12 +65,12 @@ class MetricsProviderFactory:
     ):
         self._global_tags = global_tags
         try:
-            self._metrics_class: type[MetricsProvider] = locate(NEXUS_FRAMEWORK_CONFIGURATION.metrics.provider)
+            self._metrics_class: type[MetricsProvider] = locate(NEXUS_FRAMEWORK_CONFIGURATION.default.metrics.provider)
 
             self._metrics_settings: MetricsProviderSettings = MetricsProviderSettings(
-                init_args=NEXUS_FRAMEWORK_CONFIGURATION.metrics.init_args,
-                protocol=NEXUS_FRAMEWORK_CONFIGURATION.metrics.protocol,
-                fixed_tags=NEXUS_FRAMEWORK_CONFIGURATION.metrics.global_tags,
+                init_args=NEXUS_FRAMEWORK_CONFIGURATION.default.metrics.init_args,
+                protocol=NEXUS_FRAMEWORK_CONFIGURATION.default.metrics.protocol,
+                fixed_tags=NEXUS_FRAMEWORK_CONFIGURATION.default.metrics.global_tags,
             )
         except BaseException as ex:
             raise FatalStartupConfigurationError("MetricsProviderFactory.__init__") from ex

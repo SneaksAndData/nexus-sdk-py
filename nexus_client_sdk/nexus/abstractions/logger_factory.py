@@ -27,7 +27,7 @@ from adapta.logs.handlers.datadog_api_handler import DataDogApiHandler
 from adapta.logs.handlers.safe_stream_handler import SafeStreamHandler
 from adapta.logs.models import LogLevel
 
-from nexus_client_sdk.nexus.config import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 
 TLogger = TypeVar("TLogger")
 
@@ -50,8 +50,8 @@ class BootstrapLoggerFactory:
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
-        if "datadog" in NEXUS_FRAMEWORK_CONFIGURATION.logging:
-            self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.logging.datadog))
+        if "datadog" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+            self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog))
 
     def create_logger(self, request_id: str, algorithm_name: str) -> LoggerInterface:
         """
@@ -60,7 +60,7 @@ class BootstrapLoggerFactory:
         return create_async_logger(
             logger_type=BootstrapLogger.__class__,
             log_handlers=self._log_handlers,
-            min_log_level=LogLevel(NEXUS_FRAMEWORK_CONFIGURATION.logging.log_level),
+            min_log_level=LogLevel(NEXUS_FRAMEWORK_CONFIGURATION.default.logging.log_level),
             global_tags={
                 "request_id": request_id,
                 "algorithm": algorithm_name,
@@ -86,15 +86,15 @@ class LoggerFactory:
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
-        if "datadog" in NEXUS_FRAMEWORK_CONFIGURATION.logging:
-            self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.logging.datadog))
+        if "datadog" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+            self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog))
 
-        if "fixed_template" in NEXUS_FRAMEWORK_CONFIGURATION.logging:
-            self._fixed_template = self._fixed_template | NEXUS_FRAMEWORK_CONFIGURATION.logging.fixed_template
+        if "fixed_template" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+            self._fixed_template = self._fixed_template | NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template
 
-        if "fixed_template_delimiter" in NEXUS_FRAMEWORK_CONFIGURATION.logging:
+        if "fixed_template_delimiter" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
             self._fixed_template_delimiter = (
-                self._fixed_template_delimiter or NEXUS_FRAMEWORK_CONFIGURATION.logging.fixed_template_delimiter
+                self._fixed_template_delimiter or NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template_delimiter
             )
 
     def create_logger(
@@ -107,7 +107,7 @@ class LoggerFactory:
         return create_async_logger(
             logger_type=logger_type,
             log_handlers=self._log_handlers,
-            min_log_level=LogLevel(NEXUS_FRAMEWORK_CONFIGURATION.logging.log_level),
+            min_log_level=LogLevel(NEXUS_FRAMEWORK_CONFIGURATION.default.logging.log_level),
             fixed_template=self._fixed_template,
             fixed_template_delimiter=self._fixed_template_delimiter,
             global_tags=self._global_tags,

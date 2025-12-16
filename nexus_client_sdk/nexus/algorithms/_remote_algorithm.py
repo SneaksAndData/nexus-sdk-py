@@ -35,7 +35,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
-from nexus_client_sdk.nexus.config import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.core.app_dependencies import Compressor
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input.input_processor import (
@@ -170,12 +170,12 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             algorithm_name=self._remote_name,
             custom_configuration=self._remote_config,
             parent_request=SdkParentRequest.create(
-                algorithm_name=NEXUS_FRAMEWORK_CONFIGURATION.algorithm_name, request_id=run_args["request_id"]
+                algorithm_name=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name, request_id=run_args["request_id"]
             )
             if self._is_hard_dependency
             else None,
             tag=tag,
-            dry_run=NEXUS_FRAMEWORK_CONFIGURATION.remote_algorithm.dry_run == "1",
+            dry_run=NEXUS_FRAMEWORK_CONFIGURATION.default.remote_algorithm.dry_run == "1",
         )
 
         self._logger.info(

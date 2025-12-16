@@ -22,7 +22,7 @@ from typing import final
 from adapta.storage.distributed_object_store.v3.datastax_astra import AstraClient
 from injector import Module, singleton, provider
 
-from nexus_client_sdk.nexus.config import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 
 
 @final
@@ -38,13 +38,13 @@ class AstraClientModule(Module):
         DI factory method.
         """
 
-        if NEXUS_FRAMEWORK_CONFIGURATION.inputs.astra_client.enabled == "1":
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.astra_client.enabled == "1":
             return AstraClient(
-                client_name=NEXUS_FRAMEWORK_CONFIGURATION.algorithm_name,
-                keyspace=NEXUS_FRAMEWORK_CONFIGURATION.inputs.astra_client.keyspace,
-                secure_connect_bundle_bytes=NEXUS_FRAMEWORK_CONFIGURATION.inputs.astra_client.bundle,
-                client_id=NEXUS_FRAMEWORK_CONFIGURATION.inputs.astra_client.client_id,
-                client_secret=NEXUS_FRAMEWORK_CONFIGURATION.inputs.astra_client.client_secret,
+                client_name=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
+                keyspace=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.astra_client.keyspace,
+                secure_connect_bundle_bytes=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.astra_client.bundle,
+                client_id=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.astra_client.client_id,
+                client_secret=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.astra_client.client_secret,
             )
 
         return None

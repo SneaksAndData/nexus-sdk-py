@@ -1,0 +1,153 @@
+dynaconf_merge = true
+
+# Name of this algorithm in the Nexus deployment
+algorithm_name = ""
+
+# Shard this algorithm is executed one. This setting is assigned at runtime.
+shard_name = ""
+
+# Nexus client configuration
+[client]
+# Nexus Receiver address
+receiver = "http://localhost:8081"
+
+# Nexus Scheduler address
+scheduler = "http://localhost:8080"
+
+# Configurations for nexus_client_sdk.nexus.algorithms.RemoteAlgorithm
+[remote_algorithm]
+
+# If set to "1" will only create run metadata
+dry_run = "0"
+
+# Import path to a compression method to use, if remote payload compression is required
+compression_import_path = ""
+
+# Import path to a decompression method to require on the receiving end, if remote payload is compressed
+decompression_import_path = ""
+
+# Result processing and serialization
+[result]
+# Storage client to use when saving serialized result and generating pre-signed URL for it
+storage_client_class = "adapta.storage.blob.s3_storage_client.S3StorageClient"
+
+# Base path to use when recording results. Protocol must be supported by storage_client_class
+output_path = "s3a://nexus-sdk-tests/result"
+
+# RESULT SERIALIZERS - classes available to serialize AlgorithmResult objects to desired formats
+serializers = [
+    "adapta.storage.models.formatters.PandasDataFrameJsonSerializationFormat"
+]
+
+# Run telemetry recording
+[telemetry]
+# Base path to use when recording input and user telemetry
+output_path = "s3a://nexus-sdk-tests/telemetry"
+
+# TELEMETRY SERIALIZERS - classes available to serialize Algorithm inputs and UserTelemetry classes
+serializers = [
+    "adapta.storage.models.formatters.PandasDataFrameJsonSerializationFormat"
+]
+
+   # Input telemetry configurations. Inputs are dataframes and other objects passed to algorithm class from processors
+   [telemetry.input]
+     # Control whether algorithm inputs are recorded as telemetry
+     enabled = "1"
+
+    # User telemetry configurations. User telemetry comes from custom classes provided by algorithm developers that extend UserTelemetry interface
+    # User telemetry is often used for measure health, output quality and other data that is important for observing the runs in a live system
+    [telemetry.user]
+      # Control whether user telemetry recording is enabled
+      enabled = "1"
+
+      # Provide a list of user telemetry classes to execute. If empty, all user telemetry will be recorded
+      # THIS IS A RESERVATION FOR https://github.com/SneaksAndData/nexus-sdk-py/issues/126
+      classes = []
+
+# INPUTS - configuration for data read interfaces
+[inputs]
+
+# External data sockets to be injected into InputReader instances
+#[[inputs.sockets]]
+#alias = "localfile1"
+#data_path = "local+file:///tmp/file1.json"
+#data_format = "text"
+#
+#[[inputs.sockets]]
+#alias = "localfile2"
+#data_path = "local+file:///tmp/file2.json"
+#data_format = "text"
+
+# default is empty list
+sockets = []
+
+    # Query Enabled Store configuration
+    [inputs.query_enabled_store]
+
+    enabled = "1"
+
+    # Connection string for QES
+    connection_string = "qes://engine=LOCAL;plaintext_credentials={};settings={}"
+
+    # Settings for AstraClientModule
+    [inputs.astra_client]
+
+    # Enabled injection of AstraClientModule
+    enabled = "0"
+
+    # Astra Keyspace
+    # keyspace = ""
+
+    # Secure Connection Bundle, base64-encoded
+    # bundle = ""
+
+    # Astra Client ID
+    # client_id = ""
+
+    # Astra Client Secret
+    # client_secret = ""
+
+# Framework-powered logging
+[logging]
+# Global template to apply to ALL log messages emitted by framework loggers. This setting conflicts with
+# with_log_enricher() and might be removed in the future
+# fixed_template = ""
+
+# Delimiter to use for global template
+# fixed_template_delimiter = ""
+
+# Framework log level. Defaults to INFO if not provided
+# log_level = "ERROR"
+
+    # Datadog API handler settings
+    #[logging.datadog]
+    #buffer_size = "1"
+    #debug = "False"
+    #max_flush_retry_time = "30"
+    #ignore_flush_failure = "True"
+    #fixed_tags = {'key' = 'value'}
+
+[metrics]
+# Implementation of MetricsProvider used to submit default framework runtime and user-level metrics
+provider = "adapta.metrics.providers.void_provider.VoidMetricsProvider"
+
+# Initialization configuration for the MetricsProvider defined under `provider`
+init_args = {"metric_namespace" = "sdk"}
+
+# Protocol to use when sending metrics. Provider-speicifc setting. `udp`, `uds` are supported for DatadogMetricsProvider
+protocol = "uds"
+
+# Tags to assign to all metrics globally
+global_tags = {}
+
+# Threadpool resource management
+[threading]
+
+# size of the blocking thread pool. Blocking pool runs operations that can hang main thread - usually via run_blocking() call
+blocking_pool_max_size = "16"
+
+# Settings for ForkedAlgorithm runtime
+[forked_algorithm]
+
+# Base delay between fork launches
+spawn_base_delay_seconds = "1"

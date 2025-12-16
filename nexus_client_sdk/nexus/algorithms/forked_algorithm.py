@@ -33,7 +33,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
-from nexus_client_sdk.nexus.config import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.input_processor import (
     InputProcessor,
 )
@@ -146,7 +146,7 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             return await self._main_run(**run_args)
 
         async def _spawn(remote_algorithm: RemoteAlgorithm, run_index: int, **remote_args) -> asyncio.Task:
-            delay = int(NEXUS_FRAMEWORK_CONFIGURATION.forked_algorithm.spawn_base_delay_seconds)
+            delay = int(NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.spawn_base_delay_seconds)
             # skip delay if not provided, or if spawning the first fork
             if delay > 0 and run_index > 0:
                 jitter = delay + random.random() * delay

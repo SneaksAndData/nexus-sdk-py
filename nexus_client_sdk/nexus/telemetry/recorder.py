@@ -34,7 +34,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
     NexusCoreObject,
     AlgorithmResult,
 )
-from nexus_client_sdk.nexus.config import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.core.serializers import (
     TelemetrySerializer,
 )
@@ -66,7 +66,7 @@ class TelemetryRecorder(NexusCoreObject):
     ):
         super().__init__(metrics_provider, logger_factory)
         self._storage_client = storage_client
-        self._telemetry_base_path = NEXUS_FRAMEWORK_CONFIGURATION.telemetry.output_path
+        self._telemetry_base_path = NEXUS_FRAMEWORK_CONFIGURATION.default.telemetry.output_path
         self._serializer = serializer
 
     async def record(self, run_id: str, **telemetry_args):

@@ -32,7 +32,7 @@ from nexus_client_sdk.nexus.abstractions.logger_factory import (
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
     ExternalSocketProvider,
 )
-from nexus_client_sdk.nexus.config import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.configurations.algorithm_configuration import (
     NexusConfiguration,
 )
@@ -75,8 +75,8 @@ class QueryEnabledStoreModule(Module):
         """
         DI factory method.
         """
-        if NEXUS_FRAMEWORK_CONFIGURATION.inputs.query_enabled_store.enabled == "1":
-            connection_string = NEXUS_FRAMEWORK_CONFIGURATION.inputs.query_enabled_store.connection_string
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.query_enabled_store.enabled == "1":
+            connection_string = NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.query_enabled_store.connection_string
             return QueryEnabledStore.from_string(connection_string, lazy_init=False)
 
         return None
@@ -94,10 +94,12 @@ class StorageClientModule(Module):
         """
         DI factory method.
         """
-        storage_client_class: type[StorageClient] = locate(NEXUS_FRAMEWORK_CONFIGURATION.result.storage_client_class)
+        storage_client_class: type[StorageClient] = locate(
+            NEXUS_FRAMEWORK_CONFIGURATION.default.result.storage_client_class
+        )
 
         try:
-            return storage_client_class.for_storage_path(path=NEXUS_FRAMEWORK_CONFIGURATION.result.output_path)
+            return storage_client_class.for_storage_path(path=NEXUS_FRAMEWORK_CONFIGURATION.default.result.output_path)
         except Exception as e:
             raise FatalStartupConfigurationError(
                 "StorageClient cannot be created, configuration missing or invalid. Review the underlying exception."
@@ -116,8 +118,11 @@ class ExternalSocketsModule(Module):
         """
         Dependency provider.
         """
-        if NEXUS_FRAMEWORK_CONFIGURATION.inputs.sockets and len(NEXUS_FRAMEWORK_CONFIGURATION.inputs.sockets) > 0:
-            return ExternalSocketProvider.from_dynaconf(NEXUS_FRAMEWORK_CONFIGURATION.inputs.sockets)
+        if (
+            NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets
+            and len(NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets) > 0
+        ):
+            return ExternalSocketProvider.from_dynaconf(NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets)
 
         return ExternalSocketProvider.empty()
 
@@ -135,7 +140,7 @@ class ResultSerializerModule(Module):
         DI factory method.
         """
         serializer = ResultSerializer()
-        for serializer_class in NEXUS_FRAMEWORK_CONFIGURATION.result.serializers:
+        for serializer_class in NEXUS_FRAMEWORK_CONFIGURATION.default.result.serializers:
             serializer = serializer.with_format(locate(serializer_class))
 
         return serializer
@@ -154,7 +159,7 @@ class TelemetrySerializerModule(Module):
         DI factory method.
         """
         serializer = TelemetrySerializer()
-        for serializer_class in NEXUS_FRAMEWORK_CONFIGURATION.result.serializers:
+        for serializer_class in NEXUS_FRAMEWORK_CONFIGURATION.default.result.serializers:
             serializer = serializer.with_format(locate(serializer_class))
 
         return serializer
@@ -255,8 +260,8 @@ class CompressorModule(Module):
         """
         Returns a compressor if configured, else None.
         """
-        compress_path = NEXUS_FRAMEWORK_CONFIGURATION.remote_algorithm.compression_import_path
-        decompress_path = NEXUS_FRAMEWORK_CONFIGURATION.remote_algorithm.decompression_import_path
+        compress_path = NEXUS_FRAMEWORK_CONFIGURATION.default.remote_algorithm.compression_import_path
+        decompress_path = NEXUS_FRAMEWORK_CONFIGURATION.default.remote_algorithm.decompression_import_path
 
         if not compress_path and not decompress_path:
             return None
