@@ -1,6 +1,9 @@
 # Name of this algorithm in the Nexus deployment
 algorithm_name = "hello-world"
 
+# Shard this algorithm is executed one. This setting is assigned at runtime.
+shard_name = ""
+
 # Nexus client configuration
 [client]
 # Nexus Receiver address
@@ -45,13 +48,13 @@ serializers = [
 ]
 
    # Input telemetry configurations. Inputs are dataframes and other objects passed to algorithm class from processors
-   [input]
+   [telemetry.input]
      # Control whether algorithm inputs are recorded as telemetry
      enabled = "1"
 
     # User telemetry configurations. User telemetry comes from custom classes provided by algorithm developers that extend UserTelemetry interface
     # User telemetry is often used for measure health, output quality and other data that is important for observing the runs in a live system
-    [user]
+    [telemetry.user]
       # Control whether user telemetry recording is enabled
       enabled = "1"
 

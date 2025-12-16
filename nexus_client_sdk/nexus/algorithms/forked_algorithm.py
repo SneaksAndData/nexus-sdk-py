@@ -18,7 +18,6 @@
 #
 
 import asyncio
-import os
 import random
 from abc import abstractmethod
 from functools import partial

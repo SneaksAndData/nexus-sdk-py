@@ -9,14 +9,14 @@ def _try_parse_log_level(log_level: str) -> bool:
     try:
         _ = LogLevel(log_level)
         return True
-    except:
+    except ValueError:
         return False
 
 
 try:
     NEXUS_FRAMEWORK_CONFIGURATION = Dynaconf(
         envvar_prefix="NEXUS_",
-        settings_files=["settings.toml", ".secrets.toml"],
+        settings_files=["settings.toml", ".secrets.toml", "settings.custom.toml"],
         auto_cast=True,
         commentjson_enabled=False,
         core_loaders=["TOML"],
