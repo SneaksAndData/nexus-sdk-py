@@ -21,12 +21,12 @@ import ctypes
 from dataclasses import dataclass
 from typing import final
 
-from nexus_client_sdk.clients.cwrapper import CLIB
 from nexus_client_sdk.models.client_errors.go_http_errors import (
     SdkError,
     UnauthorizedError,
     BadRequestError,
     NotFoundError,
+    NetworkError,
 )
 
 
@@ -53,6 +53,8 @@ class PySdkType:
                 return BadRequestError(self.client_error_message)
             case "*models.NotFoundError":
                 return NotFoundError(self.client_error_message)
+            case "*models.NetworkError":
+                return NetworkError(self.client_error_message)
         return None
 
 
@@ -67,5 +69,15 @@ class SdkErrorResponse(ctypes.Structure):
         ("client_error_message", ctypes.c_char_p),
     ]
 
-    def __del__(self):
-        CLIB.FreeErrorResponse(self)
+
+@final
+class SdkBoolResult(ctypes.Structure):
+    """
+    Error response Golang-side struct.
+    """
+
+    _fields_ = [
+        ("result", ctypes.c_int32),
+        ("client_error_type", ctypes.c_char_p),
+        ("client_error_message", ctypes.c_char_p),
+    ]

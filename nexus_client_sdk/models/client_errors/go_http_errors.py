@@ -54,3 +54,13 @@ class UnauthorizedError(RuntimeError):
 
     def __init__(self, *args, **kwargs):
         pass
+
+
+@final
+class NetworkError(RuntimeError):
+    """
+    Nexus client error returned if a connection or other networking error occurs.
+    """
+
+    def __init__(self, *args, **kwargs):
+        pass

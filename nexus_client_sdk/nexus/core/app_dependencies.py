@@ -1,7 +1,6 @@
 """
  Dependency injections.
 """
-
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,13 +19,13 @@
 import os
 import re
 from pydoc import locate
-from typing import final, Any
+from typing import final, Any, Callable, Self
 
 from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from injector import Module, singleton, provider
 
-from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import (
     BootstrapLoggerFactory,
 )
@@ -100,7 +99,12 @@ class StorageClientModule(Module):
         if "NEXUS__ALGORITHM_OUTPUT_PATH" not in os.environ:
             raise FatalStartupConfigurationError("NEXUS__ALGORITHM_OUTPUT_PATH")
 
-        return storage_client_class.for_storage_path(path=os.getenv("NEXUS__ALGORITHM_OUTPUT_PATH"))
+        try:
+            return storage_client_class.for_storage_path(path=os.getenv("NEXUS__ALGORITHM_OUTPUT_PATH"))
+        except Exception as e:
+            raise FatalStartupConfigurationError(
+                "StorageClient cannot be created, configuration missing or invalid. Review the underlying exception."
+            ) from e
 
 
 @final
@@ -175,6 +179,105 @@ class CacheModule(Module):
 
 
 @final
+class Compressor:
+    """
+    Compression and decompression support for remote algorithm payloads.
+    """
+
+    def __init__(self, compress_import_path: str, decompress_import_path: str):
+        self._compress_import_path = compress_import_path
+        self._decompress_import_path = decompress_import_path
+        self._compress_function: Callable[
+            [
+                bytes,
+            ],
+            bytes,
+        ] = locate(self._compress_import_path)
+        self._decompress_function: Callable[
+            [
+                bytes,
+            ],
+            bytes,
+        ] = locate(self._decompress_import_path)
+
+        if not self._compress_function:
+            raise FatalStartupConfigurationError(
+                f"Compression function '{self._compress_import_path}' from NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH could not be located."
+            )
+        if not self._decompress_function:
+            raise FatalStartupConfigurationError(
+                f"Decompression function '{self._decompress_import_path}' from NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH could not be located."
+            )
+
+    @classmethod
+    def create(cls, compress_import_path: str, decompress_import_path: str) -> Self:
+        """
+        Factory method to create a compressor instance.
+        """
+        try:
+            return cls(compress_import_path, decompress_import_path)
+        except Exception as ex:
+            raise FatalStartupConfigurationError("compress or decompress import path could not be resolved.") from ex
+
+    def compress(self, data: bytes) -> bytes:
+        """
+        Compresses the given data using the configured compression function.
+        """
+        return self._compress_function(data)
+
+    def decompress(self, data: bytes) -> bytes:
+        """
+        Decompresses the given data using the configured decompression function.
+        """
+        return self._decompress_function(data)
+
+    @property
+    def compressor_import_path(self) -> str:
+        """
+        Returns the import path of the compression function.
+        """
+        return self._compress_import_path
+
+    @property
+    def decompressor_import_path(self) -> str:
+        """
+        Returns the import path of the decompression function.
+        """
+        return self._decompress_import_path
+
+
+@final
+class CompressorModule(Module):
+    """
+    Compression configuration module.
+    """
+
+    @singleton
+    @provider
+    def provide(self) -> Compressor:
+        """
+        Returns a compressor if configured, else None.
+        """
+        compress_path = os.getenv("NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH")
+        decompress_path = os.getenv("NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH")
+
+        if compress_path is None and decompress_path is None:
+            return None
+
+        if compress_path is None and decompress_path is not None:
+            raise FatalStartupConfigurationError(
+                "NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH must be set if NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH is set."
+            )
+
+        if compress_path is not None and decompress_path is None:
+            raise FatalStartupConfigurationError(
+                "NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH must be set if NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH is set."
+            )
+
+        return Compressor.create(compress_path, decompress_path)
+
+
+@final
 class ServiceConfigurator:
     """
     Runtime DI support.
@@ -189,6 +292,7 @@ class ServiceConfigurator:
             TelemetrySerializerModule(),
             ResultSerializerModule(),
             CacheModule(),
+            CompressorModule(),
             type(f"{TelemetryRecorder.__name__}Module", (Module,), {})(),
         ]
         self._runtime_injection_binds = []

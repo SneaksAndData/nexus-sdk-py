@@ -17,9 +17,9 @@
 
 import ctypes
 from dataclasses import dataclass
+from enum import Enum
 from typing import final, Self
 
-from nexus_client_sdk.clients.cwrapper import CLIB
 from nexus_client_sdk.models.common import PySdkType
 
 
@@ -39,8 +39,21 @@ class SdkRunResult(ctypes.Structure):
         ("status", ctypes.c_char_p),
     ]
 
-    def __del__(self):
-        CLIB.FreeRunResult(self)
+
+@final
+class RequestLifeCycleStage(Enum):
+    """
+    Nexus status states. DEPRECATED - DO NOT USE. Use `scheduler.is_finished` or `scheduler.has_succeeded` instead.
+    """
+
+    NEW = "NEW"
+    BUFFERED = "BUFFERED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    SCHEDULING_FAILED = "SCHEDULING_FAILED"
+    DEADLINE_EXCEEDED = "DEADLINE_EXCEEDED"
+    CANCELLED = "CANCELLED"
 
 
 @dataclass
@@ -107,9 +120,6 @@ class SdkAlgorithmRun(ctypes.Structure):
         ("client_error_type", ctypes.c_char_p),
         ("client_error_message", ctypes.c_char_p),
     ]
-
-    def __del__(self):
-        CLIB.FreeAlgorithmRun(self)
 
 
 @dataclass
@@ -253,9 +263,6 @@ class SdkRequestMetadata(ctypes.Structure):
         ("client_error_message", ctypes.c_char_p),
     ]
 
-    def __del__(self):
-        CLIB.FreeRequestMetadata(self)
-
 
 @dataclass
 class RequestMetadata(PySdkType):
@@ -306,7 +313,7 @@ class RequestMetadata(PySdkType):
             content_hash=result.content_hash.decode() if result.content_hash else None,
             job_uid=result.job_uid.decode() if result.job_uid else None,
             last_modified=result.last_modified.decode() if result.last_modified else None,
-            lifecycle_stage=result.lifecycle_stage,
+            lifecycle_stage=result.lifecycle_stage.decode() if result.lifecycle_stage else None,
             parent_job=result.parent_job.decode() if result.parent_job else None,
             payload_uri=result.payload_uri.decode() if result.payload_uri else None,
             payload_valid_for=result.payload_valid_for.decode() if result.payload_valid_for else None,
@@ -331,9 +338,6 @@ class SdkStringResult(ctypes.Structure):
         ("client_error_type", ctypes.c_char_p),
         ("client_error_message", ctypes.c_char_p),
     ]
-
-    def __del__(self):
-        CLIB.FreeStringResult(self)
 
 
 @dataclass

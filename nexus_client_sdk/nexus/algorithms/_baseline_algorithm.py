@@ -23,7 +23,7 @@ from functools import partial
 from adapta.metrics import MetricsProvider
 from adapta.utils.decorators import run_time_metrics_async
 
-from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     NexusObject,
     TPayload,

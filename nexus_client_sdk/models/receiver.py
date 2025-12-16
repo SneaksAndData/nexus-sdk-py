@@ -18,7 +18,7 @@ import traceback
 from dataclasses import dataclass
 from typing import Self, final
 
-from nexus_client_sdk.models.common import PySdkType, SdkErrorResponse
+from nexus_client_sdk.models.common import PySdkType, SdkErrorResponse, SdkBoolResult
 
 
 @dataclass
@@ -43,6 +43,31 @@ class ErrorResponse(PySdkType):
         )
 
 
+@dataclass
+class BoolResult(PySdkType):
+    """
+    Error response Python-side struct.
+    """
+
+    result: bool | None
+
+    @classmethod
+    def from_sdk_result(cls, sdk_result: SdkBoolResult) -> Self | None:
+        """
+         Create an ErrorResponse from a SdkErrorResponse.
+        :param sdk_result:
+        :return:
+        """
+        if not sdk_result:
+            return None
+
+        return cls(
+            result=None if sdk_result.result == -1 else bool(sdk_result.result),
+            client_error_type=sdk_result.client_error_type,
+            client_error_message=sdk_result.client_error_message,
+        )
+
+
 @final
 class SdkCompletedRunResult(ctypes.Structure):
     """
@@ -60,7 +85,7 @@ class SdkCompletedRunResult(ctypes.Structure):
         cls,
         *,
         result_uri: str | None = None,
-        error: Exception | None = None,
+        error: BaseException | None = None,
     ) -> Self:
         """
          Create an instance of this class.

@@ -17,10 +17,12 @@ jobs:
     if: ${{ github.ref != 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-          architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
+          #architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
 
       - name: Create Controller Kind Cluster
         uses: helm/kind-action@main
@@ -72,10 +74,13 @@ jobs:
           install_extras: all
 
       - name: Unit test
+        env:
+          NEXUS__SDK_LOG_LEVEL: INFO
         run: |
           set -euxo pipefail
           
-          poetry run pytest ./tests --asyncio-mode=auto --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=term-missing:skip-covered | tee pytest-coverage.txt
+          poetry run pytest -n auto --dist loadgroup --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=term-missing:skip-covered | tee pytest-coverage.txt
+
       - name: Publish Code Coverage
         uses: MishaKav/pytest-coverage-comment@main
         with:

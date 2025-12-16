@@ -23,7 +23,7 @@ from functools import partial
 from adapta.metrics import MetricsProvider
 from adapta.utils.decorators import run_time_metrics_async
 
-from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.input_object import InputObject
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
@@ -82,7 +82,7 @@ class InputProcessor(InputObject[TPayload, TResult]):
             },
         )
         async def _process(**_) -> TResult:
-            readers = await self._cache.resolve(*self._readers)
+            readers = await self._cache.resolve(*self._readers, **kwargs)
             return await self._process_input(**(kwargs | readers))
 
         if self._result is None:

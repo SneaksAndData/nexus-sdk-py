@@ -13,7 +13,7 @@ include = [
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.13"
-adapta = { version = "^3.5.1", extras = ["aws", "storage", "datadog"] }
+adapta = { version = "^3.5.7", extras = ["aws", "storage", "datadog"] }
 injector = "^0.22.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -22,7 +22,6 @@ pytest-mock = "^3"
 pytest-xdist = "^3"
 pytest-asyncio = "^1.1"
 pytest-cov = "^2.12.1"
-locust = "^2.14.2"
 pylint = "^3"
 black = "^23"
 wheel = "^0.42.0"
@@ -31,6 +30,15 @@ scylla-driver = "^3"
 
 [tool.black]
 line-length = 120
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+asyncio_mode = "auto"
+asyncio_debug = "false"
+testpaths = [
+    "tests"
+]
 
 [tool.coverage.report]
 exclude_also = [

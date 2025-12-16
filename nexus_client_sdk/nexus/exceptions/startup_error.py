@@ -45,7 +45,7 @@ class FatalStartupConfigurationError(FatalNexusError):
         self._missing_entry = missing_entry
 
     def __str__(self) -> str:
-        return f"Algorithm initialization failed due to a missing configuration entry: {self._missing_entry}."
+        return f"Algorithm initialization failed due to a misconfigured dependency: {self._missing_entry}."
 
 
 class FatalAlgorithmConfigurationError(FatalNexusError):

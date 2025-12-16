@@ -25,7 +25,7 @@ from adapta.process_communication import DataSocket
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from adapta.utils.decorators import run_time_metrics_async
 
-from nexus_client_sdk.nexus.abstractions.algrorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.input_object import InputObject
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
@@ -74,7 +74,7 @@ class InputReader(InputObject[TPayload, TResult]):
     def _metric_tags(self) -> dict[str, str]:
         return {"entity": self.__class__.alias()}
 
-    async def process(self, **_) -> TResult:
+    async def process(self, **kwargs) -> TResult:
         """
         Coroutine that reads the data from external store and converts it to a dataframe, or generates data locally. Do not override this method.
         """
@@ -90,8 +90,8 @@ class InputReader(InputObject[TPayload, TResult]):
             | ({"data_path": self.socket.data_path} if self.socket else {}),
         )
         async def _read(**_) -> TResult:
-            readers = await self._cache.resolve(*self._readers)
-            return await self._read_input(**readers)
+            readers = await self._cache.resolve(*self._readers, **kwargs)
+            return await self._read_input(**(kwargs | readers))
 
         if self._data is None:
             self._data = await partial(

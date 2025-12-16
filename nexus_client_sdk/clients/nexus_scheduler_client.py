@@ -25,7 +25,7 @@ from typing import final, Callable, Self, Iterator, Any
 from adapta.logs import LoggerInterface
 from adapta.utils.concurrent_task_runner import ConcurrentTaskRunner, Executable
 
-from nexus_client_sdk.clients.cwrapper import CLIB
+from nexus_client_sdk.clients.cwrapper import import_cgo_library
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.client_errors.go_http_errors import NotFoundError
 from nexus_client_sdk.models.scheduler import (
@@ -59,38 +59,45 @@ class NexusSchedulerClient:
         self._logger = logger
         self._client = None
         self._current_token: AccessToken | None = None
+        self._sdk_lib = import_cgo_library()
 
         # setup functions
-        self._get_run_results = CLIB.GetRunResults
+        self._get_run_results = self._sdk_lib.GetRunResults
         self._get_run_results.restype = ctypes.POINTER(SdkRunResult)
 
-        self._get_run_result = CLIB.GetRunResult
+        self._get_run_result = self._sdk_lib.GetRunResult
         self._get_run_result.restype = SdkRunResult
 
-        self._update_token = CLIB.UpdateToken
+        self._update_token = self._sdk_lib.UpdateToken
 
-        self._create_run = CLIB.CreateRun
+        self._create_run = self._sdk_lib.CreateRun
         self._create_run.restype = SdkAlgorithmRun
 
-        self._await_run = CLIB.AwaitRun
+        self._await_run = self._sdk_lib.AwaitRun
         self._await_run.restype = SdkRunResult
 
-        self._await_tagged_runs = CLIB.AwaitRuns
+        self._await_tagged_runs = self._sdk_lib.AwaitRuns
         self._await_tagged_runs.restype = ctypes.POINTER(SdkRunResult)
 
-        self._get_request_metadata = CLIB.GetRequestMetadata
+        self._get_request_metadata = self._sdk_lib.GetRequestMetadata
         self._get_request_metadata.restype = SdkRequestMetadata
 
-        self._free_results_array = CLIB.FreeRunResultsPointer
+        self._free_results_array = self._sdk_lib.FreeRunResultsPointer
 
-        self._cancel_run = CLIB.CancelRun
+        self._cancel_run = self._sdk_lib.CancelRun
         self._cancel_run.restype = SdkStringResult
 
-        self._get_buffered_run = CLIB.GetBufferedRun
+        self._get_buffered_run = self._sdk_lib.GetBufferedRun
         self._get_buffered_run.restype = SdkStringResult
 
+        self._is_run_finished = self._sdk_lib.IsRunFinished
+        self._is_run_finished.restype = ctypes.c_int32
+
+        self._has_run_succeeded = self._sdk_lib.HasRunSucceeded
+        self._has_run_succeeded.restype = ctypes.c_int32
+
     def __del__(self):
-        CLIB.FreeClient(self._client)
+        self._sdk_lib.FreeClient(self._client)
 
     def _c_string_array(self, strings: list[str]) -> ctypes.pointer:
         ptr = (ctypes.c_char_p * (len(strings) + 1))()
@@ -101,7 +108,7 @@ class NexusSchedulerClient:
     def _init_client(self):
         if self._client is None:
             self._current_token = self._token_provider() if self._token_provider is not None else AccessToken.empty()
-            self._client = CLIB.CreateSchedulerClient(
+            self._client = self._sdk_lib.CreateSchedulerClient(
                 bytes(self._url, encoding="utf-8"), bytes(self._current_token.value, encoding="utf-8")
             )
 
@@ -123,6 +130,14 @@ class NexusSchedulerClient:
                 case _:
                     raise maybe_result.error()
 
+    @property
+    def logger(self) -> LoggerInterface:
+        """
+         Logger (Python) used by this instance.
+        :return:
+        """
+        return self._logger
+
     def get_run_result(self, request_id: str, algorithm: str) -> RunResult:
         """
          Retrieves result of a specified run
@@ -132,6 +147,7 @@ class NexusSchedulerClient:
         """
         self._init_client()
         result = self._get_run_result(bytes(request_id, encoding="utf-8"), bytes(algorithm, encoding="utf-8"))
+        result.__del__ = self._sdk_lib.FreeRunResult
 
         if not result:
             raise RuntimeError(
@@ -188,9 +204,9 @@ class NexusSchedulerClient:
         """
         self._init_client()
         self._logger.info(
-            "Creating a new run for {algorithm} with tag '{tag}'",
-            algorithm=algorithm_name,
-            tag=tag or "tag not provided",
+            "Creating a new run for {algorithm_template_name} with tag '{client_runtime_tag}'",
+            algorithm_template_name=algorithm_name,
+            client_runtime_tag=tag or "tag not provided",
         )
         maybe_result = self._create_run(
             bytes(algorithm_name, encoding="utf-8"),
@@ -201,29 +217,43 @@ class NexusSchedulerClient:
             bytes(tag, encoding="utf-8") if tag else None,
             bytes(str(dry_run).lower(), encoding="utf-8"),
         )
+        maybe_result.__del__ = self._sdk_lib.FreeAlgorithmRun
 
         converted = AlgorithmRun.from_sdk_run(maybe_result)
 
         match converted.error():
             case None:
+                self._logger.info(
+                    "New run initiated: {algorithm_template_name}/{request_identifier}",
+                    algorithm_template_name=algorithm_name,
+                    request_identifier=converted.request_id,
+                )
                 return converted.request_id
             case _:
                 raise converted.error()
 
-    def await_run(self, request_id: str, algorithm: str, poll_interval_seconds=5) -> RunResult:
+    def await_run(
+        self, request_id: str, algorithm: str, poll_interval_seconds: int = 5, wait_timeout_seconds: int = 0
+    ) -> RunResult:
         """
           Awaits result for a given run for a given algorithm.
         :param request_id: Run request ID.
         :param algorithm: Algorithm name.
         :param poll_interval_seconds: Time between status checks
+        :param wait_timeout_seconds: Optional timeout for the wait, 0 stands for no timeout. Can wait infinite time if not provided and submission status is never updated.
         :return:
         """
         self._init_client()
-        self._logger.info("Awaiting run for {algorithm}/{request_id}", algorithm=algorithm, request_id=request_id)
+        self._logger.info(
+            "Awaiting run for {algorithm_template_name}/{request_identifier}",
+            algorithm_template_name=algorithm,
+            request_identifier=request_id,
+        )
         maybe_result = self._await_run(
             bytes(request_id, encoding="utf-8"),
             bytes(algorithm, encoding="utf-8"),
             ctypes.c_int32(poll_interval_seconds),
+            ctypes.c_int32(wait_timeout_seconds),
         )
 
         converted = RunResult.from_sdk_result(maybe_result)
@@ -253,6 +283,7 @@ class NexusSchedulerClient:
                     bytes(algorithm, encoding="utf-8") if algorithm else None,
                     ctypes.c_int32(poll_interval_seconds),
                     None if not report_progress else progress_counter,
+                    None,
                 )
             )
 
@@ -265,15 +296,17 @@ class NexusSchedulerClient:
                     and progress_counter.contents.value / len(tags) - prev_progress / len(tags) > 0.05
                 ):
                     self._logger.info(
-                        "Total tagged runs: {total}, completed {completed}, remaining {remaining}",
-                        total=len(tags),
-                        completed=progress_counter.contents.value,
-                        remaining=len(tags) - progress_counter.contents.value,
+                        "Total tagged runs: {total_tagged_runs}, completed {completed_tagged_runs}, remaining {remaining_tagged_runs}",
+                        total_tagged_runs=len(tags),
+                        completed_tagged_runs=progress_counter.contents.value,
+                        remaining_tagged_runs=len(tags) - progress_counter.contents.value,
                     )
                     prev_progress = progress_counter.contents.value
                 time.sleep(1)
 
-            self._logger.info("All runs have completed")
+            self._logger.info(
+                "All tagged runs for {algorithm_template_name} have completed", algorithm_template_name=algorithm
+            )
 
         self._init_client()
         tags_array_ptr = self._c_string_array(tags)
@@ -298,6 +331,7 @@ class NexusSchedulerClient:
         """
         self._init_client()
         sdk_meta = self._get_request_metadata(bytes(request_id, encoding="utf-8"), bytes(algorithm, encoding="utf-8"))
+        sdk_meta.__del__ = self._sdk_lib.FreeRequestMetadata
         maybe_meta = RequestMetadata.from_sdk_result(sdk_meta)
 
         if maybe_meta is None:
@@ -331,6 +365,8 @@ class NexusSchedulerClient:
             bytes(initiator, encoding="utf-8"),
             bytes(reason, encoding="utf-8"),
         )
+        sdk_result.__del__ = self._sdk_lib.FreeStringResult
+
         maybe_result = StringResult.from_sdk_result(sdk_result)
 
         if maybe_result is None:
@@ -341,6 +377,27 @@ class NexusSchedulerClient:
                 return None
             case _:
                 raise maybe_result.error()
+
+    def is_finished(self, result: RunResult) -> bool:
+        """
+         Check if a run has finished.
+        :param result: RunResult instance
+        :return:
+        """
+        result = self._is_run_finished(bytes(result.status, encoding="utf-8"))
+        return bool(result)
+
+    def has_succeeded(self, result: RunResult) -> bool | None:
+        """
+         Check if a run has succeeded. Returns None if the run is not finished yet.
+        :param result: RunResult instance
+        :return:
+        """
+        result = self._has_run_succeeded(bytes(result.status, encoding="utf-8"))
+        if result == -1:
+            return None
+
+        return bool(result)
 
     @classmethod
     def create(cls, url: str, logger: LoggerInterface, token_provider: Callable[[], AccessToken] | None = None) -> Self:

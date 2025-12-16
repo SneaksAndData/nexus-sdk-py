@@ -39,7 +39,7 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-    image: ghcr.io/sneaksanddata/nexus:1.1.5
+    image: ghcr.io/sneaksanddata/nexus:1.1.11
     volumes:
       - ./test-resources/kubecfg/controller:/opt/kubecfg/controller
       - ./test-resources/kubecfg/shards:/opt/kubecfg/shards
@@ -50,9 +50,9 @@ services:
       NEXUS__S3_BUFFER__BUFFER_CONFIG__PAYLOAD_VALID_FOR: 72h
       NEXUS__S3_BUFFER__BUFFER_CONFIG__FAILURE_RATE_BASE_DELAY: 100ms
       NEXUS__S3_BUFFER__BUFFER_CONFIG__FAILURE_RATE_MAX_DELAY: 1s
-      NEXUS__S3_BUFFER__BUFFER_CONFIG__RATE_LIMIT_ELEMENTS_PER_SECOND: 20
-      NEXUS__S3_BUFFER__BUFFER_CONFIG__RATE_LIMIT_ELEMENTS_BURST: 200
-      NEXUS__S3_BUFFER__BUFFER_CONFIG__WORKERS: 10
+      NEXUS__S3_BUFFER__BUFFER_CONFIG__RATE_LIMIT_ELEMENTS_PER_SECOND: 1000
+      NEXUS__S3_BUFFER__BUFFER_CONFIG__RATE_LIMIT_ELEMENTS_BURST: 5000
+      NEXUS__S3_BUFFER__BUFFER_CONFIG__WORKERS: 50
       NEXUS__KUBE_CONFIG_PATH: /opt/kubecfg/controller
       NEXUS__SHARD_KUBE_CONFIG_PATH: /opt/kubecfg/shards
       NEXUS__S3_BUFFER__ACCESS_KEY_ID: minioadmin
@@ -69,7 +69,7 @@ services:
     depends_on:
       scylla:
         condition: service_healthy
-    image: ghcr.io/sneaksanddata/nexus-receiver:1.1.1
+    image: ghcr.io/sneaksanddata/nexus-receiver:1.1.4
     volumes:
       - ./test-resources/kubecfg/shards/kind-nexus-shard-0.kubeconfig:/opt/kubecfg/cluster
     environment:
@@ -82,6 +82,27 @@ services:
       NEXUS__RATE_LIMIT_ELEMENTS_BURST: 100
       NEXUS__WORKERS: 10
       NEXUS__BIND_PORT: 8081
+      NEXUS__SCYLLA_CQL_STORE__HOSTS: 127.0.0.1
+      DD_DOGSTATSD_URL: udp://localhost:8125
+
+  nexus-supervisor:
+    container_name: nexus-supervisor
+    network_mode: host
+    depends_on:
+      scylla:
+        condition: service_healthy
+    image: ghcr.io/sneaksanddata/nexus-supervisor:0.1.6
+    volumes:
+      - ./test-resources/kubecfg/shards/kind-nexus-shard-0.kubeconfig:/opt/kubecfg/cluster
+    environment:
+      NEXUS__RESOURCE_NAMESPACE: nexus
+      NEXUS__KUBE_CONFIG_PATH: /opt/kubecfg/cluster
+      NEXUS__CQL_STORE_TYPE: scylla
+      NEXUS__FAILURE_RATE_BASE_DELAY: 100ms
+      NEXUS__FAILURE_RATE_MAX_DELAY: 1s
+      NEXUS__RATE_LIMIT_ELEMENTS_PER_SECOND: 5
+      NEXUS__RATE_LIMIT_ELEMENTS_BURST: 100
+      NEXUS__WORKERS: 10
       NEXUS__SCYLLA_CQL_STORE__HOSTS: 127.0.0.1
       DD_DOGSTATSD_URL: udp://localhost:8125
 

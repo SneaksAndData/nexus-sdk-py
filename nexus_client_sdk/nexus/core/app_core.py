@@ -22,6 +22,7 @@ import os
 import platform
 import signal
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from typing import final, Self
 from collections.abc import Callable
 
@@ -35,7 +36,6 @@ from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from injector import Injector, Module, singleton
 
-import nexus_client_sdk.nexus.exceptions
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
 
 from nexus_client_sdk.nexus.abstractions.logger_factory import (
@@ -60,6 +60,8 @@ from nexus_client_sdk.nexus.core.app_dependencies import (
 from nexus_client_sdk.nexus.core.serializers import (
     ResultSerializer,
 )
+from nexus_client_sdk.nexus.exceptions import TransientNexusError, FatalNexusError
+from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.input.input_processor import InputProcessor
 from nexus_client_sdk.nexus.input.input_reader import InputReader
@@ -80,13 +82,13 @@ def is_transient_exception(exception: BaseException | None) -> bool | None:
     """
     if not exception:
         return None
-    match type(exception):
-        case nexus_client_sdk.nexus.exceptions.FatalNexusError:
-            return False
-        case nexus_client_sdk.nexus.exceptions.TransientNexusError:
-            return True
-        case _:
-            return False
+
+    if isinstance(exception, TransientNexusError):
+        return True
+    if isinstance(exception, FatalNexusError):
+        return False
+
+    return False
 
 
 async def graceful_shutdown():
@@ -170,11 +172,29 @@ class Nexus:
         self._configurator = self._configurator.with_input_reader(reader)
         return self
 
+    def add_readers(self, *readers: type[InputReader]) -> "Nexus":
+        """
+        Adds one or more input data readers for the algorithm.
+        """
+        for reader in readers:
+            self.add_reader(reader)
+
+        return self
+
     def use_processor(self, input_processor: type[InputProcessor]) -> "Nexus":
         """
         Initialises an input processor for the algorithm.
         """
         self._configurator = self._configurator.with_input_processor(input_processor)
+        return self
+
+    def use_processors(self, *input_processors: type[InputProcessor]) -> "Nexus":
+        """
+        Initialises one or more input processors for the algorithm.
+        """
+        for input_processor in input_processors:
+            self.use_processor(input_processor)
+
         return self
 
     def use_algorithm(self, algorithm: type[BaselineAlgorithm]) -> "Nexus":
@@ -257,7 +277,6 @@ class Nexus:
     async def _submit_result(
         self,
         root_logger: LoggerInterface,
-        metrics_provider: MetricsProvider,
         result: AlgorithmResult | None = None,
         ex: BaseException | None = None,
     ) -> None:
@@ -291,6 +310,7 @@ class Nexus:
             return storage_client.get_blob_uri(blob_path=blob_path)
 
         receiver = self._injector.get(NexusReceiverAsyncClient)
+        metrics_provider = self._injector.get(MetricsProvider)
 
         match is_transient_exception(ex):
             case None:
@@ -303,7 +323,18 @@ class Nexus:
                     request_id=self._run_args.request_id,
                 )
                 metrics_provider.increment("successful_runs")
+                root_logger.info(
+                    "Algorithm {algorithm} run completed on Nexus version {version}",
+                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    version=__version__,
+                )
             case True:
+                root_logger.warning(
+                    "Algorithm {algorithm} run transiently failed on Nexus version {version}",
+                    ex,
+                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    version=__version__,
+                )
                 sys.exit(1)
             case False:
                 await receiver.complete_run(
@@ -331,20 +362,19 @@ class Nexus:
         ) as reader:
             return reader.payload
 
-    async def activate(self):
-        """
-        Activates the run sequence.
-        """
-
-        self._injector = Injector(self._configurator.injection_binds)
-
-        bootstrap_logger: LoggerInterface = self._injector.get(BootstrapLoggerFactory).create_logger(
+    async def _complete_with_error(self, logger: LoggerInterface, error: BaseException) -> None:
+        await NexusReceiverAsyncClient(
+            url=os.getenv("NEXUS__RECEIVER_URL"), token_provider=None, logger=logger
+        ).complete_run(
+            result=SdkCompletedRunResult.create(
+                result_uri=None,
+                error=error,
+            ),
+            algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
             request_id=self._run_args.request_id,
-            algorithm_name=os.getenv("NEXUS__ALGORITHM_NAME"),
         )
 
-        bootstrap_logger.start()
-
+    async def _bootstrap(self, logger: LoggerInterface) -> None:
         try:
             logger_fixed_template = {}
             logger_tags = {}
@@ -406,34 +436,51 @@ class Nexus:
                 scope=singleton,
             )
 
+        except FatalStartupConfigurationError as startup_error:
+            await self._complete_with_error(logger, startup_error)
+            logger.stop()
+            sys.exit(0)
         except requests.exceptions.HTTPError as http_error:
-            bootstrap_logger.error("HTTP error reading algorithm payload", http_error)
+            logger.error("HTTP error reading algorithm payload", http_error)
 
             # non-retryable exceptions like missing auth should cancel the run immediately
             if http_error.response.status_code in [401, 403, 410, 405, 501, 505]:
-                await NexusReceiverAsyncClient(
-                    url=os.getenv("NEXUS__RECEIVER_URL"), token_provider=None, logger=bootstrap_logger
-                ).complete_run(
-                    result=SdkCompletedRunResult.create(
-                        result_uri=None,
-                        error=http_error,
-                    ),
-                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
-                    request_id=self._run_args.request_id,
-                )
+                await self._complete_with_error(logger, http_error)
                 # ensure we flush bootstrap logger before we exit
-                bootstrap_logger.stop()
+                logger.stop()
                 sys.exit(0)
 
             # ensure we flush bootstrap logger before we exit
-            bootstrap_logger.stop()
+            logger.stop()
             sys.exit(1)
         except BaseException as ex:  # pylint: disable=broad-except
-            bootstrap_logger.error("Error reading algorithm payload", ex)
+            logger.error("Error during run bootstrap", ex)
 
             # ensure we flush bootstrap logger before we exit
-            bootstrap_logger.stop()
+            logger.stop()
             sys.exit(1)
+
+    async def activate(self):
+        """
+        Activates the run sequence.
+        """
+
+        self._injector = Injector(self._configurator.injection_binds)
+
+        bootstrap_logger: LoggerInterface = self._injector.get(BootstrapLoggerFactory).create_logger(
+            request_id=self._run_args.request_id,
+            algorithm_name=os.getenv("NEXUS__ALGORITHM_NAME"),
+        )
+
+        # configure blocking pool
+        loop = asyncio.get_event_loop()
+        loop.set_default_executor(
+            ThreadPoolExecutor(max_workers=int(os.getenv("NEXUS__BLOCKING_POOL_MAX_SIZE", "128")))
+        )
+
+        bootstrap_logger.start()
+
+        await self._bootstrap(logger=bootstrap_logger)
 
         bootstrap_logger.stop()
 
@@ -463,7 +510,6 @@ class Nexus:
                 result=self._algorithm_run_task.result() if not ex else None,
                 ex=ex,
                 root_logger=root_logger,
-                metrics_provider=metrics_provider,
             )
 
             # record telemetry
@@ -471,37 +517,48 @@ class Nexus:
                 "Recording telemetry for the run {run_id}",
                 run_id=self._run_args.request_id,
             )
-            async with telemetry_recorder as recorder:
-                await recorder.record(run_id=self._run_args.request_id, **algorithm.inputs)
-                on_complete_tasks = [
-                    recorder.record_user_telemetry(
-                        user_recorder=self._injector.get(on_complete_task_class),
-                        run_id=self._run_args.request_id,
-                        result=self._algorithm_run_task.result(),
-                        **algorithm.inputs,
-                    )
-                    for on_complete_task_class in self._on_complete_tasks
-                ]
-                if len(on_complete_tasks) > 0:
-                    done, pending = await asyncio.wait(on_complete_tasks, return_when=asyncio.FIRST_EXCEPTION)
-                    if len(pending) > 0:
-                        metrics_provider.increment("telemetry_reports_incomplete")
-                        root_logger.warning(
-                            "Some post-processing operations did not complete or failed. Please review application logs for more information"
-                        )
+            metrics_provider = self._injector.get(MetricsProvider)
 
-                    for done_on_complete_task in done:
-                        on_complete_task_exc = done_on_complete_task.exception()
-                        if on_complete_task_exc:
-                            metrics_provider.increment("telemetry_reports_failed")
+            async with telemetry_recorder as recorder:
+                if os.getenv("NEXUS__ALGORITHM_TELEMETRY_ENABLED", "1") == "1":
+                    await recorder.record(run_id=self._run_args.request_id, **algorithm.inputs)
+
+                # only execute user telemetry if this run has succeeded
+                if ex is None and os.getenv("NEXUS__USER_TELEMETRY_ENABLED", "1") == "1":
+                    on_complete_tasks = [
+                        recorder.record_user_telemetry(
+                            user_recorder=self._injector.get(on_complete_task_class),
+                            run_id=self._run_args.request_id,
+                            result=self._algorithm_run_task.result(),
+                            **algorithm.inputs,
+                        )
+                        for on_complete_task_class in self._on_complete_tasks
+                    ]
+                    if len(on_complete_tasks) > 0:
+                        done, pending = await asyncio.wait(on_complete_tasks, return_when=asyncio.FIRST_EXCEPTION)
+                        if len(pending) > 0:
+                            metrics_provider.increment("telemetry_reports_incomplete")
                             root_logger.warning(
-                                "Post processing task failed",
-                                exception=on_complete_task_exc,
+                                "Some post-processing operations did not complete or failed. Please review application logs for more information"
                             )
-                        else:
-                            metrics_provider.increment("telemetry_reports_succeeded")
+
+                        for done_on_complete_task in done:
+                            on_complete_task_exc = done_on_complete_task.exception()
+                            if on_complete_task_exc:
+                                metrics_provider.increment("telemetry_reports_failed")
+                                root_logger.warning(
+                                    "Post processing task failed",
+                                    exception=on_complete_task_exc,
+                                )
+                            else:
+                                metrics_provider.increment("telemetry_reports_succeeded")
+                    else:
+                        root_logger.info("No post processing tasks were defined for this run")
                 else:
-                    root_logger.info("No post processing tasks were defined for this run.")
+                    root_logger.warning(
+                        "Skipping user telemetry recording as the run {run_id} has failed",
+                        run_id=self._run_args.request_id,
+                    )
 
             # dispose of QES instance gracefully as it might hold open connections
             qes = self._injector.get(QueryEnabledStore)

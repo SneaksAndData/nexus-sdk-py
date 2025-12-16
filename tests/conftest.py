@@ -2,18 +2,23 @@ import json
 import os
 import random
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
-from logging import StreamHandler
+from enum import Enum
 
 import pytest
 from adapta.logs import create_async_logger
+from adapta.logs.handlers.safe_stream_handler import SafeStreamHandler
 from adapta.storage.blob.s3_storage_client import S3StorageClient
 from adapta.storage.models import S3Path
 from cassandra.cluster import Cluster
 from dataclasses_json import DataClassJsonMixin
 
+from nexus_client_sdk.clients.nexus_receiver_client import NexusReceiverClient
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.access_token import AccessToken
+from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
+from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.configurations.algorithm_configuration import NexusConfiguration
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 from nexus_client_sdk.testing import generate_payload_url
@@ -29,11 +34,18 @@ class TestAlgorithmConfiguration(NexusConfiguration):
     c2: str
 
 
+class TestEnum(Enum):
+    A = "A"
+    B = "B"
+    C = "C"
+
+
 @dataclass
 class TestAlgorithmPayload(AlgorithmPayload, DataClassJsonMixin):
     x: list[int]
     y: list[int]
     z: list[int]
+    enum_value: TestEnum
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -72,31 +84,99 @@ def run_configuration():
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def scheduler():
-    logger = create_async_logger(StreamHandler.__class__, [StreamHandler(sys.stdout)])
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
     yield NexusSchedulerClient.create("http://localhost:8080", logger, lambda: AccessToken.empty())
 
     logger.stop()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
+def receiver():
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
+    logger.start()
+    yield NexusReceiverClient("http://localhost:8081", logger, lambda: AccessToken.empty())
+
+    logger.stop()
+
+
+@contextmanager
+def broken_scheduler():
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
+    logger.start()
+    yield NexusSchedulerClient.create("http://non-existing:1234", logger, lambda: AccessToken.empty())
+
+    logger.stop()
+
+
+@pytest.fixture
+def async_scheduler():
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
+    logger.start()
+    yield NexusSchedulerAsyncClient("http://localhost:8080", logger, lambda: AccessToken.empty())
+
+    logger.stop()
+
+
+@pytest.fixture
+def async_receiver():
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
+    logger.start()
+    yield NexusReceiverAsyncClient("http://localhost:8081", logger, lambda: AccessToken.empty())
+
+    logger.stop()
+
+
+@contextmanager
+def broken_async_scheduler():
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
+    logger.start()
+    try:
+        yield NexusSchedulerAsyncClient("http://non-existing:1234", logger, lambda: AccessToken.empty())
+
+    finally:
+        logger.stop()
+
+
+@pytest.fixture
 def cql_session():
     cluster = Cluster()
     session = cluster.connect("nexus")
     yield session
     session.shutdown()
+    cluster.shutdown()
 
 
-def payloads() -> list[tuple[str, str]]:
+def payloads(compress: bool = False) -> list[tuple[str, str]]:
     upload_path = S3Path(bucket="nexus", path="units")
 
     def _rand_range(limit: int) -> list[int]:
         return [random.randint(0, 10) for _ in range(limit)]
 
-    generated = [TestAlgorithmPayload(x=_rand_range(10), y=_rand_range(10), z=_rand_range(10)) for _ in range(10)]
+    generated = [
+        TestAlgorithmPayload(
+            x=_rand_range(10), y=_rand_range(10), z=_rand_range(10), enum_value=random.choice(list(TestEnum))
+        )
+        for _ in range(10)
+    ]
     return [
-        generate_payload_url(upload_path, payload, S3StorageClient.for_storage_path(upload_path.to_hdfs_path()))
+        generate_payload_url(
+            upload_path,
+            payload,
+            S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
+            compress_payload=compress,
+        )
         for payload in generated
     ]
+
+
+def negative_z_payload() -> tuple[str, str]:
+    upload_path = S3Path(bucket="nexus", path="units")
+
+    return generate_payload_url(
+        upload_path,
+        TestAlgorithmPayload(x=[1, 2, 3], y=[4, 5, 6], z=[0, -1, 10], enum_value=TestEnum.A),
+        S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
+    )
