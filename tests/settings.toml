@@ -44,6 +44,21 @@ serializers = [
     "adapta.storage.models.formatters.PandasDataFrameJsonSerializationFormat"
 ]
 
+   # Input telemetry configurations. Inputs are dataframes and other objects passed to algorithm class from processors
+   [input]
+     # Control whether algorithm inputs are recorded as telemetry
+     enabled = "1"
+
+    # User telemetry configurations. User telemetry comes from custom classes provided by algorithm developers that extend UserTelemetry interface
+    # User telemetry is often used for measure health, output quality and other data that is important for observing the runs in a live system
+    [user]
+      # Control whether user telemetry recording is enabled
+      enabled = "1"
+
+      # Provide a list of user telemetry classes to execute. If empty, all user telemetry will be recorded
+      # THIS IS A RESERVATION FOR https://github.com/SneaksAndData/nexus-sdk-py/issues/126
+      classes = []
+
 # INPUTS - configuration for data read interfaces
 [inputs]
 
@@ -119,3 +134,15 @@ protocol = "uds"
 
 # Tags to assign to all metrics globally
 global_tags = {}
+
+# Threadpool resource management
+[threading]
+
+# size of the blocking thread pool. Blocking pool runs operations that can hang main thread - usually via run_blocking() call
+blocking_pool_max_size = "16"
+
+# Settings for ForkedAlgorithm runtime
+[forked_algorithm]
+
+# Base delay between fork launches
+spawn_base_delay_seconds = "1"

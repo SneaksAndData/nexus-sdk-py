@@ -1,7 +1,15 @@
 """Framework configuration"""
+from adapta.logs.models import LogLevel
 from dynaconf import Dynaconf, Validator
 
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
+
+def _try_parse_log_level(log_level: str) -> bool:
+    try:
+        _ = LogLevel(log_level)
+        return True
+    except:
+        return False
 
 try:
     NEXUS_FRAMEWORK_CONFIGURATION = Dynaconf(
@@ -20,7 +28,7 @@ try:
                 required=True,
                 apply_default_on_none=True,
                 default="INFO",
-                condition=lambda v: v != "",
+                condition=_try_parse_log_level,
             ),
         ],
     )

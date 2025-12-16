@@ -484,7 +484,7 @@ class Nexus:
         # configure blocking pool
         loop = asyncio.get_event_loop()
         loop.set_default_executor(
-            ThreadPoolExecutor(max_workers=int(os.getenv("NEXUS__BLOCKING_POOL_MAX_SIZE", "128")))
+            ThreadPoolExecutor(max_workers=int(NEXUS_FRAMEWORK_CONFIGURATION.threading.blocking_pool_max_size))
         )
 
         bootstrap_logger.start()
@@ -529,11 +529,11 @@ class Nexus:
             metrics_provider = self._injector.get(MetricsProvider)
 
             async with telemetry_recorder as recorder:
-                if os.getenv("NEXUS__ALGORITHM_TELEMETRY_ENABLED", "1") == "1":
+                if NEXUS_FRAMEWORK_CONFIGURATION.telemetry.input.enabled == "1":
                     await recorder.record(run_id=self._run_args.request_id, **algorithm.inputs)
 
                 # only execute user telemetry if this run has succeeded
-                if ex is None and os.getenv("NEXUS__USER_TELEMETRY_ENABLED", "1") == "1":
+                if ex is None and NEXUS_FRAMEWORK_CONFIGURATION.telemetry.user.enabled == "1":
                     on_complete_tasks = [
                         recorder.record_user_telemetry(
                             user_recorder=self._injector.get(on_complete_task_class),
