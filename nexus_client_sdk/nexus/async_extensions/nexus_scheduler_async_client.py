@@ -21,7 +21,7 @@ from functools import partial
 
 from adapta.logs import LoggerInterface
 
-
+from nexus_client_sdk.clients.fault_tolerance.retry_policy import NexusRetryPolicyBuilder
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.scheduler import (
@@ -29,11 +29,13 @@ from nexus_client_sdk.models.scheduler import (
     SdkParentRequest,
     RunResult,
     RequestLifeCycleStage,
+    RequestMetadata,
 )
+from nexus_client_sdk.nexus.async_extensions.async_exec import run_blocking
 from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
-    NexusSchedulingError,
-    NexusAsyncRetryPolicyBuilder,
+    NexusClientAsyncRetryPolicy,
 )
+from nexus_client_sdk.clients.fault_tolerance.models import NexusSchedulingError
 
 
 @final
@@ -49,7 +51,9 @@ class NexusSchedulerAsyncClient:
         token_provider: Callable[[], AccessToken] | None = None,
     ):
         self._sync_client = NexusSchedulerClient(url=url, logger=logger, token_provider=token_provider)
-        self._retry_policy_builder = NexusAsyncRetryPolicyBuilder(logger=logger)
+        self._retry_policy_builder = NexusRetryPolicyBuilder(
+            default_policy=NexusClientAsyncRetryPolicy.default(logger=logger),
+        )
 
     def __del__(self):
         self._sync_client.__del__()
@@ -63,7 +67,7 @@ class NexusSchedulerAsyncClient:
         tag: str | None = None,
         payload_valid_for: str = "24h",
         dry_run: bool = False,
-    ) -> str:
+    ) -> str | None:
         """
          Creates a new run for a given algorithm.
         :param algorithm_parameters: Algorithm parameters.
@@ -77,15 +81,17 @@ class NexusSchedulerAsyncClient:
         """
 
         return await self._retry_policy_builder.build().execute(
-            partial(
-                self._sync_client.create_run,
-                algorithm_parameters=algorithm_parameters,
-                algorithm_name=algorithm_name,
-                custom_configuration=custom_configuration,
-                parent_request=parent_request,
-                payload_valid_for=payload_valid_for,
-                tag=tag,
-                dry_run=dry_run,
+            lambda: run_blocking(
+                partial(
+                    self._sync_client.create_run,
+                    algorithm_parameters=algorithm_parameters,
+                    algorithm_name=algorithm_name,
+                    custom_configuration=custom_configuration,
+                    parent_request=parent_request,
+                    payload_valid_for=payload_valid_for,
+                    tag=tag,
+                    dry_run=dry_run,
+                )
             ),
             f"Fatal error when creating a run for template {algorithm_name}",
             method_alias="create_run",
@@ -93,7 +99,7 @@ class NexusSchedulerAsyncClient:
 
     async def await_run(
         self, request_id: str, algorithm: str, poll_interval_seconds: int = 5, wait_timeout_seconds: int = 0
-    ) -> RunResult:
+    ) -> RunResult | None:
         """
         Awaits result for a given run for a given algorithm.
         :param request_id: Run request ID.
@@ -104,12 +110,14 @@ class NexusSchedulerAsyncClient:
         """
 
         return await self._retry_policy_builder.build().execute(
-            partial(
-                self._sync_client.await_run,
-                request_id=request_id,
-                algorithm=algorithm,
-                poll_interval_seconds=poll_interval_seconds,
-                wait_timeout_seconds=wait_timeout_seconds,
+            lambda: run_blocking(
+                partial(
+                    self._sync_client.await_run,
+                    request_id=request_id,
+                    algorithm=algorithm,
+                    poll_interval_seconds=poll_interval_seconds,
+                    wait_timeout_seconds=wait_timeout_seconds,
+                )
             ),
             f"Fatal error when awaiting request {algorithm}/{request_id}",
             method_alias="await_run",
@@ -174,18 +182,40 @@ class NexusSchedulerAsyncClient:
             retry_policy_builder = retry_policy_builder.with_retry_exhaust_error_type(None)
 
         return await retry_policy_builder.build().execute(
-            partial(
-                _create_and_await,
-                algorithm_parameters=algorithm_parameters,
-                algorithm_name=algorithm_name,
-                custom_configuration=custom_configuration,
-                parent_request=parent_request,
-                payload_valid_for=payload_valid_for,
-                poll_interval_seconds=poll_interval_seconds,
-                tag=tag,
-                dry_run=dry_run,
-                post_create_callback=post_create_callback,
+            lambda: run_blocking(
+                partial(
+                    _create_and_await,
+                    algorithm_parameters=algorithm_parameters,
+                    algorithm_name=algorithm_name,
+                    custom_configuration=custom_configuration,
+                    parent_request=parent_request,
+                    payload_valid_for=payload_valid_for,
+                    poll_interval_seconds=poll_interval_seconds,
+                    tag=tag,
+                    dry_run=dry_run,
+                    post_create_callback=post_create_callback,
+                )
             ),
             "Fatal error when creating/awaiting a run",
             method_alias="create_and_await",
+        )
+
+    async def get_request_metadata(self, request_id: str, algorithm: str) -> RequestMetadata | None:
+        """
+        Gets metadata for a given run for a given algorithm.
+        :param request_id: Run request ID.
+        :param algorithm: Algorithm name.
+        :return:
+        """
+
+        return await self._retry_policy_builder.build().execute(
+            lambda: run_blocking(
+                partial(
+                    self._sync_client.get_request_metadata,
+                    request_id=request_id,
+                    algorithm=algorithm,
+                )
+            ),
+            f"Fatal error when getting metadata for request {algorithm}/{request_id}",
+            method_alias="get_request_metadata",
         )

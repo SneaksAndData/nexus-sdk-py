@@ -18,6 +18,8 @@
 #
 
 import asyncio
+import os
+import random
 from abc import abstractmethod
 from functools import partial
 
@@ -143,6 +145,15 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
 
             return await self._main_run(**run_args)
 
+        async def _spawn(remote_algorithm: RemoteAlgorithm, **remote_args) -> asyncio.Task:
+            delay = int(os.getenv("NEXUS__FORK_SPAWN_BASE_DELAY_SECONDS", "0"))
+            if delay > 0:
+                jitter = delay + random.random() * delay
+                self._logger.info("Spawning fork in {jitter:.2f}", jitter=jitter)
+                await asyncio.sleep(delay + random.random() * delay)
+
+            return asyncio.create_task(remote_algorithm.run(**remote_args))
+
         if await self._is_forked(**kwargs):
             self._inputs = await self._fork_inputs(**kwargs)
         else:
@@ -166,7 +177,7 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
                 forks=",".join([fork.alias() for fork in forks]),
             )
             done, _ = await asyncio.wait(
-                [asyncio.create_task(fork.run(**kwargs)) for fork in forks], return_when=asyncio.ALL_COMPLETED
+                [await _spawn(fork, **kwargs) for fork in forks], return_when=asyncio.ALL_COMPLETED
             )
             for task in done:
                 if task.exception() is not None:

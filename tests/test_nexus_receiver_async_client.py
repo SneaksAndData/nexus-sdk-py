@@ -6,7 +6,7 @@ import pytest
 from cassandra.cluster import Session
 
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
-from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import NexusClientRuntimeError
+from nexus_client_sdk.clients.fault_tolerance.models import NexusClientRuntimeError
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 
 runtime_config_stub = (

@@ -1,6 +1,5 @@
-"""
- C Library import.
-"""
+"""Models for fault tolerance"""
+
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,19 +15,4 @@
 #  limitations under the License.
 #
 
-import os
-import pathlib
-from ctypes import cdll, CDLL
-
-
-_LIB_DEFAULT_LOCATION = os.path.join(
-    pathlib.Path(__file__).parent.resolve().parent.resolve(), ".extensions", "nexus_sdk.so"
-)
-
-
-def import_cgo_library() -> CDLL:
-    """
-     Imports the SDK CGO library.
-    :return:
-    """
-    return cdll.LoadLibrary(_LIB_DEFAULT_LOCATION)
+from nexus_client_sdk.clients.fault_tolerance.models._models import *

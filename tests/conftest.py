@@ -15,6 +15,7 @@ from adapta.storage.models import S3Path
 from cassandra.cluster import Cluster
 from dataclasses_json import DataClassJsonMixin
 
+from nexus_client_sdk.clients.nexus_receiver_client import NexusReceiverClient
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
@@ -69,6 +70,24 @@ def scheduler():
     logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
     yield NexusSchedulerClient.create("http://localhost:8080", logger, lambda: AccessToken.empty())
+
+    logger.stop()
+
+
+@pytest.fixture
+def receiver():
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
+    logger.start()
+    yield NexusReceiverClient("http://localhost:8081", logger, lambda: AccessToken.empty())
+
+    logger.stop()
+
+
+@contextmanager
+def broken_scheduler():
+    logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
+    logger.start()
+    yield NexusSchedulerClient.create("http://non-existing:1234", logger, lambda: AccessToken.empty())
 
     logger.stop()
 

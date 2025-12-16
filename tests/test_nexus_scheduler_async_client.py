@@ -1,12 +1,13 @@
+import asyncio
+import time
 from pathlib import Path
 
 import pytest
 from cassandra.cluster import Session
 
 from nexus_client_sdk.models.client_errors.go_http_errors import BadRequestError
-from nexus_client_sdk.nexus.async_extensions.async_retry.async_retry_policy import (
-    NexusClientRuntimeError,
-)
+
+from nexus_client_sdk.clients.fault_tolerance.models import NexusClientRuntimeError
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from tests.conftest import broken_async_scheduler
 
@@ -53,6 +54,14 @@ async def test_create_and_await(async_scheduler: NexusSchedulerAsyncClient):
     assert async_scheduler._sync_client.is_finished(result) and not async_scheduler._sync_client.has_succeeded(result)
 
 
+async def test_get_request_metadata(async_scheduler: NexusSchedulerAsyncClient):
+    result = await async_scheduler.create_and_await(algorithm_parameters={}, algorithm_name="hello-world")
+    meta_data = await async_scheduler.get_request_metadata(request_id=result.request_id, algorithm="hello-world")
+
+    assert meta_data.id == result.request_id
+    assert meta_data.algorithm == "hello-world"
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("propagate", [True, False])
 async def test_custom_error(propagate: bool, async_scheduler: NexusSchedulerAsyncClient, cql_session: Session):
@@ -78,3 +87,24 @@ async def test_custom_error(propagate: bool, async_scheduler: NexusSchedulerAsyn
             )
             is None
         )
+
+
+@pytest.mark.asyncio
+async def test_blocking_code_isolation(async_scheduler: NexusSchedulerAsyncClient):
+    start = time.monotonic_ns()
+
+    results = [
+        asyncio.create_task(
+            async_scheduler.create_and_await(
+                algorithm_parameters={}, algorithm_name="hello-world", poll_interval_seconds=1
+            )
+        )
+        for _ in range(2)
+    ]
+
+    await asyncio.wait(results)
+
+    duration = (time.monotonic_ns() - start) / 1e9
+
+    # each takes approx 4s
+    assert duration < 8
