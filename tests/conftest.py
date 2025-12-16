@@ -63,7 +63,7 @@ def run_configuration():
             "c2": "def",
         }
     )
-    os.environ["NEXUS__INPUTS__QUERY_ENABLED_STORE_ENABLED"] = "0"
+    os.environ["NEXUS__INPUTS__QUERY_ENABLED_STORE__ENABLED"] = "0"
 
 
 @pytest.fixture
