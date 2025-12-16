@@ -92,6 +92,7 @@ class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
             cache=cache,
             *readers,
         )
+        assert store is None
 
     async def _read_input(self, **_) -> pandas.DataFrame:
         # negative value should abort the run and be handled accordingly
