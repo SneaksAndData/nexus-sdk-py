@@ -116,8 +116,8 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         if self._compressor is None:
             raise FatalNexusError(
                 "Compressor is not configured for remote algorithm payload compression. "
-                "Configure using environment variable NEXUS__REMOTE_ALGORITHM___COMPRESSION_IMPORT_PATH "
-                "and NEXUS__REMOTE_ALGORITHM___DECOMPRESSION_IMPORT_PATH"
+                "Configure using environment variable NEXUS__REMOTE_ALGORITHM__COMPRESSION_IMPORT_PATH "
+                "and NEXUS__REMOTE_ALGORITHM__DECOMPRESSION_IMPORT_PATH"
             )
 
         payload_bytes = payload.to_json().encode(encoding="utf-8")

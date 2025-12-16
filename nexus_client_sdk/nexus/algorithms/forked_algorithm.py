@@ -179,7 +179,8 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
                 forks=",".join([fork.alias() for fork in forks]),
             )
             done, _ = await asyncio.wait(
-                [await _spawn(fork, fork_ix, **kwargs) for fork_ix, fork in enumerate(forks)], return_when=asyncio.ALL_COMPLETED
+                [await _spawn(fork, fork_ix, **kwargs) for fork_ix, fork in enumerate(forks)],
+                return_when=asyncio.ALL_COMPLETED,
             )
             for task in done:
                 if task.exception() is not None:

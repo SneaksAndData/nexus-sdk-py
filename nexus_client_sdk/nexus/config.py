@@ -4,6 +4,7 @@ from dynaconf import Dynaconf, Validator
 
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 
+
 def _try_parse_log_level(log_level: str) -> bool:
     try:
         _ = LogLevel(log_level)
@@ -11,11 +12,11 @@ def _try_parse_log_level(log_level: str) -> bool:
     except:
         return False
 
+
 try:
     NEXUS_FRAMEWORK_CONFIGURATION = Dynaconf(
         envvar_prefix="NEXUS_",
         settings_files=["settings.toml", ".secrets.toml"],
-        nested_separator="___",
         auto_cast=True,
         commentjson_enabled=False,
         core_loaders=["TOML"],
