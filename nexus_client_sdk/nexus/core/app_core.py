@@ -34,6 +34,7 @@ from adapta.metrics import MetricsProvider
 from adapta.process_communication import DataSocket
 from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
+from dynaconf import Validator
 from injector import Injector, Module, singleton
 
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
@@ -159,21 +160,21 @@ class Nexus:
         """
         return self._algorithm_class
 
-    def on_complete(self, *post_processors: type[UserTelemetryRecorder]) -> "Nexus":
+    def on_complete(self, *post_processors: type[UserTelemetryRecorder]) -> Self:
         """
         Attaches a coroutine to run on algorithm completion.
         """
         self._on_complete_tasks.extend(post_processors)
         return self
 
-    def add_reader(self, reader: type[InputReader]) -> "Nexus":
+    def add_reader(self, reader: type[InputReader]) -> Self:
         """
         Adds an input data reader for the algorithm.
         """
         self._configurator = self._configurator.with_input_reader(reader)
         return self
 
-    def add_readers(self, *readers: type[InputReader]) -> "Nexus":
+    def add_readers(self, *readers: type[InputReader]) -> Self:
         """
         Adds one or more input data readers for the algorithm.
         """
@@ -182,14 +183,14 @@ class Nexus:
 
         return self
 
-    def use_processor(self, input_processor: type[InputProcessor]) -> "Nexus":
+    def use_processor(self, input_processor: type[InputProcessor]) -> Self:
         """
         Initialises an input processor for the algorithm.
         """
         self._configurator = self._configurator.with_input_processor(input_processor)
         return self
 
-    def use_processors(self, *input_processors: type[InputProcessor]) -> "Nexus":
+    def use_processors(self, *input_processors: type[InputProcessor]) -> Self:
         """
         Initialises one or more input processors for the algorithm.
         """
@@ -198,21 +199,21 @@ class Nexus:
 
         return self
 
-    def use_algorithm(self, algorithm: type[BaselineAlgorithm]) -> "Nexus":
+    def use_algorithm(self, algorithm: type[BaselineAlgorithm]) -> Self:
         """
         Algorithm to use for this Nexus instance
         """
         self._algorithm_class = algorithm
         return self
 
-    def inject_payload(self, *payload_types: type[AlgorithmPayload]) -> "Nexus":
+    def inject_payload(self, *payload_types: type[AlgorithmPayload]) -> Self:
         """
         Adds payload types to inject to the DI container. Payloads will be deserialized at runtime.
         """
         self._payload_types = payload_types
         return self
 
-    def inject_configuration(self, *configuration_types: type[NexusConfiguration]) -> "Nexus":
+    def inject_configuration(self, *configuration_types: type[NexusConfiguration]) -> Self:
         """
         Adds custom configuration class instances to the DI container.
         """
@@ -240,7 +241,7 @@ class Nexus:
         ]
         | None = None,
         delimiter: str = ", ",
-    ) -> "Nexus":
+    ) -> Self:
         """
         Adds a log `tagger` and a log `enricher` to be used with injected logger.
         A log `tagger` will add key-value tags to each emitted log message, and those tags can be inferred from the payload and entrypoint arguments.
@@ -261,18 +262,27 @@ class Nexus:
             dict[str, str],
         ]
         | None = None,
-    ) -> "Nexus":
+    ) -> Self:
         """
         Adds a metric `enricher` to be used with injected metrics provider to assign additional tags to emitted metrics.
         """
         self._metric_tagger = tagger
         return self
 
-    def with_module(self, module: type[Module]) -> "Nexus":
+    def with_module(self, module: type[Module]) -> Self:
         """
         Adds a (custom) DI module into the DI container.
         """
         self._configurator = self._configurator.with_module(module)
+        return self
+
+    def with_config_validators(self, *validators: Validator) -> Self:
+        """
+          Adds one or more configuration validators for the algorithm.
+        :param validators: Dynaconf Validator instances.
+        :return:
+        """
+        NEXUS_FRAMEWORK_CONFIGURATION.add_bootstrap_validators(*validators)
         return self
 
     async def _submit_result(
