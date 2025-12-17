@@ -1,5 +1,5 @@
 """Framework configuration"""
-from typing import final, Self
+from typing import final
 
 from adapta.logs.models import LogLevel
 from dynaconf import Dynaconf, Validator, LazySettings
