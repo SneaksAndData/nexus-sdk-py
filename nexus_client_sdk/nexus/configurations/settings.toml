@@ -32,7 +32,7 @@ decompression_import_path = ""
 storage_client_class = "adapta.storage.blob.s3_storage_client.S3StorageClient"
 
 # Base path to use when recording results. Protocol must be supported by storage_client_class
-output_path = "s3a://nexus-sdk-tests/result"
+output_path = ""
 
 # RESULT SERIALIZERS - classes available to serialize AlgorithmResult objects to desired formats
 serializers = [
@@ -42,7 +42,7 @@ serializers = [
 # Run telemetry recording
 [telemetry]
 # Base path to use when recording input and user telemetry
-output_path = "s3a://nexus-sdk-tests/telemetry"
+output_path = ""
 
 # TELEMETRY SERIALIZERS - classes available to serialize Algorithm inputs and UserTelemetry classes
 serializers = [
