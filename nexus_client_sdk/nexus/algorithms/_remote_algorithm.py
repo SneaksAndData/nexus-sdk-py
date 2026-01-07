@@ -1,8 +1,6 @@
 """
  Remotely executed algorithm
 """
-import base64
-import os
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
 #
@@ -20,6 +18,7 @@ import os
 #
 
 from abc import abstractmethod
+import base64
 from functools import partial
 
 from adapta.metrics import MetricsProvider
@@ -36,6 +35,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.core.app_dependencies import Compressor
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input.input_processor import (
@@ -116,8 +116,8 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         if self._compressor is None:
             raise FatalNexusError(
                 "Compressor is not configured for remote algorithm payload compression. "
-                "Configure using environment variable NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH "
-                "and NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH"
+                "Configure using environment variable NEXUS__REMOTE_ALGORITHM__COMPRESSION_IMPORT_PATH "
+                "and NEXUS__REMOTE_ALGORITHM__DECOMPRESSION_IMPORT_PATH"
             )
 
         payload_bytes = payload.to_json().encode(encoding="utf-8")
@@ -170,12 +170,12 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             algorithm_name=self._remote_name,
             custom_configuration=self._remote_config,
             parent_request=SdkParentRequest.create(
-                algorithm_name=os.getenv("NEXUS__ALGORITHM_NAME"), request_id=run_args["request_id"]
+                algorithm_name=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name, request_id=run_args["request_id"]
             )
             if self._is_hard_dependency
             else None,
             tag=tag,
-            dry_run=os.getenv("NEXUS__REMOTE_DRY_RUN", "0") == "1",
+            dry_run=NEXUS_FRAMEWORK_CONFIGURATION.default.remote_algorithm.dry_run == "1",
         )
 
         self._logger.info(

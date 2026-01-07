@@ -32,6 +32,7 @@ from nexus_client_sdk.nexus.abstractions.logger_factory import (
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
     ExternalSocketProvider,
 )
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.configurations.algorithm_configuration import (
     NexusConfiguration,
 )
@@ -74,7 +75,11 @@ class QueryEnabledStoreModule(Module):
         """
         DI factory method.
         """
-        return QueryEnabledStore.from_string(os.getenv("NEXUS__QES_CONNECTION_STRING"), lazy_init=False)
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.query_enabled_store.enabled == "1":
+            connection_string = NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.query_enabled_store.connection_string
+            return QueryEnabledStore.from_string(connection_string, lazy_init=False)
+
+        return None
 
 
 @final
@@ -90,17 +95,11 @@ class StorageClientModule(Module):
         DI factory method.
         """
         storage_client_class: type[StorageClient] = locate(
-            os.getenv(
-                "NEXUS__STORAGE_CLIENT_CLASS",
-            )
+            NEXUS_FRAMEWORK_CONFIGURATION.default.result.storage_client_class
         )
-        if not storage_client_class:
-            raise FatalStartupConfigurationError("NEXUS__STORAGE_CLIENT_CLASS")
-        if "NEXUS__ALGORITHM_OUTPUT_PATH" not in os.environ:
-            raise FatalStartupConfigurationError("NEXUS__ALGORITHM_OUTPUT_PATH")
 
         try:
-            return storage_client_class.for_storage_path(path=os.getenv("NEXUS__ALGORITHM_OUTPUT_PATH"))
+            return storage_client_class.for_storage_path(path=NEXUS_FRAMEWORK_CONFIGURATION.default.result.output_path)
         except Exception as e:
             raise FatalStartupConfigurationError(
                 "StorageClient cannot be created, configuration missing or invalid. Review the underlying exception."
@@ -119,10 +118,13 @@ class ExternalSocketsModule(Module):
         """
         Dependency provider.
         """
-        if "NEXUS__ALGORITHM_INPUT_EXTERNAL_DATA_SOCKETS" not in os.environ:
-            raise FatalStartupConfigurationError("NEXUS__ALGORITHM_INPUT_EXTERNAL_DATA_SOCKETS")
+        if (
+            NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets
+            and len(NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets) > 0
+        ):
+            return ExternalSocketProvider.from_dynaconf(NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets)
 
-        return ExternalSocketProvider.from_serialized(os.getenv("NEXUS__ALGORITHM_INPUT_EXTERNAL_DATA_SOCKETS"))
+        return ExternalSocketProvider.empty()
 
 
 @final
@@ -138,8 +140,8 @@ class ResultSerializerModule(Module):
         DI factory method.
         """
         serializer = ResultSerializer()
-        for serialization_format in locate_classes(re.compile(r"NEXUS__RESULT_SERIALIZATION_FORMAT_(.+)_CLASS")):
-            serializer = serializer.with_format(serialization_format)
+        for serializer_class in NEXUS_FRAMEWORK_CONFIGURATION.default.result.serializers:
+            serializer = serializer.with_format(locate(serializer_class))
 
         return serializer
 
@@ -157,8 +159,8 @@ class TelemetrySerializerModule(Module):
         DI factory method.
         """
         serializer = TelemetrySerializer()
-        for serialization_format in locate_classes(re.compile(r"NEXUS__TELEMETRY_SERIALIZATION_FORMAT_(.+)_CLASS")):
-            serializer = serializer.with_format(serialization_format)
+        for serializer_class in NEXUS_FRAMEWORK_CONFIGURATION.default.result.serializers:
+            serializer = serializer.with_format(locate(serializer_class))
 
         return serializer
 
@@ -202,11 +204,11 @@ class Compressor:
 
         if not self._compress_function:
             raise FatalStartupConfigurationError(
-                f"Compression function '{self._compress_import_path}' from NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH could not be located."
+                f"Compression function '{self._compress_import_path}' could not be located."
             )
         if not self._decompress_function:
             raise FatalStartupConfigurationError(
-                f"Decompression function '{self._decompress_import_path}' from NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH could not be located."
+                f"Decompression function '{self._decompress_import_path}' could not be located."
             )
 
     @classmethod
@@ -258,21 +260,11 @@ class CompressorModule(Module):
         """
         Returns a compressor if configured, else None.
         """
-        compress_path = os.getenv("NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH")
-        decompress_path = os.getenv("NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH")
+        compress_path = NEXUS_FRAMEWORK_CONFIGURATION.default.remote_algorithm.compression_import_path
+        decompress_path = NEXUS_FRAMEWORK_CONFIGURATION.default.remote_algorithm.decompression_import_path
 
-        if compress_path is None and decompress_path is None:
+        if not compress_path and not decompress_path:
             return None
-
-        if compress_path is None and decompress_path is not None:
-            raise FatalStartupConfigurationError(
-                "NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH must be set if NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH is set."
-            )
-
-        if compress_path is not None and decompress_path is None:
-            raise FatalStartupConfigurationError(
-                "NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH must be set if NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH is set."
-            )
 
         return Compressor.create(compress_path, decompress_path)
 

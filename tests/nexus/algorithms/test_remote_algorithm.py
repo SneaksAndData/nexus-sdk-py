@@ -1,6 +1,4 @@
 import base64
-import json
-import os
 from dataclasses import dataclass
 from enum import Enum
 from pydoc import locate
@@ -54,7 +52,7 @@ payload = {
 
 
 @pytest.mark.parametrize(
-    ("inputs"),
+    "inputs",
     [
         pytest.param(
             TestInput(
@@ -94,11 +92,6 @@ def test_remote_algorithm__compress_remote_payload(inputs: TestInput):
     This test verifies that the payload can be compressed and then decompressed back to its original form.
     """
 
-    os.environ["NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH"] = inputs.compression_config["compress_import_path"]
-    os.environ["NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH"] = inputs.compression_config[
-        "decompress_import_path"
-    ]
-
     # Arrange
     remote_algorithm = TestRemoteAlgorithm(
         metrics_provider=MagicMock(),
@@ -107,8 +100,8 @@ def test_remote_algorithm__compress_remote_payload(inputs: TestInput):
         remote_name=MagicMock(),
         remote_config=MagicMock(),
         compressor=Compressor.create(
-            compress_import_path=os.environ["NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH"],
-            decompress_import_path=os.environ["NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH"],
+            compress_import_path=inputs.compression_config["compress_import_path"],
+            decompress_import_path=inputs.compression_config["decompress_import_path"],
         ),
         compress_payload=True,
         cache=MagicMock(),

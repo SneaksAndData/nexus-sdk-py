@@ -17,15 +17,12 @@
 Astra Client module that provides the astra client to the Nexus framework.
 """
 
-import os
 from typing import final
 
 from adapta.storage.distributed_object_store.v3.datastax_astra import AstraClient
 from injector import Module, singleton, provider
 
-from nexus_client_sdk.nexus.exceptions.startup_error import (
-    FatalStartupConfigurationError,
-)
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 
 
 @final
@@ -41,21 +38,13 @@ class AstraClientModule(Module):
         DI factory method.
         """
 
-        required_env_vars = [
-            "NEXUS__ALGORITHM_NAME",
-            "NEXUS__ASTRA_KEYSPACE",
-            "NEXUS__ASTRA_BUNDLE_BYTES",
-            "NEXUS__ASTRA_CLIENT_ID",
-            "NEXUS__ASTRA_CLIENT_SECRET",
-        ]
-
-        if all(map(lambda v: v in os.environ, required_env_vars)):
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.astra_client.enabled == "1":
             return AstraClient(
-                client_name=os.getenv("NEXUS__ALGORITHM_NAME"),
-                keyspace=os.getenv("NEXUS__ASTRA_KEYSPACE"),
-                secure_connect_bundle_bytes=os.getenv("NEXUS__ASTRA_BUNDLE_BYTES"),
-                client_id=os.getenv("NEXUS__ASTRA_CLIENT_ID"),
-                client_secret=os.getenv("NEXUS__ASTRA_CLIENT_SECRET"),
+                client_name=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
+                keyspace=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.astra_client.keyspace,
+                secure_connect_bundle_bytes=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.astra_client.bundle,
+                client_id=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.astra_client.client_id,
+                client_secret=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.astra_client.client_secret,
             )
 
-        raise FatalStartupConfigurationError(f"Astra client requires these environment variables: {required_env_vars}")
+        return None

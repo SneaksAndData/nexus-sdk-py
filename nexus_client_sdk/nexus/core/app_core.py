@@ -18,7 +18,6 @@
 #
 
 import asyncio
-import os
 import platform
 import signal
 import sys
@@ -27,6 +26,7 @@ from typing import final, Self
 from collections.abc import Callable
 
 import backoff
+import dynaconf
 import requests.exceptions
 import urllib3.exceptions
 from adapta.logs import LoggerInterface
@@ -34,6 +34,7 @@ from adapta.metrics import MetricsProvider
 from adapta.process_communication import DataSocket
 from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
+from dynaconf import Validator
 from injector import Injector, Module, singleton
 
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
@@ -51,6 +52,7 @@ from nexus_client_sdk.nexus.algorithms import (
 )
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.configurations.algorithm_configuration import (
     NexusConfiguration,
 )
@@ -158,21 +160,21 @@ class Nexus:
         """
         return self._algorithm_class
 
-    def on_complete(self, *post_processors: type[UserTelemetryRecorder]) -> "Nexus":
+    def on_complete(self, *post_processors: type[UserTelemetryRecorder]) -> Self:
         """
         Attaches a coroutine to run on algorithm completion.
         """
         self._on_complete_tasks.extend(post_processors)
         return self
 
-    def add_reader(self, reader: type[InputReader]) -> "Nexus":
+    def add_reader(self, reader: type[InputReader]) -> Self:
         """
         Adds an input data reader for the algorithm.
         """
         self._configurator = self._configurator.with_input_reader(reader)
         return self
 
-    def add_readers(self, *readers: type[InputReader]) -> "Nexus":
+    def add_readers(self, *readers: type[InputReader]) -> Self:
         """
         Adds one or more input data readers for the algorithm.
         """
@@ -181,14 +183,14 @@ class Nexus:
 
         return self
 
-    def use_processor(self, input_processor: type[InputProcessor]) -> "Nexus":
+    def use_processor(self, input_processor: type[InputProcessor]) -> Self:
         """
         Initialises an input processor for the algorithm.
         """
         self._configurator = self._configurator.with_input_processor(input_processor)
         return self
 
-    def use_processors(self, *input_processors: type[InputProcessor]) -> "Nexus":
+    def use_processors(self, *input_processors: type[InputProcessor]) -> Self:
         """
         Initialises one or more input processors for the algorithm.
         """
@@ -197,21 +199,21 @@ class Nexus:
 
         return self
 
-    def use_algorithm(self, algorithm: type[BaselineAlgorithm]) -> "Nexus":
+    def use_algorithm(self, algorithm: type[BaselineAlgorithm]) -> Self:
         """
         Algorithm to use for this Nexus instance
         """
         self._algorithm_class = algorithm
         return self
 
-    def inject_payload(self, *payload_types: type[AlgorithmPayload]) -> "Nexus":
+    def inject_payload(self, *payload_types: type[AlgorithmPayload]) -> Self:
         """
         Adds payload types to inject to the DI container. Payloads will be deserialized at runtime.
         """
         self._payload_types = payload_types
         return self
 
-    def inject_configuration(self, *configuration_types: type[NexusConfiguration]) -> "Nexus":
+    def inject_configuration(self, *configuration_types: type[NexusConfiguration]) -> Self:
         """
         Adds custom configuration class instances to the DI container.
         """
@@ -239,7 +241,7 @@ class Nexus:
         ]
         | None = None,
         delimiter: str = ", ",
-    ) -> "Nexus":
+    ) -> Self:
         """
         Adds a log `tagger` and a log `enricher` to be used with injected logger.
         A log `tagger` will add key-value tags to each emitted log message, and those tags can be inferred from the payload and entrypoint arguments.
@@ -260,18 +262,27 @@ class Nexus:
             dict[str, str],
         ]
         | None = None,
-    ) -> "Nexus":
+    ) -> Self:
         """
         Adds a metric `enricher` to be used with injected metrics provider to assign additional tags to emitted metrics.
         """
         self._metric_tagger = tagger
         return self
 
-    def with_module(self, module: type[Module]) -> "Nexus":
+    def with_module(self, module: type[Module]) -> Self:
         """
         Adds a (custom) DI module into the DI container.
         """
         self._configurator = self._configurator.with_module(module)
+        return self
+
+    def with_config_validators(self, *validators: Validator) -> Self:
+        """
+          Adds one or more configuration validators for the algorithm.
+        :param validators: Dynaconf Validator instances.
+        :return:
+        """
+        NEXUS_FRAMEWORK_CONFIGURATION.add_bootstrap_validators(*validators)
         return self
 
     async def _submit_result(
@@ -299,7 +310,7 @@ class Nexus:
             result_ = data.result()
             serializer = self._injector.get(ResultSerializer)
             storage_client = self._injector.get(StorageClient)
-            output_path = f"{os.getenv('NEXUS__ALGORITHM_OUTPUT_PATH')}/{self._run_args.request_id}.json"
+            output_path = f"{NEXUS_FRAMEWORK_CONFIGURATION.default.result.output_path}/{self._run_args.request_id}.json"
             blob_path = DataSocket(data_path=output_path, alias="output", data_format="null").parse_data_path()
             storage_client.save_data_as_blob(
                 data=result_,
@@ -319,20 +330,20 @@ class Nexus:
                         result_uri=save_result(result),
                         error=None,
                     ),
-                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    algorithm=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
                     request_id=self._run_args.request_id,
                 )
                 metrics_provider.increment("successful_runs")
                 root_logger.info(
                     "Algorithm {algorithm} run completed on Nexus version {version}",
-                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    algorithm=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
                     version=__version__,
                 )
             case True:
                 root_logger.warning(
                     "Algorithm {algorithm} run transiently failed on Nexus version {version}",
                     ex,
-                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    algorithm=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
                     version=__version__,
                 )
                 sys.exit(1)
@@ -342,13 +353,13 @@ class Nexus:
                         result_uri=None,
                         error=ex,
                     ),
-                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    algorithm=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
                     request_id=self._run_args.request_id,
                 )
                 root_logger.error(
                     "Algorithm {algorithm} run failed on Nexus version {version}",
                     ex,
-                    algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+                    algorithm=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
                     version=__version__,
                 )
                 metrics_provider.increment("failed_runs")
@@ -364,13 +375,13 @@ class Nexus:
 
     async def _complete_with_error(self, logger: LoggerInterface, error: BaseException) -> None:
         await NexusReceiverAsyncClient(
-            url=os.getenv("NEXUS__RECEIVER_URL"), token_provider=None, logger=logger
+            url=NEXUS_FRAMEWORK_CONFIGURATION.default.client.receiver, token_provider=None, logger=logger
         ).complete_run(
             result=SdkCompletedRunResult.create(
                 result_uri=None,
                 error=error,
             ),
-            algorithm=os.getenv("NEXUS__ALGORITHM_NAME"),
+            algorithm=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
             request_id=self._run_args.request_id,
         )
 
@@ -379,6 +390,10 @@ class Nexus:
             logger_fixed_template = {}
             logger_tags = {}
             metric_tags = {}
+
+            # trigger config validation before reading the payload
+            # ALGORITHM_NAME and CLIENT.RECEIVER_URL are available at this point, so module configuration errors can be registered
+            NEXUS_FRAMEWORK_CONFIGURATION.default.validators.validate_all()
 
             for payload_type in self._payload_types:
                 payload = await self._get_payload(payload_type=payload_type)
@@ -412,7 +427,7 @@ class Nexus:
 
             # create and bind receiver client
             receiver_client = NexusReceiverAsyncClient(
-                url=os.getenv("NEXUS__RECEIVER_URL"),
+                url=NEXUS_FRAMEWORK_CONFIGURATION.default.client.receiver,
                 logger=logger_factory.create_logger(NexusReceiverAsyncClient),
                 token_provider=None,
             )
@@ -425,7 +440,7 @@ class Nexus:
 
             # create and bind scheduler client
             scheduler_client = NexusSchedulerAsyncClient(
-                url=os.getenv("NEXUS__SCHEDULER_URL"),
+                url=NEXUS_FRAMEWORK_CONFIGURATION.default.client.scheduler,
                 logger=logger_factory.create_logger(NexusSchedulerAsyncClient),
                 token_provider=None,
             )
@@ -436,6 +451,10 @@ class Nexus:
                 scope=singleton,
             )
 
+        except dynaconf.ValidationError as config_error:
+            await self._complete_with_error(logger, config_error)
+            logger.stop()
+            sys.exit(0)
         except FatalStartupConfigurationError as startup_error:
             await self._complete_with_error(logger, startup_error)
             logger.stop()
@@ -466,16 +485,17 @@ class Nexus:
         """
 
         self._injector = Injector(self._configurator.injection_binds)
+        NEXUS_FRAMEWORK_CONFIGURATION.load()
 
         bootstrap_logger: LoggerInterface = self._injector.get(BootstrapLoggerFactory).create_logger(
             request_id=self._run_args.request_id,
-            algorithm_name=os.getenv("NEXUS__ALGORITHM_NAME"),
+            algorithm_name=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
         )
 
         # configure blocking pool
         loop = asyncio.get_event_loop()
         loop.set_default_executor(
-            ThreadPoolExecutor(max_workers=int(os.getenv("NEXUS__BLOCKING_POOL_MAX_SIZE", "128")))
+            ThreadPoolExecutor(max_workers=int(NEXUS_FRAMEWORK_CONFIGURATION.default.threading.blocking_pool_max_size))
         )
 
         bootstrap_logger.start()
@@ -520,11 +540,11 @@ class Nexus:
             metrics_provider = self._injector.get(MetricsProvider)
 
             async with telemetry_recorder as recorder:
-                if os.getenv("NEXUS__ALGORITHM_TELEMETRY_ENABLED", "1") == "1":
+                if NEXUS_FRAMEWORK_CONFIGURATION.default.telemetry.input.enabled == "1":
                     await recorder.record(run_id=self._run_args.request_id, **algorithm.inputs)
 
                 # only execute user telemetry if this run has succeeded
-                if ex is None and os.getenv("NEXUS__USER_TELEMETRY_ENABLED", "1") == "1":
+                if ex is None and NEXUS_FRAMEWORK_CONFIGURATION.default.telemetry.user.enabled == "1":
                     on_complete_tasks = [
                         recorder.record_user_telemetry(
                             user_recorder=self._injector.get(on_complete_task_class),
@@ -562,7 +582,8 @@ class Nexus:
 
             # dispose of QES instance gracefully as it might hold open connections
             qes = self._injector.get(QueryEnabledStore)
-            qes.close()
+            if qes is not None:
+                qes.close()
 
         root_logger.stop()
 

@@ -17,9 +17,7 @@
 #  limitations under the License.
 #
 
-import json
 import logging
-import os
 import sys
 from abc import ABC
 from typing import final, TypeVar
@@ -28,6 +26,8 @@ from adapta.logs import LoggerInterface, create_async_logger
 from adapta.logs.handlers.datadog_api_handler import DataDogApiHandler
 from adapta.logs.handlers.safe_stream_handler import SafeStreamHandler
 from adapta.logs.models import LogLevel
+
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 
 TLogger = TypeVar("TLogger")
 
@@ -50,8 +50,8 @@ class BootstrapLoggerFactory:
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
-        if "NEXUS__DATADOG_LOGGER_CONFIGURATION" in os.environ:
-            self._log_handlers.append(DataDogApiHandler(**json.loads(os.getenv("NEXUS__DATADOG_LOGGER_CONFIGURATION"))))
+        if "datadog" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+            self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog))
 
     def create_logger(self, request_id: str, algorithm_name: str) -> LoggerInterface:
         """
@@ -60,7 +60,7 @@ class BootstrapLoggerFactory:
         return create_async_logger(
             logger_type=BootstrapLogger.__class__,
             log_handlers=self._log_handlers,
-            min_log_level=LogLevel(os.getenv("NEXUS__LOG_LEVEL", "INFO")),
+            min_log_level=LogLevel(NEXUS_FRAMEWORK_CONFIGURATION.default.logging.log_level),
             global_tags={
                 "request_id": request_id,
                 "algorithm": algorithm_name,
@@ -86,13 +86,16 @@ class LoggerFactory:
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
-        if "NEXUS__DATADOG_LOGGER_CONFIGURATION" in os.environ:
-            self._log_handlers.append(DataDogApiHandler(**json.loads(os.getenv("NEXUS__DATADOG_LOGGER_CONFIGURATION"))))
-        if "NEXUS__LOGGER_FIXED_TEMPLATE" in os.environ:
-            self._fixed_template = self._fixed_template | json.loads(os.getenv("NEXUS__LOGGER_FIXED_TEMPLATE"))
+        if "datadog" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+            self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog))
 
-        if "NEXUS__LOGGER_FIXED_TEMPLATE_DELIMITER" in os.environ:
-            self._fixed_template_delimiter = self._fixed_template_delimiter or os.getenv("NEXUS__LOGGER_FIXED_TEMPLATE")
+        if "fixed_template" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+            self._fixed_template = self._fixed_template | NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template
+
+        if "fixed_template_delimiter" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+            self._fixed_template_delimiter = (
+                self._fixed_template_delimiter or NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template_delimiter
+            )
 
     def create_logger(
         self,
@@ -104,7 +107,7 @@ class LoggerFactory:
         return create_async_logger(
             logger_type=logger_type,
             log_handlers=self._log_handlers,
-            min_log_level=LogLevel(os.getenv("NEXUS__LOG_LEVEL", "INFO")),
+            min_log_level=LogLevel(NEXUS_FRAMEWORK_CONFIGURATION.default.logging.log_level),
             fixed_template=self._fixed_template,
             fixed_template_delimiter=self._fixed_template_delimiter,
             global_tags=self._global_tags,

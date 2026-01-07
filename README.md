@@ -105,8 +105,8 @@ Nexus can automatically compress and decompress payloads when using `RemoteAlgor
 
 First, you need to provide the Python import paths for your compression and decompression logic. Setting these environment variables allows Nexus to create an injectable `Compressor` service.
 
-  * `NEXUS__REMOTE_ALGORITHM_COMPRESSION_IMPORT_PATH`: The import path to your **compression** function (e.g., `my_module.my_compress`).
-  * `NEXUS__REMOTE_ALGORITHM_DECOMPRESSION_IMPORT_PATH`: The import path to your **decompression** function (e.g., `my_module.my_decompress`).
+  * `NEXUS__REMOTE_ALGORITHM__COMPRESSION_IMPORT_PATH`: The import path to your **compression** function (e.g., `my_module.my_compress`).
+  * `NEXUS__REMOTE_ALGORITHM__DECOMPRESSION_IMPORT_PATH`: The import path to your **decompression** function (e.g., `my_module.my_decompress`).
 
 ### Step 2: Enabling Compression in Your Algorithm
 

@@ -132,3 +132,6 @@ dmypy.json
 .pyre/
 test-resources/kubecfg/
 .helm/charts/
+
+# Ignore dynaconf secret files
+tests/.secrets.toml

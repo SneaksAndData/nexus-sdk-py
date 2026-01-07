@@ -10,6 +10,7 @@ from cassandra.cluster import Session
 
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.scheduler import RequestLifeCycleStage
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from tests.conftest import payloads, negative_z_payload
 from tests.sample_algorithm.sample_main import main as sample_algorithm_main, NegativeZError
@@ -36,7 +37,8 @@ runtime_config_stub = (
 @pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.parametrize("test_args", test_cases)
 async def test_sdk_run(test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session) -> None:
-    algorithm = os.getenv("NEXUS__ALGORITHM_NAME")
+    NEXUS_FRAMEWORK_CONFIGURATION.load()
+    algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
     # create initial fake record
     cql_session.execute(
         f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{runtime_config_stub}', '{{}}', '{{}}')"
@@ -56,7 +58,7 @@ async def test_sdk_run(test_args: NexusDefaultArguments, scheduler: NexusSchedul
 async def test_sdk_run_compressed(
     test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session
 ) -> None:
-    algorithm = os.getenv("NEXUS__ALGORITHM_NAME")
+    algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
     # create initial fake record
     cql_session.execute(
         f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{runtime_config_stub}', '{{}}', '{{}}')"
@@ -79,7 +81,7 @@ async def test_sdk_run_compressed(
 @pytest.mark.asyncio(loop_scope="package")
 async def test_failing_reader(scheduler: NexusSchedulerClient, cql_session: Session) -> None:
     payload_url, request_id = negative_z_payload()
-    algorithm = os.getenv("NEXUS__ALGORITHM_NAME")
+    algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
     # create initial fake record
     cql_session.execute(
         f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{request_id}', 'RUNNING', '{payload_url}', '{runtime_config_stub}', '{{}}', '{{}}')"
