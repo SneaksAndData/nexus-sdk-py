@@ -8,6 +8,7 @@ from cassandra.cluster import Session
 from nexus_client_sdk.models.client_errors.go_http_errors import BadRequestError
 
 from nexus_client_sdk.clients.fault_tolerance.models import NexusClientRuntimeError
+from nexus_client_sdk.models.scheduler import SdkCustomRunConfiguration
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from tests.conftest import broken_async_scheduler
 
@@ -49,7 +50,11 @@ async def test_create_and_await_manual(async_scheduler: NexusSchedulerAsyncClien
 
 @pytest.mark.asyncio
 async def test_create_and_await(async_scheduler: NexusSchedulerAsyncClient):
-    result = await async_scheduler.create_and_await(algorithm_parameters={}, algorithm_name="hello-world")
+    result = await async_scheduler.create_and_await(
+        algorithm_parameters={},
+        algorithm_name="hello-world",
+        custom_configuration=SdkCustomRunConfiguration.create(max_retries=0, max_deadline_seconds=60),
+    )
 
     assert async_scheduler._sync_client.is_finished(result) and not async_scheduler._sync_client.has_succeeded(result)
 
