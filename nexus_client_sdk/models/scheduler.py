@@ -162,6 +162,8 @@ class SdkCustomRunConfiguration(ctypes.Structure):
         ("workgroup_kind", ctypes.c_char_p),
         ("cpu_limit", ctypes.c_char_p),
         ("memory_limit", ctypes.c_char_p),
+        ("deadline_seconds", ctypes.c_int32),
+        ("maximum_retries", ctypes.c_int32),
     ]
 
     @classmethod
@@ -174,6 +176,8 @@ class SdkCustomRunConfiguration(ctypes.Structure):
         memory_limit: str | None = None,
         workgroup_group: str = "science.sneaksanddata.com/v1",
         workgroup_kind: str = "NexusAlgorithmWorkgroup",
+        max_deadline_seconds: int | None = None,
+        max_retries: int | None = None,
     ) -> Self:
         """
          Create an instance of this class.
@@ -183,6 +187,8 @@ class SdkCustomRunConfiguration(ctypes.Structure):
         :param workgroup_kind: Algorithm workgroup kind override
         :param cpu_limit: Run CPU limit override
         :param memory_limit: Run max memory limit override
+        :param max_deadline_seconds: Maximum deadline seconds override
+        :param max_retries: Maximum retries override
         :return:
         """
         return cls(
@@ -192,6 +198,8 @@ class SdkCustomRunConfiguration(ctypes.Structure):
             workgroup_kind=bytes(workgroup_kind, encoding="utf-8") if workgroup_kind else None,
             cpu_limit=bytes(cpu_limit, encoding="utf-8") if cpu_limit else None,
             memory_limit=bytes(memory_limit, encoding="utf-8") if memory_limit else None,
+            deadline_seconds=max_deadline_seconds if max_deadline_seconds else 0,
+            max_retries=max_retries if max_retries else -1,
         )
 
     def as_pointer(self) -> ctypes.pointer:
