@@ -276,6 +276,26 @@ class SdkRequestMetadata(ctypes.Structure):
 class RequestMetadata(PySdkType):
     """
     Python counterpart for SdkRequestMetadata
+
+    :attr algorithm: Algorithm name
+    :attr id: Request identifier
+    :attr algorithm_failure_cause: Cause of algorithm failure
+    :attr algorithm_failure_details: Details of algorithm failure
+    :attr api_version: API version
+    :attr applied_configuration: Applied configuration
+    :attr configuration_overrides: Configuration overrides
+    :attr content_hash: Content hash
+    :attr job_uid: Job UID
+    :attr last_modified: Last modified timestamp of edits to the response
+    :attr lifecycle_stage: Lifecycle stage
+    :attr parent_job: Parent job information
+    :attr payload_uri: Payload URI
+    :attr payload_valid_for: Payload validity duration
+    :attr received_at: Timestamp of when the request was received
+    :attr received_by_host: Nexus Host that received the request
+    :attr result_uri: Result URI
+    :attr sent_at: Timestamp of when the request was sent to the cluster
+    :attr tag: Request tag
     """
 
     algorithm: str | None
