@@ -184,6 +184,22 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             for task in done:
                 if task.exception() is not None:
                     self._logger.error("Forked run failed", exception=task.exception())
+                    self._metrics_provider.increment(
+                        metric_name="forked_algorithm_run_failed",
+                        tags=self._metric_tags,
+                    )
+                else:
+                    self._metrics_provider.increment(
+                        metric_name="forked_algorithm_run_scheduled",
+                        tags=self._metric_tags,
+                    )
+            successful_forks_rate = sum(1 for task in done if task.exception() is None) / len(done)
+
+            self._metrics_provider.gauge(
+                metric_name="forked_algorithm_forks_scheduled_rate",
+                value=successful_forks_rate,
+                tags=self._metric_tags,
+            )
         else:
             self._logger.info("Leaf algorithm node: proceeding with this node run only")
 
