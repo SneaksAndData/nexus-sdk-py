@@ -575,7 +575,7 @@ class Nexus:
                     else:
                         root_logger.info("No post processing tasks were defined for this run")
                 else:
-                    if ex is None:
+                    if ex is not None:
                         root_logger.warning(
                             "Skipping user telemetry recording as the run {run_id} has failed",
                             run_id=self._run_args.request_id,
@@ -588,7 +588,7 @@ class Nexus:
                         )
                     else:
                         root_logger.warning(
-                            "Skipping user telemetry recording for the run {run_id} for unknown reasons",
+                            "Skipping user telemetry recording for the run {run_id} due to unknown reasons",
                         )
             # dispose of QES instance gracefully as it might hold open connections
             qes = self._injector.get(QueryEnabledStore)
