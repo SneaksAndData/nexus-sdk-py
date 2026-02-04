@@ -203,11 +203,6 @@ class NexusSchedulerClient:
         :return:
         """
         self._init_client()
-        self._logger.info(
-            "Creating a new run for {algorithm_template_name} with tag '{client_runtime_tag}'",
-            algorithm_template_name=algorithm_name,
-            client_runtime_tag=tag or "tag not provided",
-        )
         maybe_result = self._create_run(
             bytes(algorithm_name, encoding="utf-8"),
             bytes(json.dumps(algorithm_parameters), encoding="utf-8"),
@@ -224,12 +219,20 @@ class NexusSchedulerClient:
         match converted.error():
             case None:
                 self._logger.info(
-                    "New run initiated: {algorithm_template_name}/{request_identifier}",
+                    "New run initiated: {algorithm_template_name}/{request_identifier} with tag '{client_runtime_tag}'",
                     algorithm_template_name=algorithm_name,
                     request_identifier=converted.request_id,
+                    client_runtime_tag=tag or "tag not provided",
                 )
                 return converted.request_id
             case _:
+                self._logger.error(
+                    "Failed to create a run for: {algorithm_template_name}/{request_identifier} with tag '{client_runtime_tag}'",
+                    algorithm_template_name=algorithm_name,
+                    request_identifier=converted.request_id,
+                    client_runtime_tag=tag or "tag not provided",
+                    exception=converted.error(),
+                )
                 raise converted.error()
 
     def await_run(
