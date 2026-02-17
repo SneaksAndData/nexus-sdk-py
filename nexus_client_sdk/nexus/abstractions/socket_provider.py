@@ -54,13 +54,18 @@ class ExternalSocketProvider:
         return cls(*[DataSocket.from_dict(socket_dict) for socket_dict in json.loads(socket_list_ser)])
 
     @classmethod
-    def from_dynaconf(cls, sockets_list: list[dynaconf.utils.boxing.DynaBox]) -> Self:
+    def from_dynaconf(cls, sockets_list: list[dynaconf.utils.boxing.DynaBox] | str) -> Self:
         """
         Creates a SocketProvider from a Dynaconf entry list
         :param sockets_list:
         :return:
         """
-        return cls(*[DataSocket.from_dict(socket_dict) for socket_dict in sockets_list])
+        if isinstance(sockets_list, str):
+            return cls.from_serialized(sockets_list)
+        if isinstance(sockets_list, list):
+            return cls(*[DataSocket.from_dict(socket_dict) for socket_dict in sockets_list])
+
+        raise FatalStartupConfigurationError(f"Unknown type for input sockets: {type(sockets_list)}")
 
     @classmethod
     def empty(cls) -> Self:
