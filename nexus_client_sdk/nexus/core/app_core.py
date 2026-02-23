@@ -575,11 +575,11 @@ class Nexus:
                     else:
                         root_logger.info("No post processing tasks were defined for this run")
                 else:
-                    root_logger.warning(
-                        "Skipping user telemetry recording as the run {run_id} has failed",
-                        run_id=self._run_args.request_id,
+                    self._log_warning_when_skipping_telemetry(
+                        logger=root_logger,
+                        skipped_due_to_failed_run=ex is not None,
+                        skipped_due_to_config=NEXUS_FRAMEWORK_CONFIGURATION.default.telemetry.user.enabled != "1",
                     )
-
             # dispose of QES instance gracefully as it might hold open connections
             qes = self._injector.get(QueryEnabledStore)
             if qes is not None:
@@ -593,3 +593,36 @@ class Nexus:
         Creates a Nexus instance with command-line arguments parsed into input.
         """
         return Nexus(NexusDefaultArguments.from_args())
+
+    def _log_warning_when_skipping_telemetry(
+        self,
+        logger: LoggerInterface,
+        skipped_due_to_failed_run: bool,
+        skipped_due_to_config: bool,
+    ) -> None:
+        """
+        Logs appropriate warning messages when telemetry recording is skipped.
+        :param logger: LoggerInterface instance for logging messages.
+        :param skipped_due_to_failed_run: Indicates if the algorithm run failed.
+        :param skipped_due_to_config: Indicates if telemetry recording was skipped due to configuration.
+        """
+
+        if skipped_due_to_failed_run:
+            logger.warning(
+                template="Skipping user telemetry recording as the run {run_id} has failed",
+                run_id=self._run_args.request_id,
+            )
+            return
+
+        if skipped_due_to_config:
+            logger.warning(
+                template="Skipping user telemetry recording as the run {run_id} has not telemetry.user.enabled set "
+                "to 1",
+                run_id=self._run_args.request_id,
+            )
+            return
+
+        logger.warning(
+            template="Run {run_id} succeeded and telemetry.user.enabled is set to 1, but telemetry recording was "
+            "skipped. Please check this is intended behaviour"
+        )
