@@ -197,7 +197,7 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
 
             self._metrics_provider.gauge(
                 metric_name="forked_algorithm_forks_scheduled_rate",
-                value=successful_forks_rate,
+                metric_value=successful_forks_rate,
                 tags=self._metric_tags,
             )
         else:
