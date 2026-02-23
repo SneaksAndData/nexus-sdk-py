@@ -159,7 +159,7 @@ class TelemetrySerializerModule(Module):
         DI factory method.
         """
         serializer = TelemetrySerializer()
-        for serializer_class in NEXUS_FRAMEWORK_CONFIGURATION.default.result.serializers:
+        for serializer_class in NEXUS_FRAMEWORK_CONFIGURATION.default.telemetry.serializers:
             serializer = serializer.with_format(locate(serializer_class))
 
         return serializer
