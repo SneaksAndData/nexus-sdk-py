@@ -25,3 +25,7 @@ try:
     from nexus_client_sdk.nexus.modules.astra_client_module import AstraClientModule
 except ModuleNotFoundError:
     pass
+try:
+    from nexus_client_sdk.nexus.modules.trino_client_module import TrinoClientModule
+except ModuleNotFoundError:
+    pass
