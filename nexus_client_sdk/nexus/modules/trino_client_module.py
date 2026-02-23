@@ -19,7 +19,7 @@ Trino Client module that provides the trino client to the Nexus framework.
 
 from typing import final
 
-from adapta.security.clients import HashicorpVaultClient
+from adapta.security.clients import HashicorpVaultTokenClient
 from adapta.storage.database.v3.trino_sql import TrinoClient, TrinoConnectionSecret
 from adapta.storage.secrets.hashicorp_vault_secret_storage_client import HashicorpSecretStorageClient
 from injector import Module, singleton, provider
@@ -47,8 +47,9 @@ class TrinoClientModule(Module):
                 password_secret_key=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.password_secret_key,
             )
             secret_storage_client = HashicorpSecretStorageClient(
-                base_client=HashicorpVaultClient(
-                    vault_address=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.vault_address
+                base_client=HashicorpVaultTokenClient(
+                    vault_address=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.vault_address,
+                    access_token=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.vault_access_token,
                 )
             )
 
@@ -57,7 +58,7 @@ class TrinoClientModule(Module):
                 credentials_provider=(
                     trino_connection_secret,
                     secret_storage_client,
-                )
+                ),
             )
 
         return None

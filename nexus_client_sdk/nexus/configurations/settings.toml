@@ -116,6 +116,9 @@ sockets = []
     # Hashicorp Vault address for Trino credentials
     # vault_address = ""
 
+    # Hashicorp Vault Access token for Trino credentials
+    # vault_access_token = ""
+
     # Trino Secret Path
     # secret_path = ""
 
