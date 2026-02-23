@@ -16,12 +16,10 @@
 """
 Trino Client module that provides the trino client to the Nexus framework.
 """
-
+import os
 from typing import final
 
-from adapta.security.clients import HashicorpVaultTokenClient
-from adapta.storage.database.v3.trino_sql import TrinoClient, TrinoConnectionSecret
-from adapta.storage.secrets.hashicorp_vault_secret_storage_client import HashicorpSecretStorageClient
+from adapta.storage.database.v3.trino_sql import TrinoClient
 from injector import Module, singleton, provider
 
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
@@ -41,24 +39,11 @@ class TrinoClientModule(Module):
         """
 
         if NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.enabled == "1":
-            trino_connection_secret = TrinoConnectionSecret(
-                secret_name=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.secret_path,
-                username_secret_key=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.username_secret_key,
-                password_secret_key=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.password_secret_key,
-            )
-            secret_storage_client = HashicorpSecretStorageClient(
-                base_client=HashicorpVaultTokenClient(
-                    vault_address=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.vault_address,
-                    access_token=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.vault_access_token,
-                )
-            )
+            os.environ["ADAPTA__TRINO_USERNAME"] = NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.username
+            os.environ["ADAPTA__TRINO_PASSWORD"] = NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.password
 
             return TrinoClient(
                 host=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.host,
-                credentials_provider=(
-                    trino_connection_secret,
-                    secret_storage_client,
-                ),
             )
 
         return None

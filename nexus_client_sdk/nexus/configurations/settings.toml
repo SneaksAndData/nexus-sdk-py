@@ -113,20 +113,11 @@ sockets = []
     # Enabled injection of TrinoClientModule
     enabled = "0"
 
-    # Hashicorp Vault address for Trino credentials
-    # vault_address = ""
+    # Trino username
+    # username = ""
 
-    # Hashicorp Vault Access token for Trino credentials
-    # vault_access_token = ""
-
-    # Trino Secret Path
-    # secret_path = ""
-
-    # Trino Username Key in the secret path
-    # username_secret_key = ""
-
-    # Trino Password Key in the secret path
-    # password_secret_key = ""
+    # Trino password
+    # password = ""
 
 # Framework-powered logging
 [logging]
