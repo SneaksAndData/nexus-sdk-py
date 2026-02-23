@@ -32,7 +32,7 @@ class TrinoClientModule(Module):
 
     @singleton
     @provider
-    def provide(self) -> TrinoClient | None:
+    def provide(self) -> TrinoClient:
         """
         DI factory method.
         """
