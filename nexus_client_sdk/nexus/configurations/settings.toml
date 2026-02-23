@@ -107,6 +107,18 @@ sockets = []
     # Astra Client Secret
     # client_secret = ""
 
+    # Settings for TrinoClientModule
+    [inputs.trino_client]
+
+    # Enabled injection of TrinoClientModule
+    enabled = "0"
+
+    # Trino username
+    # username = ""
+
+    # Trino password
+    # password = ""
+
 # Framework-powered logging
 [logging]
 # Global template to apply to ALL log messages emitted by framework loggers. This setting conflicts with
