@@ -16,7 +16,6 @@
 """
 Trino Client module that provides the trino client to the Nexus framework.
 """
-import os
 from typing import final
 
 from adapta.storage.database.v3.trino_sql import TrinoClient
@@ -33,17 +32,16 @@ class TrinoClientModule(Module):
 
     @singleton
     @provider
-    def provide(self) -> TrinoClient:
+    def provide(self) -> TrinoClient | None:
         """
         DI factory method.
         """
 
         if NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.enabled == "1":
-            os.environ["ADAPTA__TRINO_USERNAME"] = NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.username
-            os.environ["ADAPTA__TRINO_PASSWORD"] = NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.password
-
             return TrinoClient(
                 host=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.host,
+                username=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.username,
+                password=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.password,
             )
 
         return None

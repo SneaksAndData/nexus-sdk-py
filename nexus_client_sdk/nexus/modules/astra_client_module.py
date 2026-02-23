@@ -33,7 +33,7 @@ class AstraClientModule(Module):
 
     @singleton
     @provider
-    def provide(self) -> AstraClient:
+    def provide(self) -> AstraClient | None:
         """
         DI factory method.
         """
