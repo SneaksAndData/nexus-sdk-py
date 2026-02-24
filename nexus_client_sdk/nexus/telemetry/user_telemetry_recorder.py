@@ -156,12 +156,19 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         )()
 
         if telemetry is None:
-            self._logger.info(f"No telemetry to record for UserTelemetryRecorder {self.__class__.alias()}")
+            self._logger.info(
+                "No telemetry to record for UserTelemetryRecorder {recorder}", recorder=self.__class__.alias()
+            )
             return
 
         serializer = self._serializer.get_serialization_format(telemetry.telemetry)
 
         for chunk_index, telemetry_chunk in enumerate(telemetry.telemetry):
+            self._logger.info(
+                "Recording telemetry chunk {chunk_index} of {recorder}",
+                chunk_index=chunk_index,
+                recorder=self.__class__.alias(),
+            )
             self._storage_client.save_data_as_blob(
                 data=telemetry_chunk,
                 blob_path=DataSocket(
