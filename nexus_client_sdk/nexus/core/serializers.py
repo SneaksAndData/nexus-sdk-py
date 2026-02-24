@@ -60,7 +60,7 @@ class Serializer:
         return self.get_serialization_format(data)().serialize(data)
 
     @property
-    def serialization_formats(self) -> dict[type[T], type[SerializationFormat[T]]]:
+    def serialization_formats(self) -> dict[type[T], type[SerializationFormat[T]]] | None:
         """
          Return loaded serialization formats.
         :return:
@@ -73,8 +73,12 @@ class Serializer:
          String representation of the loaded serialization formats.
         :return:
         """
-        return ",".join(
-            [f"{format_target}/{format_type}" for format_target, format_type in self._serialization_formats]
+        return (
+            ",".join(
+                [f"{format_target}/{format_type}" for format_target, format_type in self._serialization_formats.items()]
+            )
+            if self._serialization_formats is not None
+            else "No serialization formats loaded"
         )
 
 
