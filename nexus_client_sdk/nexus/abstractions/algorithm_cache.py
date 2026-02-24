@@ -63,6 +63,12 @@ class InputCache:
         Resolve base exception into a specific Nexus exception.
         """
 
+        if isinstance(ex, FatalCachingError):
+            return FatalCachingError
+
+        if isinstance(ex, TransientCachingError):
+            return TransientCachingError
+
         match type(ex):
             case (
                 deltalake.exceptions.TableNotFoundError
