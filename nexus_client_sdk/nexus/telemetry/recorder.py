@@ -130,7 +130,7 @@ class TelemetryRecorder(NexusCoreObject):
         if not telemetry_tasks:
             return
 
-        done, pending = await asyncio.wait(telemetry_tasks, return_when=asyncio.FIRST_EXCEPTION)
+        done, pending = await asyncio.wait(telemetry_tasks)
         if len(pending) > 0:
             self._logger.warning(
                 "Some telemetry recording operations did not complete within specified time. This run might lack observability coverage."
