@@ -22,7 +22,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import partial
-from typing import final, Generic
+from typing import final, Generic, Iterator
 
 from pandas import DataFrame
 
@@ -60,14 +60,14 @@ class UserTelemetry:
 
     def __init__(
         self,
-        telemetry: DataFrame,
+        telemetry: Iterator[DataFrame],
         *telemetry_path_segments: UserTelemetryPathSegment,
     ):
         self._telemetry = telemetry
         self._telemetry_path_segments = telemetry_path_segments
 
     @property
-    def telemetry(self) -> DataFrame:
+    def telemetry(self) -> Iterator[DataFrame]:
         """
         User telemetry data
         """
@@ -156,27 +156,35 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         )()
 
         if telemetry is None:
-            self._logger.info(f"No telemetry to record for UserTelemetryRecorder {self.__class__.alias()}")
+            self._logger.info(
+                "No telemetry to record for UserTelemetryRecorder {recorder}", recorder=self.__class__.alias()
+            )
             return
 
         serializer = self._serializer.get_serialization_format(telemetry.telemetry)
 
-        self._storage_client.save_data_as_blob(
-            data=telemetry.telemetry,
-            blob_path=DataSocket(
-                alias="user_telemetry",
-                data_path=os.path.join(
-                    telemetry_base_path,
-                    "telemetry_group=user",
-                    f"recorder_class={self.__class__.alias()}",
-                    telemetry.telemetry_path,  # path join eliminates empty segments
-                    serializer().get_output_name(output_name=run_id),
-                ),
-                data_format="null",
-            ).parse_data_path(),
-            serialization_format=serializer,
-            overwrite=True,
-        )
+        for chunk_index, telemetry_chunk in enumerate(telemetry.telemetry):
+            self._logger.info(
+                "Recording telemetry chunk {chunk_index} of {recorder}",
+                chunk_index=chunk_index,
+                recorder=self.__class__.alias(),
+            )
+            self._storage_client.save_data_as_blob(
+                data=telemetry_chunk,
+                blob_path=DataSocket(
+                    alias="user_telemetry",
+                    data_path=os.path.join(
+                        telemetry_base_path,
+                        "telemetry_group=user",
+                        f"recorder_class={self.__class__.alias()}",
+                        telemetry.telemetry_path,  # path join eliminates empty segments
+                        f"{serializer().get_output_name(output_name=run_id)}_{chunk_index}",
+                    ),
+                    data_format="null",
+                ).parse_data_path(),
+                serialization_format=serializer,
+                overwrite=True,
+            )
 
     @classmethod
     def alias(cls) -> str:
