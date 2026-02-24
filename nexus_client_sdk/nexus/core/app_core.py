@@ -309,14 +309,9 @@ class Nexus:
             """
             result_ = data.result()
             serializer = self._injector.get(ResultSerializer)
-            self._logger.debug(
+            root_logger.debug(
                 "Available result serialization formats: {formats}",
-                formats=",".join(
-                    [
-                        f"{format_target}/{format_type}"
-                        for format_target, format_type in serializer.serialization_formats
-                    ]
-                ),
+                formats=serializer.serialization_formats_str,
             )
             storage_client = self._injector.get(StorageClient)
             output_path = f"{NEXUS_FRAMEWORK_CONFIGURATION.default.result.output_path}/{self._run_args.request_id}.json"

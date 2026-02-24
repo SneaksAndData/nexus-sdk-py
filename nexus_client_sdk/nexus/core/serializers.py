@@ -67,6 +67,16 @@ class Serializer:
         """
         return self._serialization_formats
 
+    @property
+    def serialization_formats_str(self) -> str:
+        """
+         String representation of the loaded serialization formats.
+        :return:
+        """
+        return ",".join(
+            [f"{format_target}/{format_type}" for format_target, format_type in self._serialization_formats]
+        )
+
 
 @final
 class TelemetrySerializer(Serializer):
