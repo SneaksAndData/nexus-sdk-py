@@ -163,3 +163,7 @@ blocking_pool_max_size = "16"
 
 # Base delay between fork launches
 spawn_base_delay_seconds = "1"
+
+# Enable or disable async spawn mode for forks
+# In async mode, forks are spawned without awaiting completion, allowing main run to proceed while forks are spawning.
+async_spawn_enabled = "0"

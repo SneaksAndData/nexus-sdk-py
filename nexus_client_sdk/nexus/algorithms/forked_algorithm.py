@@ -155,30 +155,13 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
 
             return asyncio.create_task(remote_algorithm.run(**remote_args))
 
-        if await self._is_forked(**kwargs):
-            self._inputs = await self._fork_inputs(**kwargs)
-        else:
-            self._inputs = await self._main_inputs(**kwargs)
-
-        # evaluate if additional forks will be spawned
-        forks: list[RemoteAlgorithm] = await partial(self._get_forks, **self._inputs, **kwargs)()
-
-        run_result = await partial(
-            _measured_run,
-            **kwargs,
-            **self._inputs,
-            metric_tags=self._metric_tags,
-            metrics_provider=self._metrics_provider,
-            logger=self._logger,
-        )()
-
-        if len(forks) > 0:
+        async def _spawn_forks(fork_list: list[RemoteAlgorithm]) -> None:
             self._logger.info(
                 "Forking node with: {forks}, after the node run",
-                forks=",".join([fork.alias() for fork in forks]),
+                forks=",".join([fork.alias() for fork in fork_list]),
             )
             done, _ = await asyncio.wait(
-                [await _spawn(fork, fork_ix, **kwargs) for fork_ix, fork in enumerate(forks)],
+                [await _spawn(fork, fork_ix, **kwargs) for fork_ix, fork in enumerate(fork_list)],
                 return_when=asyncio.ALL_COMPLETED,
             )
             for task in done:
@@ -200,6 +183,29 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
                 metric_value=successful_forks_rate,
                 tags=self._metric_tags,
             )
+
+        if await self._is_forked(**kwargs):
+            self._inputs = await self._fork_inputs(**kwargs)
+        else:
+            self._inputs = await self._main_inputs(**kwargs)
+
+        # evaluate if additional forks will be spawned
+        forks: list[RemoteAlgorithm] = await partial(self._get_forks, **self._inputs, **kwargs)()
+
+        run_result = await partial(
+            _measured_run,
+            **kwargs,
+            **self._inputs,
+            metric_tags=self._metric_tags,
+            metrics_provider=self._metrics_provider,
+            logger=self._logger,
+        )()
+
+        if len(forks) > 0:
+            if NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.async_spawn_enabled == "1":
+                asyncio.create_task(_spawn_forks(forks))
+            else:
+                await _spawn_forks(forks)
         else:
             self._logger.info("Leaf algorithm node: proceeding with this node run only")
 
