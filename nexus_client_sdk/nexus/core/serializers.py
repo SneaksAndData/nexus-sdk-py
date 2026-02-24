@@ -59,6 +59,14 @@ class Serializer:
         """
         return self.get_serialization_format(data)().serialize(data)
 
+    @property
+    def serialization_formats(self) -> dict[type[T], type[SerializationFormat[T]]]:
+        """
+         Return loaded serialization formats.
+        :return:
+        """
+        return self._serialization_formats
+
 
 @final
 class TelemetrySerializer(Serializer):
