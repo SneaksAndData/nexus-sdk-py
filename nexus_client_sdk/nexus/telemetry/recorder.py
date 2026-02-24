@@ -80,6 +80,10 @@ class TelemetryRecorder(NexusCoreObject):
             **_,
         ) -> None:
             self._logger.debug(
+                "Loaded serialization formats: {formats}",
+                formats=self._serializer.serialization_formats_str,
+            )
+            self._logger.debug(
                 "Recording telemetry for {entity_name} in the run {run_id}",
                 entity_name=entity_name,
                 run_id=run_id,
@@ -89,8 +93,10 @@ class TelemetryRecorder(NexusCoreObject):
                 serialization_format = self._serializer.get_serialization_format(entity_to_record)
             except KeyError:
                 self._logger.warning(
-                    "No telemetry serialization format injected for data type: {telemetry_entity_type}. Telemetry recording skipped.",
+                    "No telemetry serialization format injected for data type: {telemetry_entity_type} when recording telemetry for {entity_name}. Available formats: {formats}. Telemetry recording skipped.",
+                    entity_name=entity_name,
                     telemetry_entity_type=str(type(entity_to_record)),
+                    formats=self._serializer.serialization_formats_str,
                 )
                 return
 

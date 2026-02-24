@@ -58,6 +58,7 @@ async def test_sdk_run(test_args: NexusDefaultArguments, scheduler: NexusSchedul
 async def test_sdk_run_compressed(
     test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session
 ) -> None:
+    NEXUS_FRAMEWORK_CONFIGURATION.load()
     algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
     # create initial fake record
     cql_session.execute(
@@ -80,6 +81,7 @@ async def test_sdk_run_compressed(
 
 @pytest.mark.asyncio(loop_scope="package")
 async def test_failing_reader(scheduler: NexusSchedulerClient, cql_session: Session) -> None:
+    NEXUS_FRAMEWORK_CONFIGURATION.load()
     payload_url, request_id = negative_z_payload()
     algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
     # create initial fake record

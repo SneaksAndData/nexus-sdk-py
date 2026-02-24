@@ -309,6 +309,10 @@ class Nexus:
             """
             result_ = data.result()
             serializer = self._injector.get(ResultSerializer)
+            root_logger.debug(
+                "Available result serialization formats: {formats}",
+                formats=serializer.serialization_formats_str,
+            )
             storage_client = self._injector.get(StorageClient)
             output_path = f"{NEXUS_FRAMEWORK_CONFIGURATION.default.result.output_path}/{self._run_args.request_id}.json"
             blob_path = DataSocket(data_path=output_path, alias="output", data_format="null").parse_data_path()
