@@ -162,7 +162,7 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
             return
 
         for chunk_index, telemetry_chunk in enumerate(telemetry.telemetry):
-            serializer_chunk = self._serializer.get_serialization_format(telemetry_chunk)
+            chunk_serializer = self._serializer.get_serialization_format(telemetry_chunk)
 
             self._logger.info(
                 "Recording telemetry chunk {chunk_index} of {recorder}",
@@ -178,11 +178,11 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
                         "telemetry_group=user",
                         f"recorder_class={self.__class__.alias()}",
                         telemetry.telemetry_path,  # path join eliminates empty segments
-                        f"{serializer_chunk().get_output_name(output_name=run_id)}_{chunk_index}",
+                        f"{chunk_serializer().get_output_name(output_name=run_id)}_{chunk_index}",
                     ),
                     data_format="null",
                 ).parse_data_path(),
-                serialization_format=serializer_chunk,
+                serialization_format=chunk_serializer,
                 overwrite=True,
             )
 
