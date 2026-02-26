@@ -50,7 +50,7 @@ class BootstrapLoggerFactory:
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
-        if "datadog" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+        if "datadog" in map(lambda x: x.lower(), NEXUS_FRAMEWORK_CONFIGURATION.default.logging.keys()):
             self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog))
 
     def create_logger(self, request_id: str, algorithm_name: str) -> LoggerInterface:
@@ -86,13 +86,15 @@ class LoggerFactory:
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
-        if "datadog" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+        logging_keys = map(lambda x: x.lower(), NEXUS_FRAMEWORK_CONFIGURATION.default.logging.keys())
+
+        if "datadog" in logging_keys:
             self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog))
 
-        if "fixed_template" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+        if "fixed_template" in logging_keys:
             self._fixed_template = self._fixed_template | NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template
 
-        if "fixed_template_delimiter" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+        if "fixed_template_delimiter" in logging_keys:
             self._fixed_template_delimiter = (
                 self._fixed_template_delimiter or NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template_delimiter
             )
