@@ -133,11 +133,15 @@ sockets = []
 
     # Datadog API handler settings
     [logging.datadog]
+    # If enabled, remember to add PROTEUS__DD_API_KEY, PROTEUS__DD_APP_KEY and PROTEUS__DD_SITE to your environment
+    # variables
+    enabled = "0"
     buffer_size = "1"
     debug = "False"
     max_flush_retry_time = "30"
     ignore_flush_failure = "True"
     fixed_tags = {}
+    attach_interrupt_handlers = "True"
 
 [metrics]
 # Implementation of MetricsProvider used to submit default framework runtime and user-level metrics

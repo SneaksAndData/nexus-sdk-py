@@ -50,8 +50,17 @@ class BootstrapLoggerFactory:
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
-        if "datadog" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
-            self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog))
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.enabled == "1":
+            self._log_handlers.append(
+                DataDogApiHandler(
+                    buffer_size=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.buffer_size,
+                    debug=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.debug,
+                    max_flush_retry_time=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.max_flush_retry_time,
+                    ignore_flush_failure=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.ignore_flush_failure,
+                    fixed_tags=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.fixed_tags,
+                    attach_interrupt_handlers=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.attach_interrupt_handlers,
+                )
+            )
 
     def create_logger(self, request_id: str, algorithm_name: str) -> LoggerInterface:
         """
@@ -86,8 +95,18 @@ class LoggerFactory:
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
-        if "datadog" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
-            self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog))
+
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.enabled == "1":
+            self._log_handlers.append(
+                DataDogApiHandler(
+                    buffer_size=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.buffer_size,
+                    debug=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.debug,
+                    max_flush_retry_time=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.max_flush_retry_time,
+                    ignore_flush_failure=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.ignore_flush_failure,
+                    fixed_tags=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.fixed_tags,
+                    attach_interrupt_handlers=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.attach_interrupt_handlers,
+                )
+            )
 
         if "fixed_template" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
             self._fixed_template = self._fixed_template | NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template
