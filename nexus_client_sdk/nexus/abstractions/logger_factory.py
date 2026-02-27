@@ -119,10 +119,9 @@ class LoggerFactory:
         if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template != "":
             self._fixed_template = self._fixed_template | NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template
 
-        if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template_delimiter != "":
-            self._fixed_template_delimiter = (
-                self._fixed_template_delimiter or NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template_delimiter
-            )
+        self._fixed_template_delimiter = (
+            self._fixed_template_delimiter or NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template_delimiter
+        )
 
     def create_logger(
         self,
