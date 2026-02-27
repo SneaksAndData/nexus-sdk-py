@@ -108,10 +108,10 @@ class LoggerFactory:
                 )
             )
 
-        if "fixed_template" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template != "":
             self._fixed_template = self._fixed_template | NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template
 
-        if "fixed_template_delimiter" in NEXUS_FRAMEWORK_CONFIGURATION.default.logging:
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template_delimiter != "":
             self._fixed_template_delimiter = (
                 self._fixed_template_delimiter or NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template_delimiter
             )
