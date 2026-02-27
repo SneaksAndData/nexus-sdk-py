@@ -53,12 +53,16 @@ class BootstrapLoggerFactory:
         if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.enabled == "1":
             self._log_handlers.append(
                 DataDogApiHandler(
-                    buffer_size=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.buffer_size,
-                    debug=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.debug,
-                    max_flush_retry_time=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.max_flush_retry_time,
-                    ignore_flush_failure=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.ignore_flush_failure,
+                    buffer_size=int(NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.buffer_size),
+                    debug=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.debug == "True",
+                    max_flush_retry_time=int(
+                        NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.max_flush_retry_time
+                    ),
+                    ignore_flush_failure=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.ignore_flush_failure
+                    == "True",
                     fixed_tags=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.fixed_tags,
-                    attach_interrupt_handlers=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.attach_interrupt_handlers,
+                    attach_interrupt_handlers=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.attach_interrupt_handlers
+                    == "True",
                 )
             )
 
@@ -99,12 +103,16 @@ class LoggerFactory:
         if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.enabled == "1":
             self._log_handlers.append(
                 DataDogApiHandler(
-                    buffer_size=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.buffer_size,
-                    debug=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.debug,
-                    max_flush_retry_time=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.max_flush_retry_time,
-                    ignore_flush_failure=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.ignore_flush_failure,
+                    buffer_size=int(NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.buffer_size),
+                    debug=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.debug == "True",
+                    max_flush_retry_time=int(
+                        NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.max_flush_retry_time
+                    ),
+                    ignore_flush_failure=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.ignore_flush_failure
+                    == "True",
                     fixed_tags=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.fixed_tags,
-                    attach_interrupt_handlers=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.attach_interrupt_handlers,
+                    attach_interrupt_handlers=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.attach_interrupt_handlers
+                    == "True",
                 )
             )
 
