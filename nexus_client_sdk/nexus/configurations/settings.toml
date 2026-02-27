@@ -132,12 +132,12 @@ sockets = []
 # log_level = "ERROR"
 
     # Datadog API handler settings
-    #[logging.datadog]
-    #buffer_size = "1"
-    #debug = "False"
-    #max_flush_retry_time = "30"
-    #ignore_flush_failure = "True"
-    #fixed_tags = {'key' = 'value'}
+    [logging.datadog]
+    buffer_size = "1"
+    debug = "False"
+    max_flush_retry_time = "30"
+    ignore_flush_failure = "True"
+    fixed_tags = {}
 
 [metrics]
 # Implementation of MetricsProvider used to submit default framework runtime and user-level metrics
