@@ -51,7 +51,10 @@ class BootstrapLoggerFactory:
             SafeStreamHandler(stream=sys.stdout),
         ]
         if "datadog" in map(lambda x: x.lower(), NEXUS_FRAMEWORK_CONFIGURATION.default.logging.keys()):
-            self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog))
+            datadog_config_arguments = {
+                x.key.lower(): x.value for x in NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.items()
+            }
+            self._log_handlers.append(DataDogApiHandler(**datadog_config_arguments))
 
     def create_logger(self, request_id: str, algorithm_name: str) -> LoggerInterface:
         """
@@ -89,7 +92,10 @@ class LoggerFactory:
         logging_keys = map(lambda x: x.lower(), NEXUS_FRAMEWORK_CONFIGURATION.default.logging.keys())
 
         if "datadog" in logging_keys:
-            self._log_handlers.append(DataDogApiHandler(**NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog))
+            datadog_config_arguments = {
+                x.key.lower(): x.value for x in NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.items()
+            }
+            self._log_handlers.append(DataDogApiHandler(**datadog_config_arguments))
 
         if "fixed_template" in logging_keys:
             self._fixed_template = self._fixed_template | NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template
