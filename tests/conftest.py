@@ -65,6 +65,7 @@ def run_configuration():
     )
     os.environ["NEXUS__INPUTS__QUERY_ENABLED_STORE__ENABLED"] = "0"
     os.environ["NEXUS__RESULT__OUTPUT_PATH"] = "s3a://nexus-sdk-tests/result"
+    os.environ["NEXUS__LOGGING__DATADOG__IGNORE_FLUSH_FAILURE"] = "'False'"
 
 
 @pytest.fixture
