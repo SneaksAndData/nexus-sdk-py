@@ -76,21 +76,25 @@ sockets = []
 [logging]
 # Global template to apply to ALL log messages emitted by framework loggers. This setting conflicts with
 # with_log_enricher() and might be removed in the future
-# fixed_template = ""
+fixed_template = ""
 
 # Delimiter to use for global template
-# fixed_template_delimiter = ""
+fixed_template_delimiter = ""
 
 # Framework log level. Defaults to INFO if not provided
 # log_level = "ERROR"
 
     # Datadog API handler settings
-    #[logging.datadog]
-    #buffer_size = "1"
-    #debug = "False"
-    #max_flush_retry_time = "30"
-    #ignore_flush_failure = "True"
-    #fixed_tags = {'key' = 'value'}
+    [logging.datadog]
+    # If enabled, remember to add PROTEUS__DD_API_KEY, PROTEUS__DD_APP_KEY and PROTEUS__DD_SITE to your environment
+    # variables
+    enabled = "0"
+    buffer_size = "1"
+    debug = "False"
+    max_flush_retry_time = "30"
+    ignore_flush_failure = "True"
+    fixed_tags = {}
+    attach_interrupt_handlers = "True"
 
 [metrics]
 # Implementation of MetricsProvider used to submit default framework runtime and user-level metrics

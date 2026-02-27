@@ -50,11 +50,21 @@ class BootstrapLoggerFactory:
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
-        if "datadog" in map(lambda x: x.lower(), NEXUS_FRAMEWORK_CONFIGURATION.default.logging.keys()):
-            datadog_config_arguments = {
-                x.key.lower(): x.value for x in NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.items()
-            }
-            self._log_handlers.append(DataDogApiHandler(**datadog_config_arguments))
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.enabled == "1":
+            self._log_handlers.append(
+                DataDogApiHandler(
+                    buffer_size=int(NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.buffer_size),
+                    debug=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.debug == "True",
+                    max_flush_retry_time=int(
+                        NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.max_flush_retry_time
+                    ),
+                    ignore_flush_failure=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.ignore_flush_failure
+                    == "True",
+                    fixed_tags=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.fixed_tags,
+                    attach_interrupt_handlers=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.attach_interrupt_handlers
+                    == "True",
+                )
+            )
 
     def create_logger(self, request_id: str, algorithm_name: str) -> LoggerInterface:
         """
@@ -89,21 +99,29 @@ class LoggerFactory:
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
-        logging_keys = map(lambda x: x.lower(), NEXUS_FRAMEWORK_CONFIGURATION.default.logging.keys())
 
-        if "datadog" in logging_keys:
-            datadog_config_arguments = {
-                x.key.lower(): x.value for x in NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.items()
-            }
-            self._log_handlers.append(DataDogApiHandler(**datadog_config_arguments))
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.enabled == "1":
+            self._log_handlers.append(
+                DataDogApiHandler(
+                    buffer_size=int(NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.buffer_size),
+                    debug=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.debug == "True",
+                    max_flush_retry_time=int(
+                        NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.max_flush_retry_time
+                    ),
+                    ignore_flush_failure=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.ignore_flush_failure
+                    == "True",
+                    fixed_tags=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.fixed_tags,
+                    attach_interrupt_handlers=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.attach_interrupt_handlers
+                    == "True",
+                )
+            )
 
-        if "fixed_template" in logging_keys:
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template != "":
             self._fixed_template = self._fixed_template | NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template
 
-        if "fixed_template_delimiter" in logging_keys:
-            self._fixed_template_delimiter = (
-                self._fixed_template_delimiter or NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template_delimiter
-            )
+        self._fixed_template_delimiter = (
+            self._fixed_template_delimiter or NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template_delimiter
+        )
 
     def create_logger(
         self,
