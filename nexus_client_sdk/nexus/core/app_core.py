@@ -18,7 +18,6 @@
 #
 
 import asyncio
-import os
 import platform
 import signal
 import sys
