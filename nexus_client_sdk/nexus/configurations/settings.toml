@@ -14,6 +14,9 @@ receiver = "http://localhost:8081"
 # Nexus Scheduler address
 scheduler = "http://localhost:8080"
 
+# Nexus Access token - ONLY FOR DEBUGGING LOCALLY
+scheduler_access_token = ""
+
 # Configurations for nexus_client_sdk.nexus.algorithms.RemoteAlgorithm
 [remote_algorithm]
 

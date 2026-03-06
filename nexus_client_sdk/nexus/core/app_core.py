@@ -18,10 +18,12 @@
 #
 
 import asyncio
+import os
 import platform
 import signal
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from typing import final, Self
 from collections.abc import Callable
 
@@ -37,6 +39,7 @@ from adapta.storage.query_enabled_store import QueryEnabledStore
 from dynaconf import Validator
 from injector import Injector, Module, singleton
 
+from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
 
 from nexus_client_sdk.nexus.abstractions.logger_factory import (
@@ -446,7 +449,12 @@ class Nexus:
             scheduler_client = NexusSchedulerAsyncClient(
                 url=NEXUS_FRAMEWORK_CONFIGURATION.default.client.scheduler,
                 logger=logger_factory.create_logger(NexusSchedulerAsyncClient),
-                token_provider=None,
+                token_provider=lambda: AccessToken(
+                    value=NEXUS_FRAMEWORK_CONFIGURATION.default.client.scheduler_access_token,
+                    valid_until=datetime(2999, 1, 1),
+                )
+                if NEXUS_FRAMEWORK_CONFIGURATION.default.client.scheduler_access_token
+                else None,
             )
 
             self._injector.binder.bind(
