@@ -399,7 +399,16 @@ class Nexus:
 
             # trigger config validation before reading the payload
             # ALGORITHM_NAME and CLIENT.RECEIVER_URL are available at this point, so module configuration errors can be registered
-            NEXUS_FRAMEWORK_CONFIGURATION.default.validators.validate_all()
+            try:
+                NEXUS_FRAMEWORK_CONFIGURATION.default.validators.validate_all()
+            except Exception as error:
+                raise FatalStartupConfigurationError(
+                    f"Configuration validation failed during startup: \n{error}\n"
+                    "How to fix this:\n"
+                    "  * Standard configs: Verify your `settings.custom.toml` file.\n"
+                    "  * Secrets: Verify your `.secrets.toml` file.\n"
+                    "Ensure the missing value mentioned above is provided in at least one of these sources."
+                ) from error
 
             for payload_type in self._payload_types:
                 payload = await self._get_payload(payload_type=payload_type)
