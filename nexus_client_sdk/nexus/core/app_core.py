@@ -408,7 +408,7 @@ class Nexus:
                     "How to fix this:",
                     "  * Standard configs: Verify your `settings.custom.toml` file.",
                     "  * Secrets: Verify your `.secrets.toml` file.",
-                    "Ensure the missing value mentioned above is provided in at least one of these sources."
+                    "Ensure the missing value mentioned above is provided in at least one of these sources.",
                 ]
                 raise FatalStartupConfigurationError("\n".join(error_message_lines)) from error
 
