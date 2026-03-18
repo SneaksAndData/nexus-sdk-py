@@ -199,7 +199,7 @@ class SdkCustomRunConfiguration(ctypes.Structure):
             cpu_limit=bytes(cpu_limit, encoding="utf-8") if cpu_limit else None,
             memory_limit=bytes(memory_limit, encoding="utf-8") if memory_limit else None,
             deadline_seconds=max_deadline_seconds if max_deadline_seconds else 0,
-            max_retries=max_retries if max_retries else -1,
+            maximum_retries=max_retries if max_retries else -1,
         )
 
     def as_pointer(self) -> ctypes.pointer:
