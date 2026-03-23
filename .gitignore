@@ -135,3 +135,6 @@ test-resources/kubecfg/
 
 # Ignore dynaconf secret files
 tests/.secrets.toml
+
+# Ignore VSCode settings
+.vscode/
