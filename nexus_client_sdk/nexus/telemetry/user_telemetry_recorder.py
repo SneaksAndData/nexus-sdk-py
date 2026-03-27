@@ -178,7 +178,7 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
                         "telemetry_group=user",
                         f"recorder_class={self.__class__.alias()}",
                         telemetry.telemetry_path,  # path join eliminates empty segments
-                        f"{chunk_serializer().get_output_name(output_name=run_id)}_{chunk_index}",
+                        chunk_serializer().get_output_name(output_name=f"{run_id}_{chunk_index}"),
                     ),
                     data_format="null",
                 ).parse_data_path(),
