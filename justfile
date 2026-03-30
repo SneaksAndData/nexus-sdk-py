@@ -3,20 +3,42 @@ default:
 
 fresh: stop up
 
-up: start-kind-cluster scylla nesus-crd
-
-start-kind-cluster:
-    kind create cluster
+up: start-kind-cluster \
+    install-ingress-controller \
+    create-ingress \
+    scylla \
+    shcards-kubeconfig \
+    crd \
+    scheduler \
+    receiver \
+    supervisor \
+    minio \
+    wait-for-services
 
 stop:
     kind delete cluster
+
+start-kind-cluster:
+    kind create cluster --config=integration_tests/kind.yaml
+
+install-ingress-controller:
+    kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
+    kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout=180s
+
+create-ingress:
+    # Create ingress rules for services
+    kubectl apply -f ./integration_tests/manifests/ingress.yaml
 
 scylla:
     kubectl apply -f integration_tests/manifests/scylladb.yaml
     kubectl rollout status deployment/scylla --timeout=180s
 
-nesus-crd:
-    helm install oci://ghcr.io/sneaksanddata/helm/nexus-crd --version v1.0.0 --generate-name
+minio:
+    kubectl apply -f integration_tests/manifests/minio.yaml
+    kubectl rollout status deployment/minio --timeout=180s
+
+crd:
+    helm upgrade --install nexus-crd  oci://ghcr.io/sneaksanddata/helm/nexus-crd --version v1.0.0
 
 shcards-kubeconfig:
     kind get kubeconfig \
@@ -24,7 +46,7 @@ shcards-kubeconfig:
       | kubectl create secret generic nexus-shards --from-file=kubeconfig=/dev/stdin --type=Opaque --dry-run=client -o yaml \
       | kubectl apply -f -
 
-nexus:
+scheduler:
     helm upgrade --install nexus oci://ghcr.io/sneaksanddata/helm/nexus --version v1.1.12  \
       --set scheduler.replicas=1 \
       --set scheduler.config.cqlStore.type=scylla \
@@ -34,10 +56,23 @@ nexus:
       --set scheduler.config.cqlStore.secretName="cassandra-credentials"
 
 
-nexus-receiver:
+receiver:
     helm upgrade --install nexus-receiver oci://ghcr.io/sneaksanddata/helm/nexus-receiver --version v1.1.4  \
       --set receiver.replicas=1 \
       --set receiver.config.cqlStore.type=scylla \
       --set receiver.config.cqlStore.secretRefEnabled=true \
       --set 'extraEnvFrom[0].secretRef.name=cassandra-credentials' \
       --set receiver.config.cqlStore.secretName="cassandra-credentials"
+
+supervisor:
+    helm upgrade --install nexus-supervisor oci://ghcr.io/sneaksanddata/helm/nexus-supervisor --version v0.1.6  \
+      --set supervisor.replicas=1 \
+      --set supervisor.config.cqlStore.type=scylla \
+      --set supervisor.config.cqlStore.secretRefEnabled=true \
+      --set 'extraEnvFrom[0].secretRef.name=cassandra-credentials' \
+      --set supervisor.config.cqlStore.secretName="cassandra-credentials"
+
+wait-for-services:
+    kubectl rollout status deployment/nexus --timeout=180s
+    kubectl rollout status deployment/nexus-receiver --timeout=180s
+    kubectl rollout status deployment/nexus-supervisor --timeout=180s

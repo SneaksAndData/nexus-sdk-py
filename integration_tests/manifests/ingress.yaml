@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - pathType: ImplementationSpecific
+            path: /issuer(/|$)(.*)
+            backend:
+              service:
+                name: boxer-issuer
+                port:
+                  number: 80
+          - pathType: ImplementationSpecific
+            path: /validator(/|$)(.*)
+            backend:
+              service:
+                name: boxer-validator-nginx
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - pathType: Prefix
+            path: /auth
+            backend:
+              service:
+                name: keycloak-keycloakx-http
+                port:
+                  number: 80
