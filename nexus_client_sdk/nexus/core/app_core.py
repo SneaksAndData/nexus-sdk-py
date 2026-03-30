@@ -459,9 +459,11 @@ class Nexus:
             scheduler_client = NexusSchedulerAsyncClient(
                 url=NEXUS_FRAMEWORK_CONFIGURATION.default.client.scheduler,
                 logger=logger_factory.create_logger(NexusSchedulerAsyncClient),
-                token_provider=lambda: AccessToken(
-                    value=NEXUS_FRAMEWORK_CONFIGURATION.default.client.scheduler_access_token,
-                    valid_until=datetime(2999, 1, 1),
+                token_provider=(
+                    lambda: AccessToken(
+                        value=NEXUS_FRAMEWORK_CONFIGURATION.default.client.scheduler_access_token,
+                        valid_until=datetime(2999, 1, 1),
+                    )
                 )
                 if NEXUS_FRAMEWORK_CONFIGURATION.default.client.scheduler_access_token
                 else None,
