@@ -24,7 +24,9 @@ spec:
           image: scylladb/scylla
           command: ["scylla"]
           args:
-            - "--listen-address"
+            - "--rpc-address"
+            - "0.0.0.0"
+            - "--broadcast-rpc-address"
             - "127.0.0.1"
             - "--smp"
             - "1"
@@ -46,3 +48,25 @@ spec:
       volumes:
         - name: scylla-conf
           emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scylla
+spec:
+  selector:
+    app: scylla
+  ports:
+    - name: cql
+      port: 9042
+      targetPort: 9042
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cassandra-credentials
+stringData:
+  NEXUS__SCYLLA_CQL_STORE__HOSTS: "scylla.default.svc.cluster.local"
+  NEXUS__SCYLLA_CQL_STORE__USER: "cassandra"
+  NEXUS__SCYLLA_CQL_STORE__PASSWORD: "cassandra"
