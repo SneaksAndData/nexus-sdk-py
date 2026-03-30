@@ -41,3 +41,4 @@ spec:
                 name: keycloak-keycloakx-http
                 port:
                   number: 80
+

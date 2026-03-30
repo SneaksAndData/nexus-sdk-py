@@ -70,3 +70,16 @@ stringData:
   NEXUS__SCYLLA_CQL_STORE__HOSTS: "scylla.default.svc.cluster.local"
   NEXUS__SCYLLA_CQL_STORE__USER: "cassandra"
   NEXUS__SCYLLA_CQL_STORE__PASSWORD: "cassandra"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scylla-node-port
+spec:
+  selector:
+    app: scylla
+  ports:
+    - port: 9042
+      targetPort: 9042
+      nodePort: 30042
+  type: NodePort
