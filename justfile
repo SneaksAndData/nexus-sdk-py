@@ -34,3 +34,10 @@ nexus:
       --set scheduler.config.cqlStore.secretName="cassandra-credentials"
 
 
+nexus-receiver:
+    helm upgrade --install nexus-receiver oci://ghcr.io/sneaksanddata/helm/nexus-receiver --version v1.1.4  \
+      --set receiver.replicas=1 \
+      --set receiver.config.cqlStore.type=scylla \
+      --set receiver.config.cqlStore.secretRefEnabled=true \
+      --set 'extraEnvFrom[0].secretRef.name=cassandra-credentials' \
+      --set receiver.config.cqlStore.secretName="cassandra-credentials"
