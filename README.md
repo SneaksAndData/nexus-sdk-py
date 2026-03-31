@@ -30,7 +30,7 @@ The Nexus Scheduler API will be available at `http://localhost:5555/scheduler`  
 available at `http://localhost:8080/receiver`. Note that the cluster's ingress configured to rewrite URL paths to reduce
 number of ports you need to interact with and reduce probability of errors related to ports collision.
 For example, when you send a request to `http://localhost:5555/scheduler/api/something/something`, it
-will be automatically rewritten to `http://schuler-pod:8080/api/something/something` and forwarded to the Scheduler API.
+will be automatically rewritten to `http://scheduler-pod:8080/api/something/something` and forwarded to the Scheduler API.
 
 The Scylla DB will be available at `localhost:9042` and you can connect to it using any CQL client.
 The default credentials are `cassandra/cassandra`.
