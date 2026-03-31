@@ -8,7 +8,7 @@ up: start-kind-cluster \
     create-ingress \
     scylla \
     dbschema \
-    shcards-kubeconfig \
+    shards-kubeconfig \
     crd \
     algorithm \
     scheduler \
@@ -47,7 +47,7 @@ algorithm:
     kubectl apply -f integration_tests/manifests/hello-world-workgroup.yaml
     kubectl apply -f integration_tests/manifests/nexus-algorithm-sa.yaml
 
-shcards-kubeconfig:
+shards-kubeconfig:
     kind get kubeconfig \
       | yq -o=json '.clusters[].cluster.server = "https://kubernetes.default.svc.cluster.local"' \
       | kubectl create secret generic nexus-shards --from-file=kind-nexus-shard-0.kubeconfig=/dev/stdin --type=Opaque --dry-run=client -o yaml \
