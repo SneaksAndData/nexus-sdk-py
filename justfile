@@ -29,7 +29,14 @@ install-ingress-controller:
 
 create-ingress:
     # Create ingress rules for services
-    kubectl apply -f ./integration_tests/manifests/ingress.yaml
+    for i in $(seq 1 30); do \
+      kubectl apply -f ./integration_tests/manifests/ingress.yaml && break || \
+      (echo "Retry $i/30: failed to apply ingress, retrying in 1s..." && sleep 1); \
+    done; \
+    if [ $i -eq 30 ]; then \
+      echo "Failed to apply ingress after 30 attempts."; \
+      exit 1; \
+    fi
 
 scylla:
     kubectl apply -f integration_tests/manifests/scylladb.yaml
