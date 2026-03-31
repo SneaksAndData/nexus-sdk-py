@@ -35,29 +35,11 @@ jobs:
         with:
           cluster_name: 'nexus-shard-0'
 
-      - name: Install Nexus Stack
-        run: |
-          helm dependency build ./.helm \
-          && helm install nexus-test-stack --kube-context kind-nexus-controller --namespace nexus --create-namespace --version 0.0.0 --set dockerServiceType=linux --no-hooks ./.helm \
-          && helm upgrade nexus-test-stack --kube-context kind-nexus-controller --namespace nexus --create-namespace --set dockerServiceType=linux ./.helm
-          
-          helm install nexus-test-stack --kube-context kind-nexus-shard-0 --namespace nexus --create-namespace --version 0.0.0 --set dockerServiceType=linux --no-hooks ./.helm \
-          && helm upgrade nexus-test-stack --kube-context kind-nexus-shard-0 --namespace nexus --create-namespace --set dockerServiceType=linux ./.helm
+      - name: Setup just
+        uses: extractions/setup-just@v3
 
-      - name: Launch Compose Stack
-        run: |
-          mkdir -p ./test-resources/kubecfg/shards
-          kind export kubeconfig --name nexus-controller --kubeconfig ./test-resources/kubecfg/controller
-          kind export kubeconfig --name nexus-shard-0 --kubeconfig ./test-resources/kubecfg/shards/kind-nexus-shard-0.kubeconfig
-          
-          chmod 777 ./test-resources/kubecfg/controller
-          chmod 777 ./test-resources/kubecfg/shards/kind-nexus-shard-0.kubeconfig
-  
-          docker compose up --quiet-pull -d
-
-      - name: Get Compose Logs
-        if: always()
-        run: docker compose logs
+      - name: Setup integration tests
+        run: just up
 
       - name: Download C-Shared Build of Go SDK
         run: |
@@ -81,6 +63,11 @@ jobs:
           set -euxo pipefail
           
           poetry run pytest -n auto --dist loadgroup --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=term-missing:skip-covered | tee pytest-coverage.txt
+
+      - name: Get logs from application pods
+        if: always()
+        run: |
+          kubectl describe pods --namespace default || true
 
       - name: Publish Code Coverage
         uses: MishaKav/pytest-coverage-comment@main

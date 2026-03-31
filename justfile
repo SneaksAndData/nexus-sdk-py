@@ -7,8 +7,10 @@ up: start-kind-cluster \
     install-ingress-controller \
     create-ingress \
     scylla \
+    dbschema \
     shcards-kubeconfig \
     crd \
+    algorithm \
     scheduler \
     receiver \
     supervisor \
@@ -40,10 +42,15 @@ minio:
 crd:
     helm upgrade --install nexus-crd  oci://ghcr.io/sneaksanddata/helm/nexus-crd --version v1.0.0
 
+algorithm:
+    kubectl apply -f integration_tests/manifests/hello-world-algorithm.yaml
+    kubectl apply -f integration_tests/manifests/hello-world-workgroup.yaml
+    kubectl apply -f integration_tests/manifests/nexus-algorithm-sa.yaml
+
 shcards-kubeconfig:
     kind get kubeconfig \
-      | yq -o=json \
-      | kubectl create secret generic nexus-shards --from-file=kubeconfig=/dev/stdin --type=Opaque --dry-run=client -o yaml \
+      | yq -o=json '.clusters[].cluster.server = "https://kubernetes.default.svc.cluster.local"' \
+      | kubectl create secret generic nexus-shards --from-file=kind-nexus-shard-0.kubeconfig=/dev/stdin --type=Opaque --dry-run=client -o yaml \
       | kubectl apply -f -
 
 scheduler:
@@ -52,8 +59,10 @@ scheduler:
       --set scheduler.config.cqlStore.type=scylla \
       --set scheduler.config.cqlStore.secretRefEnabled=true \
       --set 'extraEnvFrom[0].secretRef.name=cassandra-credentials' \
-      --set 'scheduler.config.s3Buffer.s3Credentials.secretRefEnabled=false' \
-      --set scheduler.config.cqlStore.secretName="cassandra-credentials"
+      --set 'scheduler.config.cqlStore.secretName=cassandra-credentials' \
+      --set 'scheduler.config.s3Buffer.s3Credentials.secretRefEnabled=true' \
+      --set 'scheduler.config.s3Buffer.s3Credentials.secretName=minio-credentials' \
+      --set 'scheduler.config.s3Buffer.processing.payloadStoragePath=s3a://nexus'
 
 
 receiver:
@@ -66,13 +75,17 @@ receiver:
 
 supervisor:
     helm upgrade --install nexus-supervisor oci://ghcr.io/sneaksanddata/helm/nexus-supervisor --version v0.1.6  \
-      --set supervisor.replicas=1 \
-      --set supervisor.config.cqlStore.type=scylla \
-      --set supervisor.config.cqlStore.secretRefEnabled=true \
       --set 'extraEnvFrom[0].secretRef.name=cassandra-credentials' \
-      --set supervisor.config.cqlStore.secretName="cassandra-credentials"
+      --set 'supervisor.replicas=1' \
+      --set 'supervisor.config.cqlStore.type=scylla' \
+      --set 'supervisor.config.cqlStore.secretRefEnabled=true' \
+      --set 'supervisor.config.cqlStore.secretName=cassandra-credentials' \
+      --set 'supervisor.config.resourceNamespace=default'
 
 wait-for-services:
     kubectl rollout status deployment/nexus --timeout=180s
     kubectl rollout status deployment/nexus-receiver --timeout=180s
     kubectl rollout status deployment/nexus-supervisor --timeout=180s
+
+dbschema:
+  docker run --rm -v $(pwd)/test-resources/storage:/opt/storage --network=host --entrypoint /opt/storage/prepare-scylla.sh scylladb/scylla:5.0.1
