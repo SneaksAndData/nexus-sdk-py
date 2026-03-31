@@ -88,4 +88,4 @@ wait-for-services:
     kubectl rollout status deployment/nexus-supervisor --timeout=180s
 
 dbschema:
-  docker run --rm -v $(pwd)/test-resources/storage:/opt/storage --network=host --entrypoint /opt/storage/prepare-scylla.sh scylladb/scylla:5.0.1
+  docker run --rm -v $(pwd)/integration_tests/storage:/opt/storage --network=host --entrypoint /opt/storage/prepare-scylla.sh scylladb/scylla:5.0.1

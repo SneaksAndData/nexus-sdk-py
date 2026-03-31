@@ -12,6 +12,32 @@ chmod +x ./sdk-installer.sh
 ./sdk-installer.sh
 ```
 
+### Setting up the development environment
+
+To set up the development environment, follow these steps:
+- Install just (https://just.systems/man/en/introduction.html) - a handy command runner, which we use for development tasks.
+- Install Kind (https://kind.sigs.k8s.io/) - a tool for running local Kubernetes clusters, which we use for testing.
+- Ensure you have Docker installed and running, as it is required for both Just and Kind to function properly.
+
+To start a local Nexus stack for testing, run:
+```shell
+just up
+```
+
+The command will start the Kind cluster and deploy Nexus stack on it. You can then run tests against this local deployment.
+
+The Nexus Scheduler API will be available at `http://localhost:5555/scheduler`  and the Nexus Receiver API will be
+available at `http://localhost:8080/receiver`. Note that the cluster's ingress configured to rewrite URL paths to reduce
+number of ports you need to interact with and reduce probability of errors related to ports collision.
+For example, when you send a request to `http://localhost:5555/scheduler/api/something/something`, it
+will be automatically rewritten to `http://schuler-pod:8080/api/something/something` and forwarded to the Scheduler API.
+
+The Scylla DB will be available at `localhost:9042` and you can connect to it using any CQL client.
+The default credentials are `cassandra/cassandra`.
+
+The MinIO s3 API will be available at `localhost:9000` and you can connect to it using any S3 client.
+The default credentials are `minioadmin/minioadmin`.
+
 In case you are testing changes for Go SDK, clone branch you are testing and compile the `.so` file from source:
 ```shell
 go build -v -buildmode=c-shared -o nexus_sdk.so main.go
