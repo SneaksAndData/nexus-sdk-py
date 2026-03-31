@@ -72,7 +72,7 @@ def run_configuration():
 def scheduler():
     logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
-    yield NexusSchedulerClient.create("http://localhost:8080", logger, lambda: AccessToken.empty())
+    yield NexusSchedulerClient.create("http://localhost:5555/scheduler", logger, lambda: AccessToken.empty())
 
     logger.stop()
 
@@ -81,7 +81,7 @@ def scheduler():
 def receiver():
     logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
-    yield NexusReceiverClient("http://localhost:8081", logger, lambda: AccessToken.empty())
+    yield NexusReceiverClient("http://localhost:5555/receiver", logger, lambda: AccessToken.empty())
 
     logger.stop()
 
@@ -99,7 +99,7 @@ def broken_scheduler():
 def async_scheduler():
     logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
-    yield NexusSchedulerAsyncClient("http://localhost:8080", logger, lambda: AccessToken.empty())
+    yield NexusSchedulerAsyncClient("http://localhost:5555/scheduler", logger, lambda: AccessToken.empty())
 
     logger.stop()
 
@@ -108,7 +108,7 @@ def async_scheduler():
 def async_receiver():
     logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
-    yield NexusReceiverAsyncClient("http://localhost:8081", logger, lambda: AccessToken.empty())
+    yield NexusReceiverAsyncClient("http://localhost:5555/receiver", logger, lambda: AccessToken.empty())
 
     logger.stop()
 
