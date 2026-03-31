@@ -24,17 +24,6 @@ jobs:
           python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
           #architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
 
-      - name: Create Controller Kind Cluster
-        uses: helm/kind-action@main
-        with:
-          cluster_name: 'nexus-controller'
-          cloud_provider: true
-
-      - name: Create Shard Kind Cluster
-        uses: helm/kind-action@main
-        with:
-          cluster_name: 'nexus-shard-0'
-
       - name: Setup just
         uses: extractions/setup-just@v3
 
