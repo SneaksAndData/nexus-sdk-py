@@ -110,10 +110,6 @@ kind: Secret
 metadata:
   name: minio-credentials
 stringData:
-  NEXUS__SCYLLA_CQL_STORE__HOSTS: "scylla.default.svc.cluster.local"
-  NEXUS__SCYLLA_CQL_STORE__USER: "cassandra"
-  NEXUS__SCYLLA_CQL_STORE__PASSWORD: "cassandra"
-
   NEXUS__S3_BUFFER__ACCESS_KEY_ID: "minioadmin"
   NEXUS__S3_BUFFER__SECRET_ACCESS_KEY: "minioadmin"
   NEXUS__S3_BUFFER__ENDPOINT: "http://minio.default.svc.cluster.local:9000"

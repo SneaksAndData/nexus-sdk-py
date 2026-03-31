@@ -9,10 +9,10 @@ shard_name = ""
 # Nexus client configuration
 [client]
 # Nexus Receiver address
-receiver = "http://localhost:8081"
+receiver = "http://localhost:5555/receiver"
 
 # Nexus Scheduler address
-scheduler = "http://localhost:8080"
+scheduler = "http://localhost:5555/scheduler"
 
 # Nexus Access token - ONLY FOR DEBUGGING LOCALLY
 scheduler_access_token = ""
