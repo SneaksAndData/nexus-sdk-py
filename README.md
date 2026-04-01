@@ -35,8 +35,9 @@ will be automatically rewritten to `http://schuler-pod:8080/api/something/someth
 The Scylla DB will be available at `localhost:9042` and you can connect to it using any CQL client.
 The default credentials are `cassandra/cassandra`.
 
-The MinIO s3 API will be available at `localhost:9000` and you can connect to it using any S3 client.
-The default credentials are `minioadmin/minioadmin`.
+The MinIO s3 API will be available at `localhost:9000` and you can connect to it using any S3 client. The default
+credentials are `minioadmin/minioadmin`. The minio console is not exposed, but you can use the `mc` client to interact
+with it.
 
 In case you are testing changes for Go SDK, clone branch you are testing and compile the `.so` file from source:
 ```shell
