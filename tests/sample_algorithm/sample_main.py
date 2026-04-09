@@ -282,9 +282,8 @@ async def main():
         .use_algorithm(TestAlgorithm)
         .on_complete(TestUserAnalyticsTelemetry)
         .inject_configuration(TestAlgorithmConfiguration)
-        .inject_payload(TestAlgorithmPayload)
-        .with_log_enricher(tags_from_payload, enrich_from_payload)
-        .with_metric_tagger(tag_metrics)
+        # .with_log_enricher(tags_from_payload, enrich_from_payload)
+        # .with_metric_tagger(tag_metrics)
     )
 
     await nexus.activate()

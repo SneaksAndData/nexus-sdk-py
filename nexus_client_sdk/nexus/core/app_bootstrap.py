@@ -42,7 +42,7 @@ class NexusBootstrapper:
             type(f"{TelemetryRecorder.__name__}Module", (Module,), {})(),
         ]
         self._run_args = run_args
-        self._extensions: list[Callable] = [config_validation_extension]
+        self._extensions: list[Callable[[Injector], Injector]] = [config_validation_extension]
         self._payload_types: list[type[AlgorithmPayload]] = []
         self._log_enricher: Callable[
             [
@@ -141,7 +141,7 @@ class NexusBootstrapper:
         metric_tags = {}
 
         for extension in self._extensions:
-            extension(self)
+            extension(app_injector)
 
         for payload_type in self._payload_types:
             payload = await self._get_payload(payload_type=payload_type)

@@ -14,7 +14,7 @@ additional_modules = [
 ]
 
 # payload types supported by this Nexus application. At least one must be provided
-payload_types = []
+payload_types = ["tests.conftest.TestAlgorithmPayload"]
 
 # optional function that applies additional context to all logs emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters

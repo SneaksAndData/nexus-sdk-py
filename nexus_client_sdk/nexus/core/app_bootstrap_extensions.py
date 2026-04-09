@@ -1,8 +1,10 @@
+from injector import Injector
+
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 
 
-def config_validation_extension():
+def config_validation_extension(inj: Injector) -> Injector:
     """
      Validate loaded configuration by running all linked validators
     :param _:
@@ -20,3 +22,5 @@ def config_validation_extension():
             "Ensure the missing value mentioned above is provided in at least one of these sources.",
         ]
         raise FatalStartupConfigurationError("\n".join(error_message_lines)) from error
+
+    return inj
