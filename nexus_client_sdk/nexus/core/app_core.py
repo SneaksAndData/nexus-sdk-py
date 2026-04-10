@@ -34,7 +34,7 @@ from adapta.process_communication import DataSocket
 from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from dynaconf import Validator
-from injector import Injector, Module
+from injector import Injector
 
 from nexus_client_sdk import __version__
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
@@ -48,17 +48,12 @@ from nexus_client_sdk.nexus.algorithms import (
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.core.app_bootstrap import NexusBootstrapper
-from nexus_client_sdk.nexus.core.app_dependencies import (
-    ServiceConfigurator,
-)
 from nexus_client_sdk.nexus.core.serializers import (
     ResultSerializer,
 )
 from nexus_client_sdk.nexus.exceptions import TransientNexusError, FatalNexusError
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
-from nexus_client_sdk.nexus.input.input_processor import InputProcessor
-from nexus_client_sdk.nexus.input.input_reader import InputReader
 from nexus_client_sdk.nexus.telemetry.recorder import TelemetryRecorder
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
@@ -107,7 +102,6 @@ class Nexus:
     """
 
     def __init__(self, args: NexusDefaultArguments):
-        self._configurator = ServiceConfigurator()
         self._injector: Injector | None = None
         self._algorithm_class: type[BaselineAlgorithm] | None = None
         self._run_args = args
@@ -131,50 +125,11 @@ class Nexus:
         self._on_complete_tasks.extend(post_processors)
         return self
 
-    def add_reader(self, reader: type[InputReader]) -> Self:
-        """
-        Adds an input data reader for the algorithm.
-        """
-        self._configurator = self._configurator.with_input_reader(reader)
-        return self
-
-    def add_readers(self, *readers: type[InputReader]) -> Self:
-        """
-        Adds one or more input data readers for the algorithm.
-        """
-        for reader in readers:
-            self.add_reader(reader)
-
-        return self
-
-    def use_processor(self, input_processor: type[InputProcessor]) -> Self:
-        """
-        Initialises an input processor for the algorithm.
-        """
-        self._configurator = self._configurator.with_input_processor(input_processor)
-        return self
-
-    def use_processors(self, *input_processors: type[InputProcessor]) -> Self:
-        """
-        Initialises one or more input processors for the algorithm.
-        """
-        for input_processor in input_processors:
-            self.use_processor(input_processor)
-
-        return self
-
     def use_algorithm(self, algorithm: type[BaselineAlgorithm]) -> Self:
         """
         Algorithm to use for this Nexus instance
         """
         self._algorithm_class = algorithm
-        return self
-
-    def with_module(self, module: type[Module]) -> Self:
-        """
-        Adds a (custom) DI module into the DI container.
-        """
-        self._configurator = self._configurator.with_module(module)
         return self
 
     def with_config_validators(self, *validators: Validator) -> Self:

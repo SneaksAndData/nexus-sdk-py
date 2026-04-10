@@ -276,12 +276,6 @@ async def main():
     :return:
     """
 
-    nexus = (
-        Nexus.create()
-        .add_readers(XYSampleReader, ZSampleReader)
-        .use_processors(XYProcessor, ZProcessor, ZZProcessor)
-        .use_algorithm(TestAlgorithm)
-        .on_complete(TestUserAnalyticsTelemetry)
-    )
+    nexus = Nexus.create().use_algorithm(TestAlgorithm).on_complete(TestUserAnalyticsTelemetry)
 
     await nexus.activate()
