@@ -2,9 +2,9 @@ name: Validate code
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev-1.6 ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev-1.6 ]
 
 permissions:
   pull-requests: write

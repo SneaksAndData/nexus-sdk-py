@@ -276,6 +276,6 @@ async def main():
     :return:
     """
 
-    nexus = Nexus.create().use_algorithm(TestAlgorithm).on_complete(TestUserAnalyticsTelemetry)
+    nexus = Nexus.create().on_complete(TestUserAnalyticsTelemetry)
 
     await nexus.activate()

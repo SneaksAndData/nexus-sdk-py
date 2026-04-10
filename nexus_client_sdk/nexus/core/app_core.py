@@ -103,7 +103,6 @@ class Nexus:
 
     def __init__(self, args: NexusDefaultArguments):
         self._injector: Injector | None = None
-        self._algorithm_class: type[BaselineAlgorithm] | None = None
         self._run_args = args
         self._algorithm_run_task: asyncio.Task | None = None
         self._on_complete_tasks: list[type[UserTelemetryRecorder]] = []
@@ -111,25 +110,11 @@ class Nexus:
 
         attach_signal_handlers()
 
-    @property
-    def algorithm_class(self) -> type[BaselineAlgorithm]:
-        """
-        Class of the algorithm used by this Nexus instance.
-        """
-        return self._algorithm_class
-
     def on_complete(self, *post_processors: type[UserTelemetryRecorder]) -> Self:
         """
         Attaches a coroutine to run on algorithm completion.
         """
         self._on_complete_tasks.extend(post_processors)
-        return self
-
-    def use_algorithm(self, algorithm: type[BaselineAlgorithm]) -> Self:
-        """
-        Algorithm to use for this Nexus instance
-        """
-        self._algorithm_class = algorithm
         return self
 
     def with_config_validators(self, *validators: Validator) -> Self:
@@ -287,7 +272,8 @@ class Nexus:
 
         root_logger.start()
 
-        algorithm: BaselineAlgorithm = self._injector.get(self._algorithm_class)
+        # WIP: take list head until https://github.com/SneaksAndData/nexus-sdk-py/issues/178
+        algorithm: BaselineAlgorithm = self._injector.get(self._bootstrapper.algorithm_classes[0])
         telemetry_recorder: TelemetryRecorder = self._injector.get(TelemetryRecorder)
 
         root_logger.info(
