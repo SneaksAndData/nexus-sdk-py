@@ -46,9 +46,6 @@ from nexus_client_sdk.nexus.algorithms import (
     BaselineAlgorithm,
 )
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
-from nexus_client_sdk.nexus.configurations.algorithm_configuration import (
-    NexusConfiguration,
-)
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.core.app_bootstrap import NexusBootstrapper
 from nexus_client_sdk.nexus.core.app_dependencies import (
@@ -286,7 +283,7 @@ class Nexus:
             request_id=self._run_args.request_id,
         )
 
-    async def activate(self):
+    async def activate(self):  # pylint: disable=too-many-branches
         """
         Activates the run sequence.
         """

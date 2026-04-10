@@ -31,6 +31,10 @@ from nexus_client_sdk.nexus.telemetry.recorder import TelemetryRecorder
 
 @final
 class NexusBootstrapper:
+    """
+    Application bootstrapper. Configures DI container and supports user-provided extensions to the process.
+    """
+
     def __init__(self, run_args: NexusDefaultArguments):
         self._logger = BootstrapLoggerFactory().create_logger(
             request_id=run_args.request_id,
@@ -82,6 +86,10 @@ class NexusBootstrapper:
 
     @property
     def logger(self) -> LoggerInterface:
+        """
+         Bootstrap logger.
+        :return:
+        """
         return self._logger
 
     def register_extension(self, extension: Callable):
@@ -139,6 +147,10 @@ class NexusBootstrapper:
         self._logger.stop()
 
     async def bootstrap(self) -> Injector:
+        """
+         Bootstrapping logic. Returns an instance of Injector ready to be used for algorithm launch.
+        :return:
+        """
         self._load_additional_modules()
 
         app_injector = Injector(self._injection_binds)
