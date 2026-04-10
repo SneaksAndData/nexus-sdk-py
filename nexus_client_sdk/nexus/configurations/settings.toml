@@ -6,6 +6,35 @@ algorithm_name = ""
 # Shard this algorithm is executed one. This setting is assigned at runtime.
 shard_name = ""
 
+# Nexus runtime configuration
+[runtime]
+
+# additional modules for the DI container
+# use these to provide custom services
+additional_modules = [
+    "nexus_client_sdk.nexus.core.app_dependencies.QueryEnabledStoreModule",
+    "nexus_client_sdk.nexus.core.app_dependencies.ExternalSocketsModule",
+    "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
+]
+
+# payload types supported by this Nexus application. At least one must be provided
+payload_types = []
+
+# optional function that applies additional context to all logs emitted by Nexus.
+# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
+log_enrichment_function = ""
+
+# optional function that applies additional tags (as metadata) to all logs emitted by Nexus.
+# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
+log_tagging_function = ""
+
+# optional function that applies additional tagging to all metrics emitted by Nexus.
+# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
+metric_tagging_function = ""
+
+# implementations of NexusConfiguration to be read from system environment
+configuration_types = []
+
 # Nexus client configuration
 [client]
 # Nexus Receiver address
