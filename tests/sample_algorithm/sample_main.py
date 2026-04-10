@@ -281,7 +281,6 @@ async def main():
         .use_processors(XYProcessor, ZProcessor, ZZProcessor)
         .use_algorithm(TestAlgorithm)
         .on_complete(TestUserAnalyticsTelemetry)
-        .inject_configuration(TestAlgorithmConfiguration)
         # .with_log_enricher(tags_from_payload, enrich_from_payload)
         # .with_metric_tagger(tag_metrics)
     )

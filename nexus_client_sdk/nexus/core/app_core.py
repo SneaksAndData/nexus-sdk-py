@@ -173,15 +173,6 @@ class Nexus:
         self._algorithm_class = algorithm
         return self
 
-    def inject_configuration(self, *configuration_types: type[NexusConfiguration]) -> Self:
-        """
-        Adds custom configuration class instances to the DI container.
-        """
-        for config_type in configuration_types:
-            self._configurator = self._configurator.with_configuration(config_type.from_environment())
-
-        return self
-
     def with_module(self, module: type[Module]) -> Self:
         """
         Adds a (custom) DI module into the DI container.

@@ -24,6 +24,10 @@ log_enrichment_function = ""
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
 metric_tagging_function = ""
 
+configuration_types = [
+    "tests.conftest.TestAlgorithmConfiguration"
+]
+
 # Result processing and serialization
 [result]
 

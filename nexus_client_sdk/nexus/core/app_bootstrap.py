@@ -12,7 +12,10 @@ from nexus_client_sdk.nexus.abstractions.metrics_provider_factory import Metrics
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
-from nexus_client_sdk.nexus.core.app_bootstrap_extensions import config_validation_extension
+from nexus_client_sdk.nexus.core.app_bootstrap_extensions import (
+    config_validation_extension,
+    app_configuration_loader_extension,
+)
 from nexus_client_sdk.nexus.core.app_dependencies import (
     BootstrapLoggerFactoryModule,
     StorageClientModule,
@@ -42,7 +45,10 @@ class NexusBootstrapper:
             type(f"{TelemetryRecorder.__name__}Module", (Module,), {})(),
         ]
         self._run_args = run_args
-        self._extensions: list[Callable[[Injector], Injector]] = [config_validation_extension]
+        self._extensions: list[Callable[[Injector], Injector]] = [
+            config_validation_extension,
+            app_configuration_loader_extension,
+        ]
         self._payload_types: list[type[AlgorithmPayload]] = []
         self._log_enricher: Callable[
             [
@@ -116,12 +122,15 @@ class NexusBootstrapper:
                 ) from error
 
     def _load_metric_tagger(self):
-        try:
-            self._metric_tagger = locate(NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.metric_tagging_function)
-        except BaseException as error:
-            raise FatalStartupConfigurationError(
-                f"Failed to locate a provided metric tagging function: {NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.metric_tagging_function}"
-            ) from error
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.metric_tagging_function:
+            try:
+                self._metric_tagger = locate(NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.metric_tagging_function)
+            except BaseException as error:
+                raise FatalStartupConfigurationError(
+                    f"Failed to locate a provided metric tagging function: {NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.metric_tagging_function}"
+                ) from error
+
+        return self
 
     async def __aenter__(self):
         self._logger.start()
@@ -130,8 +139,9 @@ class NexusBootstrapper:
         self._logger.stop()
 
     async def bootstrap(self) -> Injector:
-        app_injector = Injector(self._injection_binds)
         self._load_additional_modules()
+
+        app_injector = Injector(self._injection_binds)
         self._load_payload_types()
         self._load_log_enricher()
         self._load_metric_tagger()
@@ -141,7 +151,7 @@ class NexusBootstrapper:
         metric_tags = {}
 
         for extension in self._extensions:
-            extension(app_injector)
+            app_injector = extension(app_injector)
 
         for payload_type in self._payload_types:
             payload = await self._get_payload(payload_type=payload_type)
