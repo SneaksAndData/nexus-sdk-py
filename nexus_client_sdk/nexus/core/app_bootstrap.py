@@ -129,6 +129,15 @@ class NexusBootstrapper:
                     f"Failed to locate a provided log enrichment function: {NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.log_enrichment_function}"
                 ) from error
 
+    def _load_log_tagger(self):
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.log_tagging_function:
+            try:
+                self._log_tagger = locate(NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.log_tagging_function)
+            except BaseException as error:
+                raise FatalStartupConfigurationError(
+                    f"Failed to locate a provided log tagging function: {NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.log_tagging_function}"
+                ) from error
+
     def _load_metric_tagger(self):
         if NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.metric_tagging_function:
             try:
@@ -156,6 +165,7 @@ class NexusBootstrapper:
         app_injector = Injector(self._injection_binds)
         self._load_payload_types()
         self._load_log_enricher()
+        self._load_log_tagger()
         self._load_metric_tagger()
 
         logger_fixed_template = {}

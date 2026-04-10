@@ -253,27 +253,28 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
         )
 
 
+def tags_from_payload(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
+    return {"x_tag": str(sum(payload.x))}
+
+
+def enrich_from_payload(payload: TestAlgorithmPayload, run_args: NexusDefaultArguments) -> dict[str, dict[str, str]]:
+    return {
+        "(mean of z:{z})": {"z": payload.z[: int(len(payload.z) / 2)]},
+        "(request_id:{request_id})": {"request_id": run_args.request_id},
+    }
+
+
+def tag_metrics(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
+    return {
+        "y_tag": str(sum(payload.y)),
+    }
+
+
 async def main():
     """
     Main entry point.
     :return:
     """
-
-    def tags_from_payload(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
-        return {"x_tag": str(sum(payload.x))}
-
-    def enrich_from_payload(
-        payload: TestAlgorithmPayload, run_args: NexusDefaultArguments
-    ) -> dict[str, dict[str, str]]:
-        return {
-            "(mean of z:{z})": {"z": payload.z[: int(len(payload.z) / 2)]},
-            "(request_id:{request_id})": {"request_id": run_args.request_id},
-        }
-
-    def tag_metrics(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
-        return {
-            "y_tag": str(sum(payload.y)),
-        }
 
     nexus = (
         Nexus.create()
@@ -281,8 +282,6 @@ async def main():
         .use_processors(XYProcessor, ZProcessor, ZZProcessor)
         .use_algorithm(TestAlgorithm)
         .on_complete(TestUserAnalyticsTelemetry)
-        # .with_log_enricher(tags_from_payload, enrich_from_payload)
-        # .with_metric_tagger(tag_metrics)
     )
 
     await nexus.activate()

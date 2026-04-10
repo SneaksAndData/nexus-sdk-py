@@ -18,11 +18,15 @@ payload_types = ["tests.conftest.TestAlgorithmPayload"]
 
 # optional function that applies additional context to all logs emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-log_enrichment_function = ""
+log_enrichment_function = "tests.sample_algorithm.sample_main.enrich_from_payload"
+
+# optional function that applies additional tags (as metadata) to all logs emitted by Nexus.
+# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
+log_tagging_function = "tests.sample_algorithm.sample_main.tag_from_payload"
 
 # optional function that applies additional tagging to all metrics emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-metric_tagging_function = ""
+metric_tagging_function = "tests.sample_algorithm.sample_main.tag_metrics"
 
 configuration_types = [
     "tests.conftest.TestAlgorithmConfiguration"

@@ -24,6 +24,10 @@ payload_types = []
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
 log_enrichment_function = ""
 
+# optional function that applies additional tags (as metadata) to all logs emitted by Nexus.
+# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
+log_tagging_function = ""
+
 # optional function that applies additional tagging to all metrics emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
 metric_tagging_function = ""
