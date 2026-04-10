@@ -287,7 +287,6 @@ class ServiceConfigurator:
             CompressorModule(),
             type(f"{TelemetryRecorder.__name__}Module", (Module,), {})(),
         ]
-        self._runtime_injection_binds = []
 
     @property
     def injection_binds(self) -> list:
@@ -295,13 +294,6 @@ class ServiceConfigurator:
         Currently configured injection bindings
         """
         return self._injection_binds
-
-    @property
-    def runtime_injection_binds(self) -> list:
-        """
-        Currently configured injection bindings that are added at runtime
-        """
-        return self._runtime_injection_binds
 
     def with_module(self, module: type[Module]) -> "ServiceConfigurator":
         """
