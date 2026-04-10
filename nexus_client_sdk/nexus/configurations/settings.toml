@@ -9,6 +9,9 @@ shard_name = ""
 # Nexus runtime configuration
 [runtime]
 
+# Nexus algorithm implementations to activate. At least one must be supplied
+algorithms = []
+
 # additional modules for the DI container
 # use these to provide custom services
 additional_modules = [
