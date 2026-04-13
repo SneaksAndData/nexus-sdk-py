@@ -248,7 +248,7 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
         **inputs: pandas.DataFrame
     ) -> UserTelemetry:
         return UserTelemetry(
-            pandas.DataFrame({"x": algorithm_payload.x, "result": algorithm_result.result()["number"]}),
+            iter([pandas.DataFrame({"x": algorithm_payload.x, "result": algorithm_result.result()["number"]})]),
             UserTelemetryPathSegment("analysis", "test-recording"),
         )
 
@@ -276,6 +276,9 @@ async def main():
     :return:
     """
 
-    nexus = Nexus.create().on_complete(TestUserAnalyticsTelemetry)
+    def alg_from_payload(payload: TestAlgorithmPayload) -> str:
+        return payload.alg_class
+
+    nexus = Nexus.create().with_algorithm_resolvers(alg_from_payload).on_complete(TestUserAnalyticsTelemetry)
 
     await nexus.activate()

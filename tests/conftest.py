@@ -47,6 +47,7 @@ class TestAlgorithmPayload(AlgorithmPayload, DataClassJsonMixin):
     y: list[int]
     z: list[int]
     enum_value: TestEnum
+    alg_class: str
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -141,7 +142,11 @@ def payloads(compress: bool = False) -> list[tuple[str, str]]:
 
     generated = [
         TestAlgorithmPayload(
-            x=_rand_range(10), y=_rand_range(10), z=_rand_range(10), enum_value=random.choice(list(TestEnum))
+            x=_rand_range(10),
+            y=_rand_range(10),
+            z=_rand_range(10),
+            enum_value=random.choice(list(TestEnum)),
+            alg_class="tests.sample_algorithm.sample_main.TestAlgorithm",
         )
         for _ in range(10)
     ]
@@ -161,6 +166,12 @@ def negative_z_payload() -> tuple[str, str]:
 
     return generate_payload_url(
         upload_path,
-        TestAlgorithmPayload(x=[1, 2, 3], y=[4, 5, 6], z=[0, -1, 10], enum_value=TestEnum.A),
+        TestAlgorithmPayload(
+            x=[1, 2, 3],
+            y=[4, 5, 6],
+            z=[0, -1, 10],
+            enum_value=TestEnum.A,
+            alg_class="tests.sample_algorithm.sample_main.TestAlgorithm",
+        ),
         S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
     )

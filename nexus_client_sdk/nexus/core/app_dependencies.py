@@ -33,18 +33,12 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import (
     ExternalSocketProvider,
 )
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
-from nexus_client_sdk.nexus.configurations.algorithm_configuration import (
-    NexusConfiguration,
-)
-from nexus_client_sdk.nexus.exceptions.startup_error import (
-    FatalStartupConfigurationError,
-)
-from nexus_client_sdk.nexus.input.input_processor import InputProcessor
-from nexus_client_sdk.nexus.input.input_reader import InputReader
-from nexus_client_sdk.nexus.telemetry.recorder import TelemetryRecorder
 from nexus_client_sdk.nexus.core.serializers import (
     TelemetrySerializer,
     ResultSerializer,
+)
+from nexus_client_sdk.nexus.exceptions.startup_error import (
+    FatalStartupConfigurationError,
 )
 
 
@@ -267,61 +261,6 @@ class CompressorModule(Module):
             return None
 
         return Compressor.create(compress_path, decompress_path)
-
-
-@final
-class ServiceConfigurator:
-    """
-    Runtime DI support.
-    """
-
-    def __init__(self):
-        self._injection_binds = [
-            BootstrapLoggerFactoryModule(),
-            QueryEnabledStoreModule(),
-            StorageClientModule(),
-            ExternalSocketsModule(),
-            TelemetrySerializerModule(),
-            ResultSerializerModule(),
-            CacheModule(),
-            CompressorModule(),
-            type(f"{TelemetryRecorder.__name__}Module", (Module,), {})(),
-        ]
-
-    @property
-    def injection_binds(self) -> list:
-        """
-        Currently configured injection bindings
-        """
-        return self._injection_binds
-
-    def with_module(self, module: type[Module]) -> "ServiceConfigurator":
-        """
-        Adds a (custom) module into the DI container.
-        """
-        self._injection_binds.append(module())
-        return self
-
-    def with_input_reader(self, reader: type[InputReader]) -> "ServiceConfigurator":
-        """
-        Adds the input reader implementation to the DI.
-        """
-        self._injection_binds.append(type(f"{reader.__name__}Module", (Module,), {})())
-        return self
-
-    def with_input_processor(self, input_processor: type[InputProcessor]) -> "ServiceConfigurator":
-        """
-        Adds the input processor implementation
-        """
-        self._injection_binds.append(type(f"{input_processor.__name__}Module", (Module,), {})())
-        return self
-
-    def with_configuration(self, config: NexusConfiguration) -> "ServiceConfigurator":
-        """
-        Adds the specified payload instance to the DI container.
-        """
-        self._injection_binds.append(lambda binder: binder.bind(config.__class__, to=config, scope=singleton))
-        return self
 
 
 def locate_classes(pattern: re.Pattern) -> list[type[Any]]:
