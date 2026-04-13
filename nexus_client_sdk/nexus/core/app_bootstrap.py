@@ -77,7 +77,7 @@ class NexusBootstrapper:
             ],
             dict[str, str],
         ] | None = None
-        self._algorithm_classes: list[type[BaselineAlgorithm]] = []
+        self._algorithm_classes: set[type[BaselineAlgorithm]] = set()
         self._algorithm_resolvers: list[Callable[[AlgorithmPayload], str]] = []
 
     async def _get_payload(self, payload_type: type[AlgorithmPayload]) -> AlgorithmPayload:
@@ -88,7 +88,7 @@ class NexusBootstrapper:
             return reader.payload
 
     @property
-    def algorithm_classes(self) -> list[type[BaselineAlgorithm]]:
+    def algorithm_classes(self) -> set[type[BaselineAlgorithm]]:
         """
          Bootstrapped algorithm classes.
         :return:
@@ -168,10 +168,10 @@ class NexusBootstrapper:
         return self
 
     def _load_algorithm(self, algorithm: str):
-        algorithm_class = locate(algorithm)
+        algorithm_class: type[BaselineAlgorithm] = locate(algorithm)
         if algorithm_class is None:
             raise FatalStartupConfigurationError(f"Failed to locate a provided algorithm class: {algorithm}")
-        self._algorithm_classes.append(algorithm_class)
+        self._algorithm_classes.add(algorithm_class)
 
     def _load_configured_algorithms(self):
         for algorithm in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.algorithms:

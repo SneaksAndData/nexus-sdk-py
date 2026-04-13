@@ -284,7 +284,7 @@ class Nexus:
         root_logger.start()
 
         # WIP: take list head until https://github.com/SneaksAndData/nexus-sdk-py/issues/178
-        algorithm: BaselineAlgorithm = self._injector.get(self._bootstrapper.algorithm_classes[0])
+        algorithm: BaselineAlgorithm = self._injector.get(self._bootstrapper.algorithm_classes.pop())
         telemetry_recorder: TelemetryRecorder = self._injector.get(TelemetryRecorder)
 
         root_logger.info(
