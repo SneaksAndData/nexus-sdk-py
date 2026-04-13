@@ -22,7 +22,7 @@ import platform
 import signal
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from typing import final, Self
+from typing import final, Self, Callable
 
 import backoff
 import dynaconf
@@ -54,6 +54,7 @@ from nexus_client_sdk.nexus.core.serializers import (
 from nexus_client_sdk.nexus.exceptions import TransientNexusError, FatalNexusError
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 from nexus_client_sdk.nexus.telemetry.recorder import TelemetryRecorder
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
@@ -109,6 +110,16 @@ class Nexus:
         self._bootstrapper = NexusBootstrapper(args)
 
         attach_signal_handlers()
+
+    def with_algorithm_resolvers(self, *resolvers: Callable[[AlgorithmPayload], str]) -> Self:
+        """
+         Add custom algorithm class resolver from a payload instance. This is additive with config-provided values from [runtime.algorithms].
+        :return:
+        """
+        for resolver in resolvers:
+            self._bootstrapper.register_algorithm_resolver(resolver)
+
+        return self
 
     def on_complete(self, *post_processors: type[UserTelemetryRecorder]) -> Self:
         """
@@ -273,7 +284,7 @@ class Nexus:
         root_logger.start()
 
         # WIP: take list head until https://github.com/SneaksAndData/nexus-sdk-py/issues/178
-        algorithm: BaselineAlgorithm = self._injector.get(self._bootstrapper.algorithm_classes[0])
+        algorithm: BaselineAlgorithm = self._injector.get(self._bootstrapper.algorithm_classes.pop())
         telemetry_recorder: TelemetryRecorder = self._injector.get(TelemetryRecorder)
 
         root_logger.info(
