@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydoc import locate
-from typing import final, Callable
+from typing import final, Callable, Self
 
 from adapta.logs import LoggerInterface
 from adapta.metrics import MetricsProvider
@@ -50,7 +50,7 @@ class NexusBootstrapper:
             type(f"{TelemetryRecorder.__name__}Module", (Module,), {})(),
         ]
         self._run_args = run_args
-        self._extensions: list[Callable[[Injector], Injector]] = [
+        self._startup_extensions: list[Callable[[Injector], Injector]] = [
             config_validation_extension,
             app_configuration_loader_extension,
         ]
@@ -102,14 +102,14 @@ class NexusBootstrapper:
         """
         return self._logger
 
-    def register_extension(self, extension: Callable):
+    def register_extension(self, extension: Callable[[Injector], Injector]) -> Self:
         """
          Register a bootstrap process extension. Extensions are executed sequentially in the
          order they are registered.
         :param extension: A method that takes bootstrapper instance as an argument.
         :return:
         """
-        self._extensions.append(extension)
+        self._startup_extensions.append(extension)
         return self
 
     def _load_additional_modules(self):
@@ -197,7 +197,7 @@ class NexusBootstrapper:
         logger_tags = {}
         metric_tags = {}
 
-        for extension in self._extensions:
+        for extension in self._startup_extensions:
             app_injector = extension(app_injector)
 
         for payload_type in self._payload_types:
