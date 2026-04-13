@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydoc import locate
-from typing import final, Callable, Self
+from typing import final, Callable
 
 from adapta.logs import LoggerInterface
 from adapta.metrics import MetricsProvider
@@ -78,6 +78,7 @@ class NexusBootstrapper:
             dict[str, str],
         ] | None = None
         self._algorithm_classes: list[type[BaselineAlgorithm]] = []
+        self._algorithm_resolvers: list[Callable[[AlgorithmPayload], str]] = []
 
     async def _get_payload(self, payload_type: type[AlgorithmPayload]) -> AlgorithmPayload:
         async with AlgorithmPayloadReader(
@@ -102,15 +103,19 @@ class NexusBootstrapper:
         """
         return self._logger
 
-    def register_extension(self, extension: Callable[[Injector], Injector]) -> Self:
+    def register_startup_extension(self, extension: Callable[[Injector], Injector]) -> None:
         """
-         Register a bootstrap process extension. Extensions are executed sequentially in the
-         order they are registered.
-        :param extension: A method that takes bootstrapper instance as an argument.
-        :return:
+        Register a startup process extension. Unlike bootstrap extensions (NYI) and algorithm resolvers, startup extensions
+        do not have access to any information except the Injector instance and configuration.
+        They are executed prior to payload read.
         """
         self._startup_extensions.append(extension)
-        return self
+
+    def register_algorithm_resolver(self, resolver: Callable[[AlgorithmPayload], str]) -> None:
+        """
+        Resolves algorithm classes based on the payload received. Resolver must return a fully qualified import name for the algorithm class.
+        """
+        self._algorithm_resolvers.append(resolver)
 
     def _load_additional_modules(self):
         for additional_module in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.additional_modules:
@@ -162,16 +167,15 @@ class NexusBootstrapper:
 
         return self
 
-    def _load_algorithms(self):
-        if not NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.algorithms:
-            raise FatalStartupConfigurationError(
-                "No algorithms defined for execution - please supply at least one class in the [runtime.algorithms] array"
-            )
+    def _load_algorithm(self, algorithm: str):
+        algorithm_class = locate(algorithm)
+        if algorithm_class is None:
+            raise FatalStartupConfigurationError(f"Failed to locate a provided algorithm class: {algorithm}")
+        self._algorithm_classes.append(algorithm_class)
+
+    def _load_configured_algorithms(self):
         for algorithm in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.algorithms:
-            algorithm_class = locate(algorithm)
-            if algorithm_class is None:
-                raise FatalStartupConfigurationError(f"Failed to locate a provided algorithm class: {algorithm}")
-            self._algorithm_classes.append(algorithm_class)
+            self._load_algorithm(algorithm)
 
     async def __aenter__(self):
         self._logger.start()
@@ -191,7 +195,7 @@ class NexusBootstrapper:
         self._load_log_enricher()
         self._load_log_tagger()
         self._load_metric_tagger()
-        self._load_algorithms()
+        self._load_configured_algorithms()
 
         logger_fixed_template = {}
         logger_tags = {}
@@ -206,6 +210,9 @@ class NexusBootstrapper:
             logger_fixed_template |= self._log_enricher(payload, self._run_args) if self._log_enricher else {}
             logger_tags |= self._log_tagger(payload, self._run_args) if self._log_tagger else {}
             metric_tags |= self._metric_tagger(payload, self._run_args) if self._metric_tagger else {}
+
+            for resolver in self._algorithm_resolvers:
+                self._load_algorithm(resolver(payload))
 
         logger_factory = LoggerFactory(
             fixed_template=logger_fixed_template,
