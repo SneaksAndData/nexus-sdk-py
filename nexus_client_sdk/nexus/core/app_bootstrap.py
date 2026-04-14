@@ -10,7 +10,7 @@ from adapta.storage.blob.base import StorageClient
 from injector import Injector, Module, singleton
 
 from nexus_client_sdk.models.access_token import AccessToken
-from nexus_client_sdk.nexus.abstractions.logger_factory import BootstrapLoggerFactory, LoggerFactory, BootstrapLogger
+from nexus_client_sdk.nexus.abstractions.logger_factory import BootstrapLoggerFactory, LoggerFactory
 from nexus_client_sdk.nexus.abstractions.metrics_provider_factory import MetricsProviderFactory
 from nexus_client_sdk.nexus.algorithms import BaselineAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
@@ -297,31 +297,33 @@ class NexusBootstrapper:
         # get temporary telemetry recorder
         bootstrap_recorder = self._get_bootstrap_recorder(logger_factory)
 
-        if bootstrap_recorder is not None:
-            for payload_type, payload_reader in payload_read_results.items():
-                if (
-                    payload_reader.read_exception is None
-                    and NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload.serialization_mode
-                    == _PayloadSerializationMode.ALWAYS.value
-                ):
-                    bootstrap_recorder.record_user_telemetry(
-                        user_recorder=app_injector.get(PayloadTelemetry),
-                        run_id=self._run_args.request_id,
-                        result=PayloadResult(payload_reader.payload_str),
-                    )
-                if (
-                    payload_reader.read_exception is not None
-                    and NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload.serialization_mode
-                    == _PayloadSerializationMode.ON_FAILURE.value
-                ):
-                    bootstrap_recorder.record_user_telemetry(
-                        user_recorder=app_injector.get(FailedPayloadRecorder),
-                        run_id=self._run_args.request_id,
-                        result=PayloadResult(payload_reader.payload_str),
-                    )
-                    raise FatalStartupConfigurationError(
-                        f"Unable to parse payload from {self._run_args.sas_uri} into {str(payload_type)}"
-                    ) from payload_reader.read_exception
+        for payload_type, payload_reader in payload_read_results.items():
+            if (
+                payload_reader.read_exception is None
+                and NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload.serialization_mode
+                == _PayloadSerializationMode.ALWAYS.value
+            ):
+                bootstrap_recorder.record_user_telemetry(
+                    user_recorder=app_injector.get(PayloadTelemetry),
+                    run_id=self._run_args.request_id,
+                    result=PayloadResult(payload_reader.payload_str),
+                )
+            if (
+                payload_reader.read_exception is not None
+                and NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload.serialization_mode
+                == _PayloadSerializationMode.ON_FAILURE.value
+            ):
+                bootstrap_recorder.record_user_telemetry(
+                    user_recorder=app_injector.get(FailedPayloadRecorder),
+                    run_id=self._run_args.request_id,
+                    result=PayloadResult(payload_reader.payload_str),
+                )
+
+            # always report payload parsing failures
+            if payload_reader.read_exception is not None:
+                raise FatalStartupConfigurationError(
+                    f"Unable to parse payload from {self._run_args.sas_uri} into {str(payload_type)}"
+                ) from payload_reader.read_exception
 
         # create and bind receiver client
         receiver_client = NexusReceiverAsyncClient(
