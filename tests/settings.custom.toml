@@ -16,7 +16,23 @@ additional_modules = [
     "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
 ]
 
-[payload]
+# optional function that applies additional context to all logs emitted by Nexus.
+# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
+log_enrichment_function = "tests.sample_algorithm.sample_main.enrich_from_payload"
+
+# optional function that applies additional tags (as metadata) to all logs emitted by Nexus.
+# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
+log_tagging_function = "tests.sample_algorithm.sample_main.tags_from_payload"
+
+# optional function that applies additional tagging to all metrics emitted by Nexus.
+# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
+metric_tagging_function = "tests.sample_algorithm.sample_main.tag_metrics"
+
+configuration_types = [
+    "tests.conftest.TestAlgorithmConfiguration"
+]
+
+[runtime.payload]
 
     # payload types supported by this Nexus application. At least one must be provided
     types = ["tests.conftest.TestAlgorithmPayload"]
@@ -33,22 +49,6 @@ additional_modules = [
     # on_failure - serialize if none of the provided payload types match the payload
     # always - always serialize the payload
     serialization_mode = "always"
-
-# optional function that applies additional context to all logs emitted by Nexus.
-# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-log_enrichment_function = "tests.sample_algorithm.sample_main.enrich_from_payload"
-
-# optional function that applies additional tags (as metadata) to all logs emitted by Nexus.
-# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-log_tagging_function = "tests.sample_algorithm.sample_main.tags_from_payload"
-
-# optional function that applies additional tagging to all metrics emitted by Nexus.
-# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-metric_tagging_function = "tests.sample_algorithm.sample_main.tag_metrics"
-
-configuration_types = [
-    "tests.conftest.TestAlgorithmConfiguration"
-]
 
 # Result processing and serialization
 [result]
