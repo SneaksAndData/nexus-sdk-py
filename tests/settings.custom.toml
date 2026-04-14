@@ -16,8 +16,23 @@ additional_modules = [
     "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
 ]
 
-# payload types supported by this Nexus application. At least one must be provided
-payload_types = ["tests.conftest.TestAlgorithmPayload"]
+[payload]
+
+    # payload types supported by this Nexus application. At least one must be provided
+    types = ["tests.conftest.TestAlgorithmPayload"]
+
+    # optional raw payload serialization for later analysis
+    # you can serialize payload via user telemetry, however that won't catch failed payloads
+    # for production scenarios recommended setup is to pair this setting with `on_failure` and
+    # a user telemetry recorder for successful runs
+    # Serialization is done via the same Telemetry API as regular user telemetry and uses a base path from telemetry settings
+    # Using `always` in production is also an option, unless you must maintain low running times
+    #
+    # Available values:
+    # off - do not serialize
+    # on_failure - serialize if none of the provided payload types match the payload
+    # always - always serialize the payload
+    serialization_mode = "always"
 
 # optional function that applies additional context to all logs emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters

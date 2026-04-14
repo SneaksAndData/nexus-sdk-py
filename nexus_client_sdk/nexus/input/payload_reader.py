@@ -84,18 +84,22 @@ class AlgorithmPayloadReader:
             self._http = session_with_retries()
         http_response = await run_blocking(partial(self._http.get, url=self._payload_uri))
         http_response.raise_for_status()
+        content = http_response.content
 
         compressed_payload: CompressedPayload | None = None
 
         try:
-            compressed_payload = CompressedPayload.from_json(http_response.content)
-        except Exception:  # pylint: disable=broad-except
+            compressed_payload = CompressedPayload.from_json(content)
+        except BaseException:  # pylint: disable=broad-except
             pass
 
         if compressed_payload is not None:
-            self._payload = self._payload_type.from_json(compressed_payload.decompress())
+            self._try_parse(compressed_payload.decompress())
         else:
-            self._payload = self._payload_type.from_json(http_response.content)
+            self._try_parse(content)
+
+        if self._save_content:
+            self._payload_str = content
 
         return self
 
@@ -103,16 +107,25 @@ class AlgorithmPayloadReader:
         self._http.close()
         self._http = None
 
-    def __init__(self, payload_uri: str, payload_type: type[AlgorithmPayload]):
+    def _try_parse(self, payload_data: str | bytes | bytearray):
+        try:
+            self._payload = self._payload_type.from_json(payload_data)
+        except BaseException as error:  # pylint: disable=broad-except
+            self._read_exc = error
+
+    def __init__(self, payload_uri: str, payload_type: type[AlgorithmPayload], save_content: bool):
         self._http = session_with_retries()
+        self._save_content = save_content
         self._payload: AlgorithmPayload | None = None
+        self._payload_str: str | None = None
         self._payload_uri = payload_uri
         self._payload_type = payload_type
+        self._read_exc: BaseException | None = None
 
     @property
     def payload_uri(self) -> str:
         """
-        Uri of the paylod for the algorithm
+        Uri of the payload for the algorithm.
         """
         return self._payload_uri
 
@@ -122,3 +135,18 @@ class AlgorithmPayloadReader:
         Payload data deserialized into the user class.
         """
         return self._payload
+
+    @property
+    def payload_str(self) -> str | None:
+        """
+        Raw payload bytes.
+        """
+        return self._payload_str
+
+    @property
+    def read_exception(self) -> BaseException | None:
+        """
+         Read exception, if any
+        :return:
+        """
+        return self._read_exc
