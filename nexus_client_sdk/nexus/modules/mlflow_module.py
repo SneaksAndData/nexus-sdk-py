@@ -37,7 +37,9 @@ class MlflowModule(Module):
         DI factory method.
         """
         if NEXUS_FRAMEWORK_CONFIGURATION.default.mlflow.tracking.enabled == "1":
-            os.environ["MLFLOW_TRACKING_USERNAME"] = NEXUS_FRAMEWORK_CONFIGURATION.default.mlflow.tracking.username
-            os.environ["MLFLOW_TRACKING_PASSWORD"] = NEXUS_FRAMEWORK_CONFIGURATION.default.mlflow.tracking.password
-            return MlflowBasicClient(tracking_server_uri=NEXUS_FRAMEWORK_CONFIGURATION.default.mlflow.tracking.uri)
+            return MlflowBasicClient.from_static_credentials(
+                tracking_server_uri=NEXUS_FRAMEWORK_CONFIGURATION.default.mlflow.tracking.uri,
+                username=NEXUS_FRAMEWORK_CONFIGURATION.default.mlflow.tracking.username,
+                password=NEXUS_FRAMEWORK_CONFIGURATION.default.mlflow.tracking.password,
+            )
         return None
