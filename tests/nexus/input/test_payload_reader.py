@@ -133,7 +133,7 @@ async def test__algorithm_payload_reader__general(
     mock_session_factory.return_value = mock_session
 
     dummy_uri = "http://mock.uri/payload.json"
-    reader = AlgorithmPayloadReader(payload_uri=dummy_uri, payload_type=SimpleTestPayload)
+    reader = AlgorithmPayloadReader(payload_uri=dummy_uri, payload_type=SimpleTestPayload, save_content=False)
 
     # Act
     async with reader as payload_reader:
