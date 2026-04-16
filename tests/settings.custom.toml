@@ -35,6 +35,50 @@ configuration_types = [
     "tests.conftest.TestAlgorithmConfiguration"
 ]
 
+# Manage applicaton response to various error types
+[runtime.exceptions]
+
+# default error to use for remapping
+[runtime.exceptions.defaults]
+global_default = 'nexus_client_sdk.nexus.exceptions._nexus_error.FatalNexusError'
+
+# class-scoped exceptions
+[[runtime.exceptions.scoped]]
+# fully qualified class name (module name + name)
+class_name = 'nexus_client_sdk.nexus.abstractions.algorithm_cache.InputCache'
+# errors to remap. provide [] to remap all errors to an alternative default
+errors = [
+    'cassandra.Timeout',
+    'cassandra.Unavailable',
+    'cassandra.ReadTimeout',
+    'cassandra.WriteTimeout',
+    'cassandra.OperationTimedOut',
+    'cassandra.ReadFailure',
+    'cassandra.CoordinationFailure'
+]
+# target error to remap to
+target = 'nexus_client_sdk.nexus.exceptions.cache_errors.TransientCachingError'
+
+[[runtime.exceptions.scoped]]
+# fully qualified class name (module name + name)
+class_name = 'nexus_client_sdk.nexus.abstractions.algorithm_cache.InputCache'
+# errors to remap. provide [] to remap all errors to an alternative default
+errors = [
+    'cassandra.Unauthorized',
+    'cassandra.RequestValidationException',
+    'cassandra.AuthenticationFailed'
+]
+# target error to remap to
+target = 'nexus_client_sdk.nexus.exceptions.cache_errors.FatalCachingError'
+
+[[runtime.exceptions.scoped]]
+# fully qualified class name (module name + name)
+class_name = 'nexus_client_sdk.nexus.abstractions.algorithm_cache.InputCache'
+# [] remaps errors that didn't match any other list to an alternative default
+errors = []
+# target error to remap to
+target = 'nexus_client_sdk.nexus.exceptions.cache_errors.FatalCachingError'
+
 # Result processing and serialization
 [result]
 
