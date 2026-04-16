@@ -17,7 +17,6 @@
 MLFlow module that provides the MLFlow client to the Nexus framework.
 """
 
-import os
 from typing import final
 from injector import Module, singleton, provider
 from adapta.ml.mlflow import MlflowBasicClient
