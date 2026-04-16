@@ -140,6 +140,8 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         async def _measured_recording(**run_args) -> UserTelemetry | None:
             return await self._compute(**run_args)
 
+        self._logger.start()
+
         telemetry: UserTelemetry | None = await partial(
             _measured_recording,
             **(
@@ -185,6 +187,7 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
                 serialization_format=chunk_serializer,
                 overwrite=True,
             )
+        self._logger.stop()
 
     @classmethod
     def alias(cls) -> str:
