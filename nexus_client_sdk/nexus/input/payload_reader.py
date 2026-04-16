@@ -84,7 +84,7 @@ class AlgorithmPayloadReader:
             self._http = session_with_retries()
         http_response = await run_blocking(partial(self._http.get, url=self._payload_uri))
         http_response.raise_for_status()
-        content = http_response.content
+        content: bytes = http_response.content
 
         compressed_payload: CompressedPayload | None = None
 
@@ -99,7 +99,7 @@ class AlgorithmPayloadReader:
             self._try_parse(content)
 
         if self._save_content:
-            self._payload_str = content
+            self._payload_str = content.decode("utf-8")
 
         return self
 
