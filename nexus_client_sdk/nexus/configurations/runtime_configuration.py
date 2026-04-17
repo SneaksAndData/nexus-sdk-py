@@ -1,4 +1,5 @@
 """Framework configuration"""
+from pydoc import locate
 from typing import final
 
 from adapta.logs.models import LogLevel
@@ -13,6 +14,15 @@ def _try_parse_log_level(log_level: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+def _try_locate_error_classes(error_classes: list[dict]) -> bool:
+    for error_class_def in error_classes:
+        for error_class in error_class_def["errors"]:
+            if locate(error_class) is None:
+                return False
+
+    return True
 
 
 @final
@@ -71,6 +81,46 @@ class NexusRuntimeConfiguration:
                 apply_default_on_none=True,
                 default="INFO",
                 condition=_try_parse_log_level,
+            ),
+            Validator(
+                "RUNTIME.EXCEPTIONS.DEFAULTS.GLOBAL",
+                required=True,
+                apply_default_on_none=True,
+                default="nexus_client_sdk.nexus.exceptions._nexus_error.FatalNexusError",
+            ),
+            Validator(
+                "RUNTIME.EXCEPTIONS.SCOPED",
+                apply_default_on_none=True,
+                default=[
+                    {
+                        "class_name": "nexus_client_sdk.nexus.abstractions.algorithm_cache.InputCache",
+                        "errors": [
+                            "cassandra.Timeout",
+                            "cassandra.Unavailable",
+                            "cassandra.ReadTimeout",
+                            "cassandra.WriteTimeout",
+                            "cassandra.OperationTimedOut",
+                            "cassandra.ReadFailure",
+                            "cassandra.CoordinationFailure",
+                        ],
+                        "target": "nexus_client_sdk.nexus.exceptions.cache_errors.TransientCachingError",
+                    },
+                    {
+                        "class_name": "nexus_client_sdk.nexus.abstractions.algorithm_cache.InputCache",
+                        "errors": [
+                            "cassandra.Unauthorized",
+                            "cassandra.RequestValidationException",
+                            "cassandra.AuthenticationFailed",
+                        ],
+                        "target": "nexus_client_sdk.nexus.exceptions.cache_errors.FatalCachingError",
+                    },
+                    {
+                        "class_name": "nexus_client_sdk.nexus.abstractions.algorithm_cache.InputCache",
+                        "errors": [],
+                        "target": "nexus_client_sdk.nexus.exceptions.cache_errors.FatalCachingError",
+                    },
+                ],
+                condition=_try_locate_error_classes,
             ),
         ]
 
