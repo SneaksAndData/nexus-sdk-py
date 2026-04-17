@@ -21,15 +21,13 @@ import asyncio
 from functools import reduce
 from typing import final, Any
 
-import deltalake.exceptions
-import cassandra
-
 from nexus_client_sdk.nexus.abstractions.input_object import InputObject
 from nexus_client_sdk.nexus.abstractions.nexus_object import TResult, TPayload
 from nexus_client_sdk.nexus.exceptions.cache_errors import (
     FatalCachingError,
     TransientCachingError,
 )
+from nexus_client_sdk.nexus.exceptions.error_map import NexusErrorMapCollection
 
 
 @final
@@ -38,11 +36,12 @@ class InputCache:
     In-memory cache for Nexus input readers/processors
     """
 
-    def __init__(self):
+    def __init__(self, error_map_collection: NexusErrorMapCollection) -> None:
         self._cache: dict[str, Any] = {}
         self._scheduled: dict[str, asyncio.Task] = {}
         self._total_executed: int = 0
         self._lock = asyncio.Lock()
+        self._error_map_collection = error_map_collection
 
     def total_evaluated_inputs(self) -> int:
         """
@@ -69,30 +68,7 @@ class InputCache:
         if isinstance(ex, TransientCachingError):
             return TransientCachingError
 
-        match type(ex):
-            case (
-                deltalake.exceptions.TableNotFoundError
-                | deltalake.exceptions.DeltaProtocolError
-                | deltalake.exceptions.CommitFailedError
-                | deltalake.exceptions.DeltaProtocolError
-                | deltalake.exceptions.SchemaMismatchError
-            ):
-                return TransientCachingError
-            case cassandra.Unauthorized | cassandra.RequestValidationException | cassandra.AuthenticationFailed:
-                return TransientCachingError
-            case (
-                cassandra.Timeout
-                | cassandra.Unavailable
-                | cassandra.ReadTimeout
-                | cassandra.WriteTimeout
-                | cassandra.OperationTimedOut
-                | cassandra.ReadFailure
-                | cassandra.ReadFailure
-                | cassandra.CoordinationFailure
-            ):
-                return TransientCachingError
-            case _:
-                return FatalCachingError
+        return self._error_map_collection.map_error(ex, self.__class__)
 
     async def resolve(
         self,
