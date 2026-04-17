@@ -29,8 +29,13 @@ class NexusErrorMap:
 
     @classmethod
     def from_config(cls, value: dict) -> Self:
+        """
+         Creates an instance of NexusErrorMap from the provided dictionary.
+        :param value:
+        :return:
+        """
         target: type[BaseException] = locate(value["target"])
-        errors: list[type[BaseException]] = list(map(lambda error_path: locate(error_path), value["errors"]))
+        errors: list[type[BaseException]] = list(map(locate, value["errors"]))
 
         return cls(target, errors)
 
