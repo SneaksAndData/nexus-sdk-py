@@ -37,6 +37,7 @@ from nexus_client_sdk.nexus.core.serializers import (
     TelemetrySerializer,
     ResultSerializer,
 )
+from nexus_client_sdk.nexus.exceptions.error_map import NexusErrorMapCollection, NexusErrorMap
 from nexus_client_sdk.nexus.exceptions.startup_error import (
     FatalStartupConfigurationError,
 )
@@ -171,7 +172,26 @@ class CacheModule(Module):
         """
         Dependency provider.
         """
-        return InputCache()
+        loaded_error_map: dict[str, list[NexusErrorMap]] = {}
+        for error_map_config in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.exceptions.scoped:
+            if error_map_config["class_name"] not in loaded_error_map:
+                loaded_error_map[error_map_config["class_name"]] = [NexusErrorMap.from_config(error_map_config)]
+            else:
+                loaded_error_map[error_map_config["class_name"]].append(NexusErrorMap.from_config(error_map_config))
+
+        default_error: type[BaseException] = locate(
+            NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.exceptions.defaults.global_default
+        )
+        if default_error is None:
+            raise FatalStartupConfigurationError(
+                f"Unable to locate default error map class: {NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.exceptions.defaults.global_default}"
+            )
+
+        map_instance = NexusErrorMapCollection(
+            global_default=default_error,
+            error_map=loaded_error_map,
+        )
+        return InputCache(map_instance)
 
 
 @final
