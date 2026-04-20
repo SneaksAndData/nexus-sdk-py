@@ -133,7 +133,7 @@ async def test__algorithm_payload_reader__general(
     mock_session_factory.return_value = mock_session
 
     dummy_uri = "http://mock.uri/payload.json"
-    reader = AlgorithmPayloadReader(payload_uri=dummy_uri, payload_type=SimpleTestPayload)
+    reader = AlgorithmPayloadReader(payload_uri=dummy_uri, payload_type=SimpleTestPayload, save_content=True)
 
     # Act
     async with reader as payload_reader:
@@ -142,6 +142,7 @@ async def test__algorithm_payload_reader__general(
     # Assert
     assert result_payload is not None
     assert result_payload == expected.expected_payload
+    assert inputs.payload_content_bytes.decode("utf-8") == reader.payload_str
 
     # Verify that the mock HTTP client was called as expected
     mock_session.get.assert_called_once_with(url=dummy_uri)
