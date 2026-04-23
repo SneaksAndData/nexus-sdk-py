@@ -1,9 +1,12 @@
 from datetime import datetime
+from enum import Enum
 from pydoc import locate
 from typing import final, Callable
 
 from adapta.logs import LoggerInterface
 from adapta.metrics import MetricsProvider
+from adapta.metrics.providers.void_provider import VoidMetricsProvider
+from adapta.storage.blob.base import StorageClient
 from injector import Injector, Module, singleton
 
 from nexus_client_sdk.models.access_token import AccessToken
@@ -24,10 +27,26 @@ from nexus_client_sdk.nexus.core.app_dependencies import (
     ResultSerializerModule,
     CacheModule,
 )
+from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader
+from nexus_client_sdk.nexus.telemetry.payload_recorder import (
+    PayloadTelemetry,
+    FailedPayloadRecorder,
+    PayloadResult,
+)
 from nexus_client_sdk.nexus.telemetry.recorder import TelemetryRecorder
+
+
+class _PayloadSerializationMode(Enum):
+    """
+    Serialization modes for [runtime.payload.serialization_mode]. Bootstrap-only access.
+    """
+
+    OFF = "off"
+    ON_FAILURE = "on_failure"
+    ALWAYS = "always"
 
 
 @final
@@ -37,7 +56,8 @@ class NexusBootstrapper:
     """
 
     def __init__(self, run_args: NexusDefaultArguments):
-        self._logger = BootstrapLoggerFactory().create_logger(
+        self._logger_factory = BootstrapLoggerFactory()
+        self._logger = self._logger_factory.create_logger(
             request_id=run_args.request_id,
             algorithm_name=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
         )
@@ -54,7 +74,10 @@ class NexusBootstrapper:
             config_validation_extension,
             app_configuration_loader_extension,
         ]
+        # payload processing
         self._payload_types: list[type[AlgorithmPayload]] = []
+
+        # observability
         self._log_enricher: Callable[
             [
                 AlgorithmPayload,
@@ -77,15 +100,21 @@ class NexusBootstrapper:
             ],
             dict[str, str],
         ] | None = None
+
+        # algorithm loading
         self._algorithm_classes: set[type[BaselineAlgorithm]] = set()
         self._algorithm_resolvers: list[Callable[[AlgorithmPayload], str]] = []
 
-    async def _get_payload(self, payload_type: type[AlgorithmPayload]) -> AlgorithmPayload:
-        async with AlgorithmPayloadReader(
+    async def _get_payload(
+        self, payload_type: type[AlgorithmPayload], save_content: bool
+    ) -> tuple[AlgorithmPayload | None, AlgorithmPayloadReader]:
+        reader = AlgorithmPayloadReader(
             payload_uri=self._run_args.sas_uri,
             payload_type=payload_type,
-        ) as reader:
-            return reader.payload
+            save_content=save_content,
+        )
+        async with reader:
+            return reader.payload, reader
 
     @property
     def algorithm_classes(self) -> set[type[BaselineAlgorithm]]:
@@ -130,12 +159,12 @@ class NexusBootstrapper:
                 ) from error
 
     def _load_payload_types(self):
-        if not NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload_types:
+        if not NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload.types:
             raise FatalStartupConfigurationError(
-                "No payload types specified - please supply at least one class in the [runtime.payload_types] array"
+                "No payload types specified - please supply at least one class in the [runtime.payload.types] array"
             )
 
-        for payload_type in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload_types:
+        for payload_type in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload.types:
             payload_class: type[AlgorithmPayload] = locate(payload_type)
             if payload_class is None:
                 raise FatalStartupConfigurationError(f"Failed to locate required payload type: {payload_type}")
@@ -177,6 +206,26 @@ class NexusBootstrapper:
         for algorithm in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.algorithms:
             self._load_algorithm(algorithm)
 
+    def _get_bootstrap_recorder(self, logger_factory: LoggerFactory) -> TelemetryRecorder | None:
+        tmp_injector = Injector(self._injection_binds)
+        if (
+            NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload.serialization_mode
+            == _PayloadSerializationMode.OFF.value
+        ):
+            return None
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload.serialization_mode in [
+            _PayloadSerializationMode.ON_FAILURE.value,
+            _PayloadSerializationMode.ALWAYS.value,
+        ]:
+            return TelemetryRecorder(
+                storage_client=tmp_injector.get(StorageClient),
+                serializer=tmp_injector.get(TelemetrySerializer),
+                metrics_provider=VoidMetricsProvider(),
+                logger_factory=logger_factory,
+            )
+
+        return None
+
     async def __aenter__(self):
         self._logger.start()
 
@@ -204,15 +253,23 @@ class NexusBootstrapper:
         for extension in self._startup_extensions:
             app_injector = extension(app_injector)
 
+        payload_read_results: dict[str, AlgorithmPayloadReader] = {}
+
         for payload_type in self._payload_types:
-            payload = await self._get_payload(payload_type=payload_type)
+            payload, reader = await self._get_payload(
+                payload_type=payload_type,
+                save_content=NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload.serialization_mode
+                != _PayloadSerializationMode.OFF.value,
+            )
             app_injector.binder.bind(payload.__class__, to=payload, scope=singleton)
             logger_fixed_template |= self._log_enricher(payload, self._run_args) if self._log_enricher else {}
             logger_tags |= self._log_tagger(payload, self._run_args) if self._log_tagger else {}
             metric_tags |= self._metric_tagger(payload, self._run_args) if self._metric_tagger else {}
+            payload_read_results |= {payload_type.__name__: reader}
 
-            for resolver in self._algorithm_resolvers:
-                self._load_algorithm(resolver(payload))
+            if payload is not None:
+                for resolver in self._algorithm_resolvers:
+                    self._load_algorithm(resolver(payload))
 
         logger_factory = LoggerFactory(
             fixed_template=logger_fixed_template,
@@ -236,6 +293,37 @@ class NexusBootstrapper:
             to=metrics_provider,
             scope=singleton,
         )
+
+        # get temporary telemetry recorder
+        bootstrap_recorder = self._get_bootstrap_recorder(logger_factory)
+
+        for payload_type, payload_reader in payload_read_results.items():
+            if (
+                payload_reader.read_exception is None
+                and NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload.serialization_mode
+                == _PayloadSerializationMode.ALWAYS.value
+            ):
+                bootstrap_recorder.record_user_telemetry(
+                    user_recorder=app_injector.get(PayloadTelemetry),
+                    run_id=self._run_args.request_id,
+                    result=PayloadResult(payload_reader.payload_str),
+                )
+            if (
+                payload_reader.read_exception is not None
+                and NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload.serialization_mode
+                == _PayloadSerializationMode.ON_FAILURE.value
+            ):
+                bootstrap_recorder.record_user_telemetry(
+                    user_recorder=app_injector.get(FailedPayloadRecorder),
+                    run_id=self._run_args.request_id,
+                    result=PayloadResult(payload_reader.payload_str),
+                )
+
+            # always report payload parsing failures
+            if payload_reader.read_exception is not None:
+                raise FatalStartupConfigurationError(
+                    f"Unable to parse payload from {self._run_args.sas_uri} into {str(payload_type)}"
+                ) from payload_reader.read_exception
 
         # create and bind receiver client
         receiver_client = NexusReceiverAsyncClient(
