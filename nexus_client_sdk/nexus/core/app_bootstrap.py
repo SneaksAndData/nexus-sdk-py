@@ -348,7 +348,7 @@ class NexusBootstrapper:
                     valid_until=datetime(2999, 1, 1),
                 )
             )
-            if NEXUS_FRAMEWORK_CONFIGURATION.default.client.scheduler_access_token
+            if NEXUS_FRAMEWORK_CONFIGURATION.default.exists("client.scheduler_access_token")
             else None,
         )
 
