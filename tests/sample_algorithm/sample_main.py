@@ -248,9 +248,26 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
         **inputs: pandas.DataFrame
     ) -> UserTelemetry:
         return UserTelemetry(
-            pandas.DataFrame({"x": algorithm_payload.x, "result": algorithm_result.result()["number"]}),
+            iter([pandas.DataFrame({"x": algorithm_payload.x, "result": algorithm_result.result()["number"]})]),
             UserTelemetryPathSegment("analysis", "test-recording"),
         )
+
+
+def tags_from_payload(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
+    return {"x_tag": str(sum(payload.x))}
+
+
+def enrich_from_payload(payload: TestAlgorithmPayload, run_args: NexusDefaultArguments) -> dict[str, dict[str, str]]:
+    return {
+        "(mean of z:{z})": {"z": payload.z[: int(len(payload.z) / 2)]},
+        "(request_id:{request_id})": {"request_id": run_args.request_id},
+    }
+
+
+def tag_metrics(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
+    return {
+        "y_tag": str(sum(payload.y)),
+    }
 
 
 async def main():
@@ -259,32 +276,9 @@ async def main():
     :return:
     """
 
-    def tags_from_payload(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
-        return {"x_tag": str(sum(payload.x))}
+    def alg_from_payload(payload: TestAlgorithmPayload) -> str:
+        return payload.alg_class
 
-    def enrich_from_payload(
-        payload: TestAlgorithmPayload, run_args: NexusDefaultArguments
-    ) -> dict[str, dict[str, str]]:
-        return {
-            "(mean of z:{z})": {"z": payload.z[: int(len(payload.z) / 2)]},
-            "(request_id:{request_id})": {"request_id": run_args.request_id},
-        }
-
-    def tag_metrics(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
-        return {
-            "y_tag": str(sum(payload.y)),
-        }
-
-    nexus = (
-        Nexus.create()
-        .add_readers(XYSampleReader, ZSampleReader)
-        .use_processors(XYProcessor, ZProcessor, ZZProcessor)
-        .use_algorithm(TestAlgorithm)
-        .on_complete(TestUserAnalyticsTelemetry)
-        .inject_configuration(TestAlgorithmConfiguration)
-        .inject_payload(TestAlgorithmPayload)
-        .with_log_enricher(tags_from_payload, enrich_from_payload)
-        .with_metric_tagger(tag_metrics)
-    )
+    nexus = Nexus.create().with_algorithm_resolvers(alg_from_payload).on_complete(TestUserAnalyticsTelemetry)
 
     await nexus.activate()

@@ -22,9 +22,7 @@ import platform
 import signal
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
-from typing import final, Self
-from collections.abc import Callable
+from typing import final, Self, Callable
 
 import backoff
 import dynaconf
@@ -36,48 +34,31 @@ from adapta.process_communication import DataSocket
 from adapta.storage.blob.base import StorageClient
 from adapta.storage.query_enabled_store import QueryEnabledStore
 from dynaconf import Validator
-from injector import Injector, Module, singleton
+from injector import Injector
 
-from nexus_client_sdk.models.access_token import AccessToken
+from nexus_client_sdk import __version__
 from nexus_client_sdk.models.receiver import SdkCompletedRunResult
-
 from nexus_client_sdk.nexus.abstractions.logger_factory import (
     LoggerFactory,
-    BootstrapLoggerFactory,
-)
-from nexus_client_sdk.nexus.abstractions.metrics_provider_factory import (
-    MetricsProviderFactory,
 )
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.algorithms import (
     BaselineAlgorithm,
 )
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
-from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
-from nexus_client_sdk.nexus.configurations.algorithm_configuration import (
-    NexusConfiguration,
-)
-from nexus_client_sdk.nexus.core.app_dependencies import (
-    ServiceConfigurator,
-)
+from nexus_client_sdk.nexus.core.app_bootstrap import NexusBootstrapper
 from nexus_client_sdk.nexus.core.serializers import (
     ResultSerializer,
 )
 from nexus_client_sdk.nexus.exceptions import TransientNexusError, FatalNexusError
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
-from nexus_client_sdk.nexus.input.input_processor import InputProcessor
-from nexus_client_sdk.nexus.input.input_reader import InputReader
-from nexus_client_sdk.nexus.input.payload_reader import (
-    AlgorithmPayloadReader,
-    AlgorithmPayload,
-)
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 from nexus_client_sdk.nexus.telemetry.recorder import TelemetryRecorder
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
 )
-from nexus_client_sdk import __version__
 
 
 def is_transient_exception(exception: BaseException | None) -> bool | None:
@@ -122,160 +103,29 @@ class Nexus:
     """
 
     def __init__(self, args: NexusDefaultArguments):
-        self._configurator = ServiceConfigurator()
         self._injector: Injector | None = None
-        self._algorithm_class: type[BaselineAlgorithm] | None = None
         self._run_args = args
         self._algorithm_run_task: asyncio.Task | None = None
         self._on_complete_tasks: list[type[UserTelemetryRecorder]] = []
-        self._payload_types: list[type[AlgorithmPayload]] = []
-        self._log_enricher: Callable[
-            [
-                AlgorithmPayload,
-                NexusDefaultArguments,
-            ],
-            dict[str, dict[str, str]],
-        ] | None = None
-        self._log_tagger: Callable[
-            [
-                AlgorithmPayload,
-                NexusDefaultArguments,
-            ],
-            dict[str, str],
-        ] | None = None
-        self._log_enrichment_delimiter: str = ", "
-
-        self._metric_tagger: Callable[
-            [
-                AlgorithmPayload,
-                NexusDefaultArguments,
-            ],
-            dict[str, str],
-        ] | None = None
+        self._bootstrapper = NexusBootstrapper(args)
 
         attach_signal_handlers()
 
-    @property
-    def algorithm_class(self) -> type[BaselineAlgorithm]:
+    def with_algorithm_resolvers(self, *resolvers: Callable[[AlgorithmPayload], str]) -> Self:
         """
-        Class of the algorithm used by this Nexus instance.
+         Add custom algorithm class resolver from a payload instance. This is additive with config-provided values from [runtime.algorithms].
+        :return:
         """
-        return self._algorithm_class
+        for resolver in resolvers:
+            self._bootstrapper.register_algorithm_resolver(resolver)
+
+        return self
 
     def on_complete(self, *post_processors: type[UserTelemetryRecorder]) -> Self:
         """
         Attaches a coroutine to run on algorithm completion.
         """
         self._on_complete_tasks.extend(post_processors)
-        return self
-
-    def add_reader(self, reader: type[InputReader]) -> Self:
-        """
-        Adds an input data reader for the algorithm.
-        """
-        self._configurator = self._configurator.with_input_reader(reader)
-        return self
-
-    def add_readers(self, *readers: type[InputReader]) -> Self:
-        """
-        Adds one or more input data readers for the algorithm.
-        """
-        for reader in readers:
-            self.add_reader(reader)
-
-        return self
-
-    def use_processor(self, input_processor: type[InputProcessor]) -> Self:
-        """
-        Initialises an input processor for the algorithm.
-        """
-        self._configurator = self._configurator.with_input_processor(input_processor)
-        return self
-
-    def use_processors(self, *input_processors: type[InputProcessor]) -> Self:
-        """
-        Initialises one or more input processors for the algorithm.
-        """
-        for input_processor in input_processors:
-            self.use_processor(input_processor)
-
-        return self
-
-    def use_algorithm(self, algorithm: type[BaselineAlgorithm]) -> Self:
-        """
-        Algorithm to use for this Nexus instance
-        """
-        self._algorithm_class = algorithm
-        return self
-
-    def inject_payload(self, *payload_types: type[AlgorithmPayload]) -> Self:
-        """
-        Adds payload types to inject to the DI container. Payloads will be deserialized at runtime.
-        """
-        self._payload_types = payload_types
-        return self
-
-    def inject_configuration(self, *configuration_types: type[NexusConfiguration]) -> Self:
-        """
-        Adds custom configuration class instances to the DI container.
-        """
-        for config_type in configuration_types:
-            self._configurator = self._configurator.with_configuration(config_type.from_environment())
-
-        return self
-
-    def with_log_enricher(
-        self,
-        tagger: Callable[
-            [
-                AlgorithmPayload,
-                NexusDefaultArguments,
-            ],
-            dict[str, str],
-        ]
-        | None,
-        enricher: Callable[
-            [
-                AlgorithmPayload,
-                NexusDefaultArguments,
-            ],
-            dict[str, dict[str, str]],
-        ]
-        | None = None,
-        delimiter: str = ", ",
-    ) -> Self:
-        """
-        Adds a log `tagger` and a log `enricher` to be used with injected logger.
-        A log `tagger` will add key-value tags to each emitted log message, and those tags can be inferred from the payload and entrypoint arguments.
-        A log `enricher` will add additional static templated content to log messages, and render those templates using payload properties entrypoint argyments.
-        """
-        self._log_tagger = tagger
-        self._log_enricher = enricher
-        self._log_enrichment_delimiter = delimiter
-        return self
-
-    def with_metric_tagger(
-        self,
-        tagger: Callable[
-            [
-                AlgorithmPayload,
-                NexusDefaultArguments,
-            ],
-            dict[str, str],
-        ]
-        | None = None,
-    ) -> Self:
-        """
-        Adds a metric `enricher` to be used with injected metrics provider to assign additional tags to emitted metrics.
-        """
-        self._metric_tagger = tagger
-        return self
-
-    def with_module(self, module: type[Module]) -> Self:
-        """
-        Adds a (custom) DI module into the DI container.
-        """
-        self._configurator = self._configurator.with_module(module)
         return self
 
     def with_config_validators(self, *validators: Validator) -> Self:
@@ -372,13 +222,6 @@ class Nexus:
             case _:
                 sys.exit(1)
 
-    async def _get_payload(self, payload_type: type[AlgorithmPayload]) -> AlgorithmPayload:
-        async with AlgorithmPayloadReader(
-            payload_uri=self._run_args.sas_uri,
-            payload_type=payload_type,
-        ) as reader:
-            return reader.payload
-
     async def _complete_with_error(self, logger: LoggerInterface, error: BaseException) -> None:
         await NexusReceiverAsyncClient(
             url=NEXUS_FRAMEWORK_CONFIGURATION.default.client.receiver, token_provider=None, logger=logger
@@ -391,117 +234,11 @@ class Nexus:
             request_id=self._run_args.request_id,
         )
 
-    async def _bootstrap(self, logger: LoggerInterface) -> None:
-        try:
-            logger_fixed_template = {}
-            logger_tags = {}
-            metric_tags = {}
-
-            # trigger config validation before reading the payload
-            # ALGORITHM_NAME and CLIENT.RECEIVER_URL are available at this point, so module configuration errors can be registered
-            NEXUS_FRAMEWORK_CONFIGURATION.default.validators.validate_all()
-
-            for payload_type in self._payload_types:
-                payload = await self._get_payload(payload_type=payload_type)
-                self._injector.binder.bind(payload.__class__, to=payload, scope=singleton)
-                logger_fixed_template |= self._log_enricher(payload, self._run_args) if self._log_enricher else {}
-                logger_tags |= self._log_tagger(payload, self._run_args) if self._log_tagger else {}
-                metric_tags |= self._metric_tagger(payload, self._run_args) if self._metric_tagger else {}
-
-            logger_factory = LoggerFactory(
-                fixed_template=logger_fixed_template,
-                fixed_template_delimiter=self._log_enrichment_delimiter,
-                global_tags=logger_tags,
-            )
-            # bind app-level LoggerFactory now
-            self._injector.binder.bind(
-                logger_factory.__class__,
-                to=logger_factory,
-                scope=singleton,
-            )
-
-            # bind app-level MetricsProvider now
-            metrics_provider = MetricsProviderFactory(
-                global_tags=metric_tags,
-            ).create_provider()
-
-            self._injector.binder.bind(
-                MetricsProvider,
-                to=metrics_provider,
-                scope=singleton,
-            )
-
-            # create and bind receiver client
-            receiver_client = NexusReceiverAsyncClient(
-                url=NEXUS_FRAMEWORK_CONFIGURATION.default.client.receiver,
-                logger=logger_factory.create_logger(NexusReceiverAsyncClient),
-                token_provider=None,
-            )
-
-            self._injector.binder.bind(
-                NexusReceiverAsyncClient,
-                to=receiver_client,
-                scope=singleton,
-            )
-
-            # create and bind scheduler client
-            scheduler_client = NexusSchedulerAsyncClient(
-                url=NEXUS_FRAMEWORK_CONFIGURATION.default.client.scheduler,
-                logger=logger_factory.create_logger(NexusSchedulerAsyncClient),
-                token_provider=lambda: AccessToken(
-                    value=NEXUS_FRAMEWORK_CONFIGURATION.default.client.scheduler_access_token,
-                    valid_until=datetime(2999, 1, 1),
-                )
-                if NEXUS_FRAMEWORK_CONFIGURATION.default.exists("client.scheduler_access_token")
-                else None,
-            )
-
-            self._injector.binder.bind(
-                NexusSchedulerAsyncClient,
-                to=scheduler_client,
-                scope=singleton,
-            )
-
-        except dynaconf.ValidationError as config_error:
-            await self._complete_with_error(logger, config_error)
-            logger.stop()
-            sys.exit(0)
-        except FatalStartupConfigurationError as startup_error:
-            await self._complete_with_error(logger, startup_error)
-            logger.stop()
-            sys.exit(0)
-        except requests.exceptions.HTTPError as http_error:
-            logger.error("HTTP error reading algorithm payload", http_error)
-
-            # non-retryable exceptions like missing auth should cancel the run immediately
-            if http_error.response.status_code in [401, 403, 410, 405, 501, 505]:
-                await self._complete_with_error(logger, http_error)
-                # ensure we flush bootstrap logger before we exit
-                logger.stop()
-                sys.exit(0)
-
-            # ensure we flush bootstrap logger before we exit
-            logger.stop()
-            sys.exit(1)
-        except BaseException as ex:  # pylint: disable=broad-except
-            logger.error("Error during run bootstrap", ex)
-
-            # ensure we flush bootstrap logger before we exit
-            logger.stop()
-            sys.exit(1)
-
-    async def activate(self):
+    async def activate(self):  # pylint: disable=too-many-branches
         """
         Activates the run sequence.
         """
-
-        self._injector = Injector(self._configurator.injection_binds)
         NEXUS_FRAMEWORK_CONFIGURATION.load()
-
-        bootstrap_logger: LoggerInterface = self._injector.get(BootstrapLoggerFactory).create_logger(
-            request_id=self._run_args.request_id,
-            algorithm_name=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
-        )
 
         # configure blocking pool
         loop = asyncio.get_event_loop()
@@ -509,11 +246,36 @@ class Nexus:
             ThreadPoolExecutor(max_workers=int(NEXUS_FRAMEWORK_CONFIGURATION.default.threading.blocking_pool_max_size))
         )
 
-        bootstrap_logger.start()
+        async with self._bootstrapper:
+            try:
+                self._injector = await self._bootstrapper.bootstrap()
+            except dynaconf.ValidationError as config_error:
+                await self._complete_with_error(self._bootstrapper.logger, config_error)
+                self._bootstrapper.logger.stop()
+                sys.exit(0)
+            except FatalStartupConfigurationError as startup_error:
+                await self._complete_with_error(self._bootstrapper.logger, startup_error)
+                self._bootstrapper.logger.stop()
+                sys.exit(0)
+            except requests.exceptions.HTTPError as http_error:
+                self._bootstrapper.logger.error("HTTP error reading algorithm payload", http_error)
 
-        await self._bootstrap(logger=bootstrap_logger)
+                # non-retryable exceptions like missing auth should cancel the run immediately
+                if http_error.response.status_code in [401, 403, 410, 405, 501, 505]:
+                    await self._complete_with_error(self._bootstrapper.logger, http_error)
+                    # ensure we flush bootstrap logger before we exit
+                    self._bootstrapper.logger.stop()
+                    sys.exit(0)
 
-        bootstrap_logger.stop()
+                # ensure we flush bootstrap logger before we exit
+                self._bootstrapper.logger.stop()
+                sys.exit(1)
+            except BaseException as ex:  # pylint: disable=broad-except
+                self._bootstrapper.logger.error("Error during run bootstrap", ex)
+
+                # ensure we flush bootstrap logger before we exit
+                self._bootstrapper.logger.stop()
+                sys.exit(1)
 
         root_logger: LoggerInterface = self._injector.get(LoggerFactory).create_logger(
             logger_type=self.__class__,
@@ -521,7 +283,8 @@ class Nexus:
 
         root_logger.start()
 
-        algorithm: BaselineAlgorithm = self._injector.get(self._algorithm_class)
+        # WIP: take list head until https://github.com/SneaksAndData/nexus-sdk-py/issues/178
+        algorithm: BaselineAlgorithm = self._injector.get(self._bootstrapper.algorithm_classes.pop())
         telemetry_recorder: TelemetryRecorder = self._injector.get(TelemetryRecorder)
 
         root_logger.info(

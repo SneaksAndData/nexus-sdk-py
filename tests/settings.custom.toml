@@ -2,6 +2,98 @@ dynaconf_merge = true
 # Name of this algorithm in the Nexus deployment
 algorithm_name = "hello-world"
 
+# Nexus runtime configuration
+[runtime]
+
+# Nexus algorithm implementations to activate. At least one must be supplied
+algorithms = ["tests.sample_algorithm.sample_main.TestAlgorithm"]
+
+# additional modules for the DI container
+# use these to provide custom services
+additional_modules = [
+    "nexus_client_sdk.nexus.core.app_dependencies.QueryEnabledStoreModule",
+    "nexus_client_sdk.nexus.core.app_dependencies.ExternalSocketsModule",
+    "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
+]
+
+# optional function that applies additional context to all logs emitted by Nexus.
+# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
+log_enrichment_function = "tests.sample_algorithm.sample_main.enrich_from_payload"
+
+# optional function that applies additional tags (as metadata) to all logs emitted by Nexus.
+# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
+log_tagging_function = "tests.sample_algorithm.sample_main.tags_from_payload"
+
+# optional function that applies additional tagging to all metrics emitted by Nexus.
+# accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
+metric_tagging_function = "tests.sample_algorithm.sample_main.tag_metrics"
+
+configuration_types = [
+    "tests.conftest.TestAlgorithmConfiguration"
+]
+
+[runtime.payload]
+
+# payload types supported by this Nexus application. At least one must be provided
+types = ["tests.conftest.TestAlgorithmPayload"]
+
+# optional raw payload serialization for later analysis
+# you can serialize payload via user telemetry, however that won't catch failed payloads
+# for production scenarios recommended setup is to pair this setting with `on_failure` and
+# a user telemetry recorder for successful runs
+# Serialization is done via the same Telemetry API as regular user telemetry and uses a base path from telemetry settings
+# Using `always` in production is also an option, unless you must maintain low running times
+#
+# Available values:
+# off - do not serialize
+# on_failure - serialize if none of the provided payload types match the payload
+# always - always serialize the payload
+serialization_mode = "always"
+
+# Manage applicaton response to various error types
+[runtime.exceptions]
+
+# default error to use for remapping
+[runtime.exceptions.defaults]
+global_default = 'nexus_client_sdk.nexus.exceptions._nexus_error.FatalNexusError'
+
+# class-scoped exceptions
+[[runtime.exceptions.scoped]]
+# fully qualified class name (module name + name)
+class_name = 'nexus_client_sdk.nexus.abstractions.algorithm_cache.InputCache'
+# errors to remap. provide [] to remap all errors to an alternative default
+errors = [
+    'cassandra.Timeout',
+    'cassandra.Unavailable',
+    'cassandra.ReadTimeout',
+    'cassandra.WriteTimeout',
+    'cassandra.OperationTimedOut',
+    'cassandra.ReadFailure',
+    'cassandra.CoordinationFailure'
+]
+# target error to remap to
+target = 'nexus_client_sdk.nexus.exceptions.cache_errors.TransientCachingError'
+
+[[runtime.exceptions.scoped]]
+# fully qualified class name (module name + name)
+class_name = 'nexus_client_sdk.nexus.abstractions.algorithm_cache.InputCache'
+# errors to remap. provide [] to remap all errors to an alternative default
+errors = [
+    'cassandra.Unauthorized',
+    'cassandra.RequestValidationException',
+    'cassandra.AuthenticationFailed'
+]
+# target error to remap to
+target = 'nexus_client_sdk.nexus.exceptions.cache_errors.FatalCachingError'
+
+[[runtime.exceptions.scoped]]
+# fully qualified class name (module name + name)
+class_name = 'nexus_client_sdk.nexus.abstractions.algorithm_cache.InputCache'
+# [] remaps errors that didn't match any other list to an alternative default
+errors = []
+# target error to remap to
+target = 'nexus_client_sdk.nexus.exceptions.cache_errors.FatalCachingError'
+
 # Result processing and serialization
 [result]
 

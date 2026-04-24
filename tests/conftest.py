@@ -47,6 +47,7 @@ class TestAlgorithmPayload(AlgorithmPayload, DataClassJsonMixin):
     y: list[int]
     z: list[int]
     enum_value: TestEnum
+    alg_class: str
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -72,7 +73,7 @@ def run_configuration():
 def scheduler():
     logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
-    yield NexusSchedulerClient.create("http://localhost:8080", logger, lambda: AccessToken.empty())
+    yield NexusSchedulerClient.create("http://localhost:5555/scheduler", logger, lambda: AccessToken.empty())
 
     logger.stop()
 
@@ -81,7 +82,7 @@ def scheduler():
 def receiver():
     logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
-    yield NexusReceiverClient("http://localhost:8081", logger, lambda: AccessToken.empty())
+    yield NexusReceiverClient("http://localhost:5555/receiver", logger, lambda: AccessToken.empty())
 
     logger.stop()
 
@@ -99,7 +100,7 @@ def broken_scheduler():
 def async_scheduler():
     logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
-    yield NexusSchedulerAsyncClient("http://localhost:8080", logger, lambda: AccessToken.empty())
+    yield NexusSchedulerAsyncClient("http://localhost:5555/scheduler", logger, lambda: AccessToken.empty())
 
     logger.stop()
 
@@ -108,7 +109,7 @@ def async_scheduler():
 def async_receiver():
     logger = create_async_logger(SafeStreamHandler.__class__, [SafeStreamHandler(sys.stdout)])
     logger.start()
-    yield NexusReceiverAsyncClient("http://localhost:8081", logger, lambda: AccessToken.empty())
+    yield NexusReceiverAsyncClient("http://localhost:5555/receiver", logger, lambda: AccessToken.empty())
 
     logger.stop()
 
@@ -141,7 +142,11 @@ def payloads(compress: bool = False) -> list[tuple[str, str]]:
 
     generated = [
         TestAlgorithmPayload(
-            x=_rand_range(10), y=_rand_range(10), z=_rand_range(10), enum_value=random.choice(list(TestEnum))
+            x=_rand_range(10),
+            y=_rand_range(10),
+            z=_rand_range(10),
+            enum_value=random.choice(list(TestEnum)),
+            alg_class="tests.sample_algorithm.sample_main.TestAlgorithm",
         )
         for _ in range(10)
     ]
@@ -161,6 +166,12 @@ def negative_z_payload() -> tuple[str, str]:
 
     return generate_payload_url(
         upload_path,
-        TestAlgorithmPayload(x=[1, 2, 3], y=[4, 5, 6], z=[0, -1, 10], enum_value=TestEnum.A),
+        TestAlgorithmPayload(
+            x=[1, 2, 3],
+            y=[4, 5, 6],
+            z=[0, -1, 10],
+            enum_value=TestEnum.A,
+            alg_class="tests.sample_algorithm.sample_main.TestAlgorithm",
+        ),
         S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
     )
