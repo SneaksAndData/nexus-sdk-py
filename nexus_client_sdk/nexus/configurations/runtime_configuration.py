@@ -147,7 +147,7 @@ class NexusRuntimeConfiguration:
             return
 
         try:
-            import nexus_client_sdk
+            import nexus_client_sdk  # pylint: disable=import-outside-toplevel
 
             config_path_root = Path(nexus_client_sdk.__file__).parent.resolve()
             self._configuration = Dynaconf(
