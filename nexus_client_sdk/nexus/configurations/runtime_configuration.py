@@ -1,4 +1,5 @@
 """Framework configuration"""
+from pathlib import Path
 from pydoc import locate
 from typing import final
 
@@ -146,10 +147,13 @@ class NexusRuntimeConfiguration:
             return
 
         try:
+            import nexus_client_sdk  # pylint: disable=import-outside-toplevel
+
+            config_path_root = Path(nexus_client_sdk.__file__).parent.resolve()
             self._configuration = Dynaconf(
                 envvar_prefix="NEXUS_",
                 settings_files=[
-                    "nexus_client_sdk/nexus/configurations/settings.toml",
+                    config_path_root / "nexus" / "configurations" / "settings.toml",
                     ".secrets.toml",
                     "settings.custom.toml",
                 ],
