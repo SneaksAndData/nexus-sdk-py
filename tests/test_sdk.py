@@ -54,6 +54,23 @@ async def test_sdk_run(test_args: NexusDefaultArguments, scheduler: NexusSchedul
 
 
 @pytest.mark.asyncio(loop_scope="package")
+@pytest.mark.parametrize("test_args", test_cases)
+async def test_sdk_run_no_config_preload(test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session) -> None:
+    algorithm = "hello-world"
+    # create initial fake record
+    cql_session.execute(
+        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{runtime_config_stub}', '{{}}', '{{}}')"
+    )
+    sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
+    await sample_algorithm_main()
+    await asyncio.sleep(1)
+    result = json.loads(requests.get(scheduler.get_run_result(test_args.request_id, algorithm).result_uri).text)
+    run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
+    assert (
+        result["total_executed_by_cache"] == 5 and run_meta.payload_uri
+    )  # expect 1 run of each: XYSAMPLE, ZSAMPLE, ZPROCESSOR, ZZPROCESSOR, XYPROCESSOR
+
+@pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.parametrize("test_args", compressed_test_cases)
 async def test_sdk_run_compressed(
     test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session

@@ -103,6 +103,7 @@ class Nexus:
     """
 
     def __init__(self, args: NexusDefaultArguments):
+        NEXUS_FRAMEWORK_CONFIGURATION.load()
         self._injector: Injector | None = None
         self._run_args = args
         self._algorithm_run_task: asyncio.Task | None = None
@@ -238,7 +239,6 @@ class Nexus:
         """
         Activates the run sequence.
         """
-        NEXUS_FRAMEWORK_CONFIGURATION.load()
 
         # configure blocking pool
         loop = asyncio.get_event_loop()
