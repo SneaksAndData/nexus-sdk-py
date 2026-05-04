@@ -56,11 +56,8 @@ class NexusBootstrapper:
     """
 
     def __init__(self, run_args: NexusDefaultArguments):
-        self._logger_factory = BootstrapLoggerFactory()
-        self._logger = self._logger_factory.create_logger(
-            request_id=run_args.request_id,
-            algorithm_name=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
-        )
+        self._logger_factory: BootstrapLoggerFactory | None = None
+        self._logger: LoggerInterface | None = None
         self._injection_binds = [
             BootstrapLoggerFactoryModule(),
             StorageClientModule(),
@@ -227,6 +224,11 @@ class NexusBootstrapper:
         return None
 
     async def __aenter__(self):
+        self._logger_factory = BootstrapLoggerFactory()
+        self._logger = self._logger_factory.create_logger(
+            request_id=self._run_args.request_id,
+            algorithm_name=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
+        )
         self._logger.start()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
