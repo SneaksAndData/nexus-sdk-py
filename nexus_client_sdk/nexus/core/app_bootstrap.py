@@ -56,6 +56,8 @@ class NexusBootstrapper:
     """
 
     def __init__(self, run_args: NexusDefaultArguments):
+        self._logger_factory: BootstrapLoggerFactory | None = None
+        self._logger: LoggerInterface | None = None
         self._injection_binds = [
             BootstrapLoggerFactoryModule(),
             StorageClientModule(),
