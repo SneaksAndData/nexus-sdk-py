@@ -37,8 +37,7 @@ runtime_config_stub = (
 @pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.parametrize("test_args", test_cases)
 async def test_sdk_run(test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session) -> None:
-    NEXUS_FRAMEWORK_CONFIGURATION.load()
-    algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
+    algorithm = "hello-world"  # do not force load config, so bootstrapping can be covered properly
     # create initial fake record
     cql_session.execute(
         f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{runtime_config_stub}', '{{}}', '{{}}')"
