@@ -79,7 +79,7 @@ class FailedPayloadRecorder(UserTelemetryRecorder[str, AlgorithmResult]):
                             "request_id": run_id,
                             "recorded_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                             "is_valid": False,
-
+                        }
                     )
                 ]
             )
