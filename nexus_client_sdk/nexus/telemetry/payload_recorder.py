@@ -39,7 +39,7 @@ class PayloadTelemetry(UserTelemetryRecorder[str, AlgorithmResult]):
                 [
                     DataFrame(
                         {
-                            "payload": algorithm_result.result()["data"],
+                            "payload": algorithm_result.result()["content"],
                             "request_id": run_id,
                             "recorded_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                             "is_valid": True,
@@ -75,11 +75,11 @@ class FailedPayloadRecorder(UserTelemetryRecorder[str, AlgorithmResult]):
                 [
                     DataFrame(
                         {
-                            "payload": algorithm_result.result()["data"],
+                            "payload": algorithm_result.result()["content"],
                             "request_id": run_id,
                             "recorded_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                             "is_valid": False,
-                        }
+
                     )
                 ]
             )
