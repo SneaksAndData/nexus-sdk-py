@@ -250,10 +250,14 @@ class Nexus:
             try:
                 self._injector = await self._bootstrapper.bootstrap()
             except dynaconf.ValidationError as config_error:
+                self._bootstrapper.logger.error("Error during run bootstrap", config_error)
+
                 await self._complete_with_error(self._bootstrapper.logger, config_error)
                 self._bootstrapper.logger.stop()
                 sys.exit(0)
             except FatalStartupConfigurationError as startup_error:
+                self._bootstrapper.logger.error("Error during run bootstrap", startup_error)
+
                 await self._complete_with_error(self._bootstrapper.logger, startup_error)
                 self._bootstrapper.logger.stop()
                 sys.exit(0)
