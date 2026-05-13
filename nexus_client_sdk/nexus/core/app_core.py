@@ -223,6 +223,8 @@ class Nexus:
                 sys.exit(1)
 
     async def _complete_with_error(self, logger: LoggerInterface, error: BaseException) -> None:
+        logger.error("Completing with error", error)
+
         await NexusReceiverAsyncClient(
             url=NEXUS_FRAMEWORK_CONFIGURATION.default.client.receiver, token_provider=None, logger=logger
         ).complete_run(
@@ -250,26 +252,23 @@ class Nexus:
             try:
                 self._injector = await self._bootstrapper.bootstrap()
             except dynaconf.ValidationError as config_error:
-                self._bootstrapper.logger.error("Error during run bootstrap", config_error)
-
                 await self._complete_with_error(self._bootstrapper.logger, config_error)
                 self._bootstrapper.logger.stop()
                 sys.exit(0)
             except FatalStartupConfigurationError as startup_error:
-                self._bootstrapper.logger.error("Error during run bootstrap", startup_error)
-
                 await self._complete_with_error(self._bootstrapper.logger, startup_error)
                 self._bootstrapper.logger.stop()
                 sys.exit(0)
             except requests.exceptions.HTTPError as http_error:
-                self._bootstrapper.logger.error("HTTP error reading algorithm payload", http_error)
-
                 # non-retryable exceptions like missing auth should cancel the run immediately
                 if http_error.response.status_code in [401, 403, 410, 405, 501, 505]:
                     await self._complete_with_error(self._bootstrapper.logger, http_error)
                     # ensure we flush bootstrap logger before we exit
                     self._bootstrapper.logger.stop()
                     sys.exit(0)
+
+                # Make sure that retryable HTTP errors are logged before exiting.
+                self._bootstrapper.logger.error("HTTP error reading algorithm payload", http_error)
 
                 # ensure we flush bootstrap logger before we exit
                 self._bootstrapper.logger.stop()
