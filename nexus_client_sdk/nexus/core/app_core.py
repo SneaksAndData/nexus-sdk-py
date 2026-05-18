@@ -268,7 +268,7 @@ class Nexus:
                     sys.exit(0)
 
                 # Make sure that retryable HTTP errors are logged before exiting.
-                self._bootstrapper.logger.error("HTTP error reading algorithm payload", http_error)
+                self._bootstrapper.logger.error("HTTP error during bootstrap", http_error)
 
                 # ensure we flush bootstrap logger before we exit
                 self._bootstrapper.logger.stop()
