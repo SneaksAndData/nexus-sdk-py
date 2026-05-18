@@ -223,7 +223,7 @@ class Nexus:
                 sys.exit(1)
 
     async def _complete_with_error(self, logger: LoggerInterface, error: BaseException) -> None:
-        logger.error("Completing with error", error)
+        logger.error("Encountered a fatal error, completing the run", error)
 
         await NexusReceiverAsyncClient(
             url=NEXUS_FRAMEWORK_CONFIGURATION.default.client.receiver, token_provider=None, logger=logger
