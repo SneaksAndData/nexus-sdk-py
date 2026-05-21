@@ -88,7 +88,7 @@ class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
             return await self._run(**run_args)
 
         async def _spawn(remote_algorithm: RemoteAlgorithm, run_index: int, **remote_args) -> asyncio.Task:
-            delay = int(NEXUS_FRAMEWORK_CONFIGURATION.default.child_algorithm.spawn_base_delay_seconds)
+            delay = int(NEXUS_FRAMEWORK_CONFIGURATION.default.fire_and_forget.spawn_base_delay_seconds)
             if delay > 0 and run_index > 0:
                 jitter = delay + random.random() * delay
                 self._logger.info("Spawning remote algorithm in {jitter:.2f}s", jitter=jitter)
@@ -145,7 +145,7 @@ class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
         child_algorithms = await self._get_branches(**self._inputs, **kwargs)
 
         if child_algorithms:
-            if NEXUS_FRAMEWORK_CONFIGURATION.default.child_algorithm.async_spawn_enabled == "1":
+            if NEXUS_FRAMEWORK_CONFIGURATION.default.fire_and_forget.async_spawn_enabled == "1":
                 asyncio.create_task(_spawn_children(child_algorithms))
             else:
                 await _spawn_children(child_algorithms)
