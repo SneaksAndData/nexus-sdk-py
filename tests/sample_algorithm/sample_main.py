@@ -292,7 +292,6 @@ class FireAndForgetChildAlgorithmResult(AlgorithmResult):
 
 
 class TestFireAndForgetRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
-
     async def _context_open(self):
         pass
 
@@ -329,7 +328,6 @@ class TestFireAndForgetRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
 
 @singleton
 class TestFireAndForgetAlgorithm(FireAndForgetAlgorithm[TestAlgorithmPayload]):
-
     async def _context_open(self):
         pass
 
