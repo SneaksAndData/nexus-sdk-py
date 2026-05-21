@@ -267,7 +267,7 @@ spawn_base_delay_seconds = "1"
 # In async mode, forks are spawned without awaiting completion, allowing main run to proceed while forks are spawning.
 async_spawn_enabled = "0"
 
-# Settings for FireAndForgetAlgorithm remote child algorithm spawns
+# Settings for FireAndForgetAlgorithm runtime
 [fire_and_forget]
 
 # Base delay between child launches
