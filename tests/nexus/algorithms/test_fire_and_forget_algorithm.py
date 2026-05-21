@@ -106,8 +106,8 @@ async def test__fire_and_forget_algorithm_run__unit_test(inputs: InputTest, expe
     cache.resolve = AsyncMock(return_value={})
 
     mock_config = MagicMock()
-    mock_config.default.remote_algorithm.spawn_base_delay_seconds = "0"
-    mock_config.default.remote_algorithm.async_spawn_enabled = "0"
+    mock_config.default.child_algorithm.spawn_base_delay_seconds = "0"
+    mock_config.default.child_algorithm.async_spawn_enabled = "0"
 
     mock_remote_algorithms = []
     for name in inputs.remote_algorithms:
