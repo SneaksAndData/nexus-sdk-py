@@ -45,11 +45,6 @@ class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
     Algorithm that executes its own logic and then spawns one or more remote algorithms
     without awaiting their results (fire-and-forget). This produces a simple execution
     tree with depth of 1: the current node runs and then dispatches remote work.
-
-    Spawn behavior is controlled by framework configuration:
-    - ``forked_algorithm.spawn_base_delay_seconds``: staggered delay between spawns.
-    - ``forked_algorithm.async_spawn_enabled``: when "1", spawns are fully async
-      (run returns immediately); when "0", run awaits all spawns to be scheduled.
     """
 
     @inject
@@ -68,7 +63,7 @@ class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
         )
 
     @abstractmethod
-    async def _get_remote_algorithms(self, **kwargs) -> list[RemoteAlgorithm]:
+    async def _get_branches(self, **kwargs) -> list[RemoteAlgorithm]:
         """
         Provide the list of remote algorithms to spawn after the main run completes.
 
@@ -93,7 +88,7 @@ class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
             return await self._run(**run_args)
 
         async def _spawn(remote_algorithm: RemoteAlgorithm, run_index: int, **remote_args) -> asyncio.Task:
-            delay = int(NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.spawn_base_delay_seconds)
+            delay = int(NEXUS_FRAMEWORK_CONFIGURATION.default.child_algorithm.spawn_base_delay_seconds)
             if delay > 0 and run_index > 0:
                 jitter = delay + random.random() * delay
                 self._logger.info("Spawning remote algorithm in {jitter:.2f}s", jitter=jitter)
@@ -101,12 +96,12 @@ class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
 
             return asyncio.create_task(remote_algorithm.run(**remote_args))
 
-        async def _spawn_remote_algorithms(
+        async def _spawn_children(
             algorithms: list[RemoteAlgorithm],
         ) -> None:
             self._logger.info(
-                "Dispatching {count} remote algorithm(s) in fire-and-forget mode: {algorithms}",
-                count=len(algorithms),
+                "Launching {count} child algorithm(s): {algorithms}",
+                count=str(len(algorithms)),
                 algorithms=",".join([alg.alias() for alg in algorithms]),
             )
             done, _ = await asyncio.wait(
@@ -116,22 +111,22 @@ class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
             for task in done:
                 if task.exception() is not None:
                     self._logger.error(
-                        "Fire-and-forget remote algorithm failed",
+                        "Child algorithm failed",
                         exception=task.exception(),
                     )
                     self._metrics_provider.increment(
-                        metric_name="fire_and_forget_algorithm_run_failed",
+                        metric_name="child_algorithm_run_failed",
                         tags=self._metric_tags,
                     )
                 else:
                     self._metrics_provider.increment(
-                        metric_name="fire_and_forget_algorithm_run_scheduled",
+                        metric_name="child_algorithm_run_scheduled",
                         tags=self._metric_tags,
                     )
 
             successful_rate = sum(1 for task in done if task.exception() is None) / len(done)
             self._metrics_provider.gauge(
-                metric_name="fire_and_forget_algorithm_scheduled_rate",
+                metric_name="child_algorithm_scheduled_rate",
                 metric_value=successful_rate,
                 tags=self._metric_tags,
             )
@@ -147,13 +142,13 @@ class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
             logger=self._logger,
         )()
 
-        remote_algorithms = await self._get_remote_algorithms(**self._inputs, **kwargs)
+        child_algorithms = await self._get_branches(**self._inputs, **kwargs)
 
-        if remote_algorithms:
-            if NEXUS_FRAMEWORK_CONFIGURATION.default.remote_algorithm.async_spawn_enabled == "1":
-                asyncio.create_task(_spawn_remote_algorithms(remote_algorithms))
+        if child_algorithms:
+            if NEXUS_FRAMEWORK_CONFIGURATION.default.child_algorithm.async_spawn_enabled == "1":
+                asyncio.create_task(_spawn_children(child_algorithms))
             else:
-                await _spawn_remote_algorithms(remote_algorithms)
+                await _spawn_children(child_algorithms)
         else:
             self._logger.info("No remote algorithms to dispatch")
 

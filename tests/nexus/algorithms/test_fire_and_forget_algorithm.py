@@ -36,7 +36,7 @@ class FireAndForgetTest(FireAndForgetAlgorithm):
     async def _run(self, **kwargs) -> AlgorithmResult:
         return ResultTest(is_successful=True)
 
-    async def _get_remote_algorithms(self, **kwargs) -> list[RemoteAlgorithm]:
+    async def _get_branches(self, **kwargs) -> list[RemoteAlgorithm]:
         return self._remote_algorithms
 
     async def _context_open(self, **kwargs) -> None:

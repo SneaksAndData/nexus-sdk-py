@@ -268,7 +268,7 @@ spawn_base_delay_seconds = "1"
 async_spawn_enabled = "0"
 
 # Settings for FireAndForgetAlgorithm remote spawns
-[remote_algorithm]
+[child_algorithm]
 
 # Base delay between remote algorithm launches
 spawn_base_delay_seconds = "1"

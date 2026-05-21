@@ -15,12 +15,15 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
     ExternalSocketProvider,
 )
+from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.core.app_core import Nexus
-from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
+from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm, RemoteAlgorithm
+from nexus_client_sdk.nexus.algorithms.fire_and_forget import FireAndForgetAlgorithm
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
@@ -268,6 +271,88 @@ def tag_metrics(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict
     return {
         "y_tag": str(sum(payload.y)),
     }
+
+
+@dataclass
+class FireAndForgetResult(AlgorithmResult):
+    def result(self) -> dict:
+        return {"number": self.computed_value, "total_executed_by_cache": self.executed}
+
+    computed_value: float
+    executed: int
+
+    def to_kwargs(self) -> dict[str, Any]:
+        pass
+
+
+@singleton
+class TestFireAndForgetRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
+    """Remote algorithm dispatched by the fire-and-forget algorithm."""
+
+    async def _context_open(self):
+        pass
+
+    async def _context_close(self):
+        pass
+
+    @inject
+    def __init__(
+        self,
+        metrics_provider: MetricsProvider,
+        logger_factory: LoggerFactory,
+        remote_client: NexusSchedulerAsyncClient,
+        payload: TestAlgorithmPayload,
+        cache: InputCache,
+    ):
+        super().__init__(
+            metrics_provider,
+            logger_factory,
+            remote_client,
+            "hello-world",
+            cache=cache,
+            compress_payload=False,
+        )
+        self._payload = payload
+
+    def _generate_tag(self, **kwargs) -> str:
+        return "fire-and-forget-remote"
+
+    def _transform_submission_result(self, request_ids: list[str], tag: str) -> AlgorithmResult:
+        return FireAndForgetResult(computed_value=0.0, executed=0)
+
+    async def _run(self, **kwargs) -> list[AlgorithmPayload]:
+        return [self._payload]
+
+
+@singleton
+class TestFireAndForgetAlgorithm(FireAndForgetAlgorithm[TestAlgorithmPayload]):
+    """Fire-and-forget algorithm that runs main logic then dispatches a remote algorithm."""
+
+    async def _context_open(self):
+        pass
+
+    async def _context_close(self):
+        pass
+
+    @inject
+    def __init__(
+        self,
+        metrics_provider: MetricsProvider,
+        logger_factory: LoggerFactory,
+        xy_processor: XYProcessor,
+        z_processor: ZProcessor,
+        remote_algorithm: TestFireAndForgetRemoteAlgorithm,
+        cache: InputCache,
+    ):
+        super().__init__(metrics_provider, logger_factory, xy_processor, z_processor, cache=cache)
+        self._remote_algorithm = remote_algorithm
+
+    async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, **kwargs) -> FireAndForgetResult:
+        computed_value = math.sqrt(float(xy.sum().sum()) + float(z.sum().sum()))
+        return FireAndForgetResult(computed_value=computed_value, executed=self._cache.total_evaluated_inputs())
+
+    async def _get_branches(self, **kwargs) -> list[RemoteAlgorithm]:
+        return [self._remote_algorithm]
 
 
 async def main():
