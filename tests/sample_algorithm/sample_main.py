@@ -292,7 +292,6 @@ class FireAndForgetChildAlgorithmResult(AlgorithmResult):
 
 
 class TestFireAndForgetRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
-    """Remote algorithm dispatched by the fire-and-forget algorithm."""
 
     async def _context_open(self):
         pass
@@ -330,7 +329,6 @@ class TestFireAndForgetRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
 
 @singleton
 class TestFireAndForgetAlgorithm(FireAndForgetAlgorithm[TestAlgorithmPayload]):
-    """Fire-and-forget algorithm that runs main logic then dispatches a remote algorithm."""
 
     async def _context_open(self):
         pass
