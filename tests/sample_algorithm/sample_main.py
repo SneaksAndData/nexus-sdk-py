@@ -276,16 +276,21 @@ def tag_metrics(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict
 @dataclass
 class FireAndForgetResult(AlgorithmResult):
     def result(self) -> dict:
-        return {"number": self.computed_value, "total_executed_by_cache": self.executed}
-
-    computed_value: float
-    executed: int
+        return {"whatever": "whatever"}
 
     def to_kwargs(self) -> dict[str, Any]:
         pass
 
 
-@singleton
+@dataclass
+class FireAndForgetChildAlgorithmResult(AlgorithmResult):
+    def result(self) -> dict:
+        return {"whatever": "whatever"}
+
+    def to_kwargs(self) -> dict[str, Any]:
+        return {}
+
+
 class TestFireAndForgetRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
     """Remote algorithm dispatched by the fire-and-forget algorithm."""
 
@@ -295,7 +300,6 @@ class TestFireAndForgetRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
     async def _context_close(self):
         pass
 
-    @inject
     def __init__(
         self,
         metrics_provider: MetricsProvider,
@@ -308,17 +312,17 @@ class TestFireAndForgetRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
             metrics_provider,
             logger_factory,
             remote_client,
-            "hello-world",
+            "child_algorithm",
             cache=cache,
             compress_payload=False,
         )
         self._payload = payload
 
     def _generate_tag(self, **kwargs) -> str:
-        return "fire-and-forget-remote"
+        return "fire-and-forget-child-algorithm"
 
     def _transform_submission_result(self, request_ids: list[str], tag: str) -> AlgorithmResult:
-        return FireAndForgetResult(computed_value=0.0, executed=0)
+        return FireAndForgetChildAlgorithmResult()
 
     async def _run(self, **kwargs) -> list[AlgorithmPayload]:
         return [self._payload]
@@ -341,18 +345,28 @@ class TestFireAndForgetAlgorithm(FireAndForgetAlgorithm[TestAlgorithmPayload]):
         logger_factory: LoggerFactory,
         xy_processor: XYProcessor,
         z_processor: ZProcessor,
-        remote_algorithm: TestFireAndForgetRemoteAlgorithm,
+        remote_client: NexusSchedulerAsyncClient,
+        payload: TestAlgorithmPayload,
         cache: InputCache,
     ):
         super().__init__(metrics_provider, logger_factory, xy_processor, z_processor, cache=cache)
-        self._remote_algorithm = remote_algorithm
+        self._remote_client = remote_client
+        self._payload = payload
+        self._logger_factory = logger_factory
 
-    async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, **kwargs) -> FireAndForgetResult:
-        computed_value = math.sqrt(float(xy.sum().sum()) + float(z.sum().sum()))
-        return FireAndForgetResult(computed_value=computed_value, executed=self._cache.total_evaluated_inputs())
+    async def _run(self, **kwargs) -> FireAndForgetResult:
+        return FireAndForgetResult()
 
     async def _get_branches(self, **kwargs) -> list[RemoteAlgorithm]:
-        return [self._remote_algorithm]
+        return [
+            TestFireAndForgetRemoteAlgorithm(
+                metrics_provider=self._metrics_provider,
+                logger_factory=self._logger_factory,
+                remote_client=self._remote_client,
+                payload=self._payload,
+                cache=self._cache,
+            )
+        ]
 
 
 async def main():
