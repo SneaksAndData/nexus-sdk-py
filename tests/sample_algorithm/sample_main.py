@@ -378,16 +378,3 @@ async def main():
 
     await nexus.activate()
 
-
-async def fan_out_main():
-    """
-    Main entry point for fan-out algorithm tests.
-    :return:
-    """
-
-    def alg_from_payload(payload: TestAlgorithmPayload) -> str:
-        return payload.alg_class
-
-    nexus = Nexus.create().with_algorithm_resolvers(alg_from_payload)
-
-    await nexus.activate()

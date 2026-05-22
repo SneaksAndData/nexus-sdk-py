@@ -13,7 +13,7 @@ from nexus_client_sdk.models.scheduler import RequestLifeCycleStage
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from tests.conftest import payloads, negative_z_payload
-from tests.sample_algorithm.sample_main import main as sample_algorithm_main, fan_out_main, NegativeZError
+from tests.sample_algorithm.sample_main import main as sample_algorithm_main, NegativeZError
 
 os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
 os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
@@ -95,7 +95,7 @@ async def test_sdk_run_fan_out(
         f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{runtime_config_stub}', '{{}}', '{{}}')"
     )
     sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
-    await fan_out_main()
+    await sample_algorithm_main()
     await asyncio.sleep(1)
 
     run_result = scheduler.get_run_result(test_args.request_id, algorithm)
