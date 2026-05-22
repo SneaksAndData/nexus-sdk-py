@@ -377,4 +377,3 @@ async def main():
     nexus = Nexus.create().with_algorithm_resolvers(alg_from_payload).on_complete(TestUserAnalyticsTelemetry)
 
     await nexus.activate()
-
