@@ -102,7 +102,7 @@ async def test_sdk_run_fan_out(
     result = json.loads(requests.get(run_result.result_uri).text)
     run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
     assert (
-        "number" in result
+        "whatever" in result
         and run_meta.payload_uri
         and scheduler.is_finished(run_result)
         and scheduler.has_succeeded(run_result)
