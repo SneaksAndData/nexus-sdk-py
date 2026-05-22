@@ -29,9 +29,9 @@ compressed_test_cases = [
     for payload_url, request_id in payloads(compress=True)
 ]
 
-fire_and_forget_test_cases = [
+fan_out_test_cases = [
     NexusDefaultArguments(sas_uri=payload_url, request_id=request_id)
-    for payload_url, request_id in payloads(alg_class="tests.sample_algorithm.sample_main.TestFireAndForgetAlgorithm")
+    for payload_url, request_id in payloads(alg_class="tests.sample_algorithm.sample_main.TestFanOutAlgorithm")
 ]
 
 runtime_config_stub = (
@@ -84,8 +84,8 @@ async def test_sdk_run_compressed(
 
 
 @pytest.mark.asyncio(loop_scope="package")
-@pytest.mark.parametrize("test_args", fire_and_forget_test_cases)
-async def test_sdk_run_fire_and_forget(
+@pytest.mark.parametrize("test_args", fan_out_test_cases)
+async def test_sdk_run_fan_out(
     test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session
 ) -> None:
     NEXUS_FRAMEWORK_CONFIGURATION.load()

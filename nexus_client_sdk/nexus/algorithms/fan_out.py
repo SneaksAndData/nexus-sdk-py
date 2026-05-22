@@ -1,5 +1,5 @@
 """
- Fire-and-forget algorithm that spawns remote algorithms without awaiting their results.
+ Fan-out algorithm that spawns remote algorithms without awaiting their results.
 """
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
@@ -40,10 +40,10 @@ from nexus_client_sdk.nexus.configurations.runtime_configuration import (
 from nexus_client_sdk.nexus.input.input_processor import InputProcessor
 
 
-class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
+class FanOutAlgorithm(BaselineAlgorithm[TPayload], ABC):
     """
     Algorithm that executes its own logic and then spawns one or more remote algorithms
-    without awaiting their results (fire-and-forget). This produces a simple execution
+    without awaiting their results (fan-out). This produces a simple execution
     tree with depth of 1: the current node runs and then dispatches remote work.
     """
 
@@ -67,7 +67,7 @@ class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
         """
         Provide the list of remote algorithms to spawn after the main run completes.
 
-        :return: List of remote algorithms to be dispatched in a fire-and-forget manner.
+        :return: List of remote algorithms to be dispatched in a fan-out manner.
         """
 
     async def run(self, **kwargs) -> AlgorithmResult:
@@ -88,10 +88,10 @@ class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
             return await self._run(**run_args)
 
         async def _spawn(remote_algorithm: RemoteAlgorithm, run_index: int, **remote_args) -> asyncio.Task:
-            delay = int(NEXUS_FRAMEWORK_CONFIGURATION.default.fire_and_forget.spawn_base_delay_seconds)
+            delay = int(NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.spawn_base_delay_seconds)
             if delay > 0 and run_index > 0:
                 jitter = delay + random.random() * delay
-                self._logger.info("Spawning remote algorithm in {jitter:.2f}s", jitter=jitter)
+                self._logger.info("Spawning child algorithm in {jitter:.2f}s", jitter=jitter)
                 await asyncio.sleep(jitter)
 
             return asyncio.create_task(remote_algorithm.run(**remote_args))
@@ -133,6 +133,8 @@ class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
 
         self._inputs = await self._cache.resolve(*self._input_processors, **kwargs)
 
+        self._logger.info("Starting main run.")
+
         run_result = await partial(
             _measured_run,
             **kwargs,
@@ -145,11 +147,11 @@ class FireAndForgetAlgorithm(BaselineAlgorithm[TPayload], ABC):
         child_algorithms = await self._get_branches(**self._inputs, **kwargs)
 
         if child_algorithms:
-            if NEXUS_FRAMEWORK_CONFIGURATION.default.fire_and_forget.async_spawn_enabled == "1":
+            if NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.async_spawn_enabled == "1":
                 asyncio.create_task(_spawn_children(child_algorithms))
             else:
                 await _spawn_children(child_algorithms)
         else:
-            self._logger.info("No remote algorithms to dispatch")
+            self._logger.info("No child algorithms to dispatch")
 
         return run_result

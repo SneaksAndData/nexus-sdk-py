@@ -18,7 +18,7 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import (
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.core.app_core import Nexus
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm, RemoteAlgorithm
-from nexus_client_sdk.nexus.algorithms.fire_and_forget import FireAndForgetAlgorithm
+from nexus_client_sdk.nexus.algorithms.fan_out import FanOutAlgorithm
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
@@ -274,7 +274,7 @@ def tag_metrics(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict
 
 
 @dataclass
-class FireAndForgetResult(AlgorithmResult):
+class FanOutResult(AlgorithmResult):
     def result(self) -> dict:
         return {"whatever": "whatever"}
 
@@ -283,7 +283,7 @@ class FireAndForgetResult(AlgorithmResult):
 
 
 @dataclass
-class FireAndForgetChildAlgorithmResult(AlgorithmResult):
+class FanOutChildAlgorithmResult(AlgorithmResult):
     def result(self) -> dict:
         return {"whatever": "whatever"}
 
@@ -291,7 +291,7 @@ class FireAndForgetChildAlgorithmResult(AlgorithmResult):
         return {}
 
 
-class TestFireAndForgetRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
+class TestFanOutRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
     async def _context_open(self):
         pass
 
@@ -317,17 +317,17 @@ class TestFireAndForgetRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
         self._payload = payload
 
     def _generate_tag(self, **kwargs) -> str:
-        return "fire-and-forget-child-algorithm"
+        return "fan-out-child-algorithm"
 
     def _transform_submission_result(self, request_ids: list[str], tag: str) -> AlgorithmResult:
-        return FireAndForgetChildAlgorithmResult()
+        return FanOutChildAlgorithmResult()
 
     async def _run(self, **kwargs) -> list[AlgorithmPayload]:
         return [self._payload]
 
 
 @singleton
-class TestFireAndForgetAlgorithm(FireAndForgetAlgorithm[TestAlgorithmPayload]):
+class TestFanOutAlgorithm(FanOutAlgorithm[TestAlgorithmPayload]):
     async def _context_open(self):
         pass
 
@@ -350,12 +350,12 @@ class TestFireAndForgetAlgorithm(FireAndForgetAlgorithm[TestAlgorithmPayload]):
         self._payload = payload
         self._logger_factory = logger_factory
 
-    async def _run(self, **kwargs) -> FireAndForgetResult:
-        return FireAndForgetResult()
+    async def _run(self, **kwargs) -> FanOutResult:
+        return FanOutResult()
 
     async def _get_branches(self, **kwargs) -> list[RemoteAlgorithm]:
         return [
-            TestFireAndForgetRemoteAlgorithm(
+            TestFanOutRemoteAlgorithm(
                 metrics_provider=self._metrics_provider,
                 logger_factory=self._logger_factory,
                 remote_client=self._remote_client,
