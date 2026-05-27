@@ -134,7 +134,9 @@ def cql_session():
     cluster.shutdown()
 
 
-def payloads(compress: bool = False) -> list[tuple[str, str]]:
+def payloads(
+    compress: bool = False,
+) -> list[tuple[str, str]]:
     upload_path = S3Path(bucket="nexus", path="units")
 
     def _rand_range(limit: int) -> list[int]:

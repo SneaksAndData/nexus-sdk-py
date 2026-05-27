@@ -29,6 +29,7 @@ compressed_test_cases = [
     for payload_url, request_id in payloads(compress=True)
 ]
 
+
 runtime_config_stub = (
     open(Path(__file__).parent / "mock_data" / "applied_configuration.json", encoding="utf-8").read().replace("\n", " ")
 )

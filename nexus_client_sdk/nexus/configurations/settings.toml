@@ -266,3 +266,14 @@ spawn_base_delay_seconds = "1"
 # Enable or disable async spawn mode for forks
 # In async mode, forks are spawned without awaiting completion, allowing main run to proceed while forks are spawning.
 async_spawn_enabled = "0"
+
+# Settings for FanOutAlgorithm runtime
+[fan_out]
+
+# Base delay between child algorithm launches
+spawn_base_delay_seconds = "1"
+
+# Enable or disable async spawn mode for child algorithm runs
+# In async mode,  child algorithm runs are spawned without awaiting completion.
+async_spawn_enabled = "0"
+
