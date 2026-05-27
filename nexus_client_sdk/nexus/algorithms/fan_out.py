@@ -131,7 +131,7 @@ class FanOutAlgorithm(BaselineAlgorithm[TPayload], ABC):
                 tags=self._metric_tags,
             )
 
-        self._logger.info("Starting main run.")
+        self._logger.info("Starting main run")
 
         self._inputs = await self._cache.resolve(*self._input_processors, **kwargs)
 
