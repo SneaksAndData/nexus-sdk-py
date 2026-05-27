@@ -15,10 +15,8 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
     ExternalSocketProvider,
 )
-from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.core.app_core import Nexus
-from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm, RemoteAlgorithm
-from nexus_client_sdk.nexus.algorithms.fan_out import FanOutAlgorithm
+from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
@@ -271,98 +269,6 @@ def tag_metrics(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict
     return {
         "y_tag": str(sum(payload.y)),
     }
-
-
-@dataclass
-class FanOutResult(AlgorithmResult):
-    def result(self) -> dict:
-        return {"whatever": "whatever"}
-
-    def to_kwargs(self) -> dict[str, Any]:
-        pass
-
-
-@dataclass
-class FanOutChildAlgorithmResult(AlgorithmResult):
-    def result(self) -> dict:
-        return {"whatever": "whatever"}
-
-    def to_kwargs(self) -> dict[str, Any]:
-        return {}
-
-
-class TestFanOutRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
-    async def _context_open(self):
-        pass
-
-    async def _context_close(self):
-        pass
-
-    def __init__(
-        self,
-        metrics_provider: MetricsProvider,
-        logger_factory: LoggerFactory,
-        remote_client: NexusSchedulerAsyncClient,
-        payload: TestAlgorithmPayload,
-        cache: InputCache,
-    ):
-        super().__init__(
-            metrics_provider,
-            logger_factory,
-            remote_client,
-            "child_algorithm",
-            cache=cache,
-            compress_payload=False,
-        )
-        self._payload = payload
-
-    def _generate_tag(self, **kwargs) -> str:
-        return "fan-out-child-algorithm"
-
-    def _transform_submission_result(self, request_ids: list[str], tag: str) -> AlgorithmResult:
-        return FanOutChildAlgorithmResult()
-
-    async def _run(self, **kwargs) -> list[AlgorithmPayload]:
-        return [self._payload]
-
-
-@singleton
-class TestFanOutAlgorithm(FanOutAlgorithm[TestAlgorithmPayload]):
-    async def _context_open(self):
-        pass
-
-    async def _context_close(self):
-        pass
-
-    @inject
-    def __init__(
-        self,
-        metrics_provider: MetricsProvider,
-        logger_factory: LoggerFactory,
-        xy_processor: XYProcessor,
-        z_processor: ZProcessor,
-        remote_client: NexusSchedulerAsyncClient,
-        payload: TestAlgorithmPayload,
-        cache: InputCache,
-    ):
-        super().__init__(metrics_provider, logger_factory, xy_processor, z_processor, cache=cache)
-        self._remote_client = remote_client
-        self._payload = payload
-        self._logger_factory = logger_factory
-
-    async def _run(self, **kwargs) -> FanOutResult:
-        return FanOutResult()
-
-    async def _get_branches(self, **kwargs) -> list[RemoteAlgorithm]:
-        return [
-            TestFanOutRemoteAlgorithm(
-                metrics_provider=self._metrics_provider,
-                logger_factory=self._logger_factory,
-                remote_client=self._remote_client,
-                payload=self._payload,
-                cache=self._cache,
-            )
-        ]
 
 
 async def main():

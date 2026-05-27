@@ -135,7 +135,7 @@ def cql_session():
 
 
 def payloads(
-    compress: bool = False, alg_class: str = "tests.sample_algorithm.sample_main.TestAlgorithm"
+    compress: bool = False,
 ) -> list[tuple[str, str]]:
     upload_path = S3Path(bucket="nexus", path="units")
 
@@ -148,7 +148,7 @@ def payloads(
             y=_rand_range(10),
             z=_rand_range(10),
             enum_value=random.choice(list(TestEnum)),
-            alg_class=alg_class,
+            alg_class="tests.sample_algorithm.sample_main.TestAlgorithm",
         )
         for _ in range(10)
     ]

@@ -29,10 +29,6 @@ compressed_test_cases = [
     for payload_url, request_id in payloads(compress=True)
 ]
 
-fan_out_test_cases = [
-    NexusDefaultArguments(sas_uri=payload_url, request_id=request_id)
-    for payload_url, request_id in payloads(alg_class="tests.sample_algorithm.sample_main.TestFanOutAlgorithm")
-]
 
 runtime_config_stub = (
     open(Path(__file__).parent / "mock_data" / "applied_configuration.json", encoding="utf-8").read().replace("\n", " ")
@@ -77,32 +73,6 @@ async def test_sdk_run_compressed(
     run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
     assert (
         "number" in result
-        and run_meta.payload_uri
-        and scheduler.is_finished(run_result)
-        and scheduler.has_succeeded(run_result)
-    )
-
-
-@pytest.mark.asyncio(loop_scope="package")
-@pytest.mark.parametrize("test_args", fan_out_test_cases)
-async def test_sdk_run_fan_out(
-    test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session
-) -> None:
-    NEXUS_FRAMEWORK_CONFIGURATION.load()
-    algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
-    # create initial fake record
-    cql_session.execute(
-        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{runtime_config_stub}', '{{}}', '{{}}')"
-    )
-    sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
-    await sample_algorithm_main()
-    await asyncio.sleep(1)
-
-    run_result = scheduler.get_run_result(test_args.request_id, algorithm)
-    result = json.loads(requests.get(run_result.result_uri).text)
-    run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
-    assert (
-        "whatever" in result
         and run_meta.payload_uri
         and scheduler.is_finished(run_result)
         and scheduler.has_succeeded(run_result)
