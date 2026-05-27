@@ -115,7 +115,7 @@ class FanOutAlgorithm(BaselineAlgorithm[TPayload], ABC):
                         exception=task.exception(),
                     )
                     self._metrics_provider.increment(
-                        metric_name="child_algorithm_run_failed",
+                        metric_name="child_algorithm_run_schedule_failed",
                         tags=self._metric_tags,
                     )
                 else:
