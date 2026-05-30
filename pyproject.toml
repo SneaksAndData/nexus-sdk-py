@@ -18,7 +18,7 @@ injector = "^0.22.0"
 dynaconf = "^3.2"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8"
+pytest = ">=8,<10"
 pytest-mock = "^3"
 pytest-xdist = "^3"
 pytest-asyncio = "^1.1"
