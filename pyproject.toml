@@ -13,7 +13,7 @@ include = [
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.13"
-adapta = { version = "^3.6.1", extras = ["aws", "storage", "datadog"] }
+adapta = { version = "^4.0", extras = ["aws", "storage", "datadog"] }
 injector = "^0.22.0"
 dynaconf = "^3.2"
 
