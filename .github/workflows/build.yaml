@@ -49,7 +49,7 @@ jobs:
           NEXUS__SDK_LOG_LEVEL: INFO
           ROOT_PATH_FOR_DYNACONF: ${{ github.workspace }}/tests
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           
           poetry run pytest -n auto --dist loadgroup --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=term-missing:skip-covered | tee pytest-coverage.txt
 
