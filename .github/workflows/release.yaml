@@ -83,7 +83,7 @@ jobs:
         env:
           VERSION: ${{steps.version.outputs.version}}
         run: |
-          set -euxo pipefail
+          set -euo pipefail
 
           curl -sSL https://install.python-poetry.org | python3 -
           
@@ -138,7 +138,7 @@ jobs:
         env:
           VERSION: ${{steps.version.outputs.version}}
         run: |
-          set -euxo pipefail
+          set -euo pipefail
 
           curl -sSL https://install.python-poetry.org | python3 -
           
