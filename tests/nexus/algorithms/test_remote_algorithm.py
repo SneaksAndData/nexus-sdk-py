@@ -129,6 +129,9 @@ class TestRemoteAlgorithm(RemoteAlgorithm):
     def _generate_tag(self, **_) -> str:
         return "test-tag"
 
+    def _generate_tag_from_remote_payloaod(self, payload: SimpleTestPayload, **kwargs) -> str | None:
+        return "test-tag-" + payload.test_id
+
     async def _run(self, **kwargs):
         return []
 

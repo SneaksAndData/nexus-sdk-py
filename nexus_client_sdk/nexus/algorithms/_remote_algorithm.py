@@ -93,6 +93,14 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         """
 
     @abstractmethod
+    def _generate_tag_from_remote_payloaod(self, payload: AlgorithmPayload, **kwargs) -> str | None:
+        """
+        Generates a submission tag specific to a remove payload.
+        If not implemented by subclass, _generate_tag() is used as tag all remote algorithms.
+        """
+        return None
+
+    @abstractmethod
     def _transform_submission_result(self, request_ids: list[str], tag: str) -> AlgorithmResult:
         """
         Called after submitting a remote run. Use this to enrich your output with remote run id and tag.
@@ -143,7 +151,14 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             payloads = await self._run(**run_args)
             tag = self._generate_tag(**run_args)
 
-            request_ids = [await self._create_remote_run(payload=payload, tag=tag, **run_args) for payload in payloads]
+            request_ids = [
+                await self._create_remote_run(
+                    payload=payload,
+                    tag=self._generate_tag_from_remote_payloaod(payload=payload, **run_args) or tag,
+                    **run_args,
+                )
+                for payload in payloads
+            ]
 
             return self._transform_submission_result(request_ids, tag)
 
