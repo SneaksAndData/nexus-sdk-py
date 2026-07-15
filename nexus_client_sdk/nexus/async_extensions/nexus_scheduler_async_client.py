@@ -219,3 +219,23 @@ class NexusSchedulerAsyncClient:
             f"Fatal error when getting metadata for request {algorithm}/{request_id}",
             method_alias="get_request_metadata",
         )
+
+    async def get_run_results(self, tag: str, algorithm: str | None = None) -> RequestMetadata | None:
+        """
+        Retrieves run results for a given tag.
+        :param tag: Client-side assigned run tag.
+        :param algorithm: Optional algorithm to filter returned results by.
+        :return: Run result collection.
+        """
+
+        return await self._retry_policy_builder.build().execute(
+            lambda: run_blocking(
+                partial(
+                    self._sync_client.get_run_results,
+                    tag=tag,
+                    algorithm=algorithm,
+                )
+            ),
+            f"Fatal error when getting run results for requests with tag {algorithm}/{tag}",
+            method_alias="get_run_results",
+        )
