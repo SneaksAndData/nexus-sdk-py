@@ -72,7 +72,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         :param remote_client: NexusSchedulerAsyncClient instance to use. Provided from DI, do not initialize manually.
         :param remote_name: Name of the remote algorithm to use.
         :param is_hard_dependency: If set to True, the launched run will set the initiator as Parent. Cancelling or completing the Parent will lead to remote run being aborted. If set to False, no Parent-Child relationship will be created. However, you can still override _generate_tag to retain the parent reference. Defaults to False.
-        :param force_run: If set to True, the launch will be made no matter what. If set to False, it will be checked whether remote algorithm tag already exists already exists before spawning to avoid dublicated spawns.
+        :param force_run: If set to True, the launch will be made no matter what. If set to False, it will be checked whether remote algorithm tag already exists before spawning to avoid dublicated runs.
         :param input_processors: Inputs to use for payload generation
         :param remote_config: Optional configuration for remote execution
         :param compressor: Optional compressor to use for payload generation. Provided from DI, do not initialize manually.
@@ -99,8 +99,8 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
     @abstractmethod
     def _generate_tag_from_remote_payload(self, payload: AlgorithmPayload, **kwargs) -> str | None:
         """
-        Generates a submission tag specific to a remove payload.
-        If not implemented by subclass, _generate_tag() is used as tag all remote algorithms.
+        Generates a submission tag specific to a remote payload.
+        If not implemented by subclass, _generate_tag() is used as tag for all remote algorithm runs.
         """
         return None
 

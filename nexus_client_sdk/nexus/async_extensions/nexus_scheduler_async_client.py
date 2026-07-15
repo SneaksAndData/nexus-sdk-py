@@ -15,7 +15,7 @@
 #  limitations under the License.
 #
 
-from typing import final, Any
+from typing import final, Any, Iterator
 from collections.abc import Callable
 from functools import partial
 
@@ -220,7 +220,7 @@ class NexusSchedulerAsyncClient:
             method_alias="get_request_metadata",
         )
 
-    async def get_run_results(self, tag: str, algorithm: str | None = None) -> RequestMetadata | None:
+    async def get_run_results(self, tag: str, algorithm: str | None = None) -> Iterator[RunResult]:
         """
         Retrieves run results for a given tag.
         :param tag: Client-side assigned run tag.
