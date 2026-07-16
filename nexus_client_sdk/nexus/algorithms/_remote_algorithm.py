@@ -72,7 +72,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         :param remote_client: NexusSchedulerAsyncClient instance to use. Provided from DI, do not initialize manually.
         :param remote_name: Name of the remote algorithm to use.
         :param is_hard_dependency: If set to True, the launched run will set the initiator as Parent. Cancelling or completing the Parent will lead to remote run being aborted. If set to False, no Parent-Child relationship will be created. However, you can still override _generate_tag to retain the parent reference. Defaults to False.
-        :param force_run: If set to True, the launch will be made no matter what. If set to False, it will be checked whether remote algorithm tag already exists before spawning to avoid dublicated runs.
+        :param force_run: If set to True, the launch will be made no matter what. If set to False, it will be checked whether remote algorithm tag already exists before spawning to avoid duplicated runs.
         :param input_processors: Inputs to use for payload generation
         :param remote_config: Optional configuration for remote execution
         :param compressor: Optional compressor to use for payload generation. Provided from DI, do not initialize manually.
@@ -96,7 +96,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         Generates a submission tag.
         """
 
-    @abstractmethod
+    # pylint: disable=unused-argument
     def _generate_tag_from_remote_payload(self, payload: AlgorithmPayload, **kwargs) -> str | None:
         """
         Generates a submission tag specific to a remote payload.
@@ -203,7 +203,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
                 self._logger.info(
                     "Found existing runs with tag {tag} for remote algorithm {remote_algorithm}, reusing the latest "
                     "received one with request_id: {old_request_id}."
-                    "\payload for this request is: {algorithm_parameters}",
+                    "\npayload for this request is: {algorithm_parameters}",
                     tag=tag,
                     remote_algorithm=self._remote_name,
                     old_request_id=run_metadata[-1].id,
