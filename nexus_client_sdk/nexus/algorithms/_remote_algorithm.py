@@ -18,6 +18,7 @@
 #
 
 from abc import abstractmethod
+import json
 import base64
 from functools import partial
 
@@ -26,7 +27,7 @@ from adapta.storage.models.formatters import DictJsonSerializationFormat
 from adapta.utils.decorators import run_time_metrics_async
 from injector import inject
 
-from nexus_client_sdk.models.scheduler import SdkCustomRunConfiguration, SdkParentRequest
+from nexus_client_sdk.models.scheduler import SdkCustomRunConfiguration, SdkParentRequest, RequestMetadata
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     NexusObject,
@@ -58,6 +59,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         remote_name: str,
         *input_processors: InputProcessor,
         is_hard_dependency: bool = False,
+        force_run: bool = True,
         remote_config: SdkCustomRunConfiguration | None = None,
         compressor: Compressor | None = None,
         compress_payload: bool = False,
@@ -70,6 +72,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         :param remote_client: NexusSchedulerAsyncClient instance to use. Provided from DI, do not initialize manually.
         :param remote_name: Name of the remote algorithm to use.
         :param is_hard_dependency: If set to True, the launched run will set the initiator as Parent. Cancelling or completing the Parent will lead to remote run being aborted. If set to False, no Parent-Child relationship will be created. However, you can still override _generate_tag to retain the parent reference. Defaults to False.
+        :param force_run: If set to True, the launch will be made no matter what. If set to False, it will be checked whether remote algorithm tag already exists before spawning to avoid duplicated runs.
         :param input_processors: Inputs to use for payload generation
         :param remote_config: Optional configuration for remote execution
         :param compressor: Optional compressor to use for payload generation. Provided from DI, do not initialize manually.
@@ -85,12 +88,21 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         self._compressor = compressor
         self._compress_payload = compress_payload
         self._is_hard_dependency = is_hard_dependency
+        self._force_run = force_run
 
     @abstractmethod
     def _generate_tag(self, **kwargs) -> str:
         """
         Generates a submission tag.
         """
+
+    # pylint: disable=unused-argument
+    def _generate_tag_from_remote_payload(self, payload: AlgorithmPayload, **kwargs) -> str | None:
+        """
+        Generates a submission tag specific to a remote payload.
+        If not implemented by subclass, _generate_tag() is used as tag for all remote algorithm runs.
+        """
+        return None
 
     @abstractmethod
     def _transform_submission_result(self, request_ids: list[str], tag: str) -> AlgorithmResult:
@@ -143,7 +155,14 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             payloads = await self._run(**run_args)
             tag = self._generate_tag(**run_args)
 
-            request_ids = [await self._create_remote_run(payload=payload, tag=tag, **run_args) for payload in payloads]
+            request_ids = [
+                await self._create_remote_run(
+                    payload=payload,
+                    tag=self._generate_tag_from_remote_payload(payload=payload, **run_args) or tag,
+                    **run_args,
+                )
+                for payload in payloads
+            ]
 
             return self._transform_submission_result(request_ids, tag)
 
@@ -163,10 +182,38 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         Creates a fork run for the given payload and tag.
         """
 
-        request_id = await self._remote_client.create_run(
-            algorithm_parameters=self._compress_remote_payload(payload=payload)
+        algorithm_parameters = (
+            self._compress_remote_payload(payload=payload)
             if self._compress_payload
-            else DictJsonSerializationFormat().deserialize(payload.to_json().encode(encoding="utf-8")),
+            else DictJsonSerializationFormat().deserialize(payload.to_json().encode(encoding="utf-8"))
+        )
+
+        if not self._force_run:
+            run_results = self._remote_client.get_run_results(tag=tag, algorithm=self._remote_name)
+
+            run_metadata: list[RequestMetadata] = sorted(
+                [
+                    self._remote_client.get_request_metadata(request_id=result.request_id, algorithm=self._remote_name)
+                    for result in run_results
+                ],
+                key=lambda x: x.received_at,
+            )
+
+            if run_metadata:
+                self._logger.info(
+                    "Found existing runs with tag {tag} for remote algorithm {remote_algorithm}, reusing the latest "
+                    "received one with request_id: {old_request_id}."
+                    "\npayload for this request is: {algorithm_parameters}",
+                    tag=tag,
+                    remote_algorithm=self._remote_name,
+                    old_request_id=run_metadata[-1].id,
+                    algorithm_parameters=json.dumps(algorithm_parameters),
+                )
+
+                return run_metadata[-1].id
+
+        request_id = await self._remote_client.create_run(
+            algorithm_parameters=algorithm_parameters,
             algorithm_name=self._remote_name,
             custom_configuration=self._remote_config,
             parent_request=SdkParentRequest.create(
