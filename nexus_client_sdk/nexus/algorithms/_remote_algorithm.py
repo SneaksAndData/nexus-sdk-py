@@ -203,7 +203,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
                 self._logger.info(
                     "Found existing runs with tag {tag} for remote algorithm {remote_algorithm}, reusing the latest "
                     "received one with request_id: {old_request_id}."
-                    "\nJson payload skipped spawn is: {algorithm_parameters}",
+                    "\payload for this request is: {algorithm_parameters}",
                     tag=tag,
                     remote_algorithm=self._remote_name,
                     old_request_id=run_metadata[-1].id,
