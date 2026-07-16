@@ -189,11 +189,13 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         )
 
         if not self._force_run:
-            run_results = self._remote_client.get_run_results(tag=tag, algorithm=self._remote_name)
+            run_results = await self._remote_client.get_run_results(tag=tag, algorithm=self._remote_name)
 
             run_metadata: list[RequestMetadata] = sorted(
                 [
-                    self._remote_client.get_request_metadata(request_id=result.request_id, algorithm=self._remote_name)
+                    await self._remote_client.get_request_metadata(
+                        request_id=result.request_id, algorithm=self._remote_name
+                    )
                     for result in run_results
                 ],
                 key=lambda x: x.received_at,
