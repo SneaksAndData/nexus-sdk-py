@@ -104,6 +104,16 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         """
         return None
 
+    # pylint: disable=unused-argument
+    def _generate_remote_config_from_remote_payload(
+        self, payload: AlgorithmPayload, **kwargs
+    ) -> SdkCustomRunConfiguration | None:
+        """
+        Generates a SdkCustomRunConfiguration specific to a remote payload.
+        If not implemented by subclass, self.__remote_config is used as tag for all remote algorithm runs.
+        """
+        return None
+
     @abstractmethod
     def _transform_submission_result(self, request_ids: list[str], tag: str) -> AlgorithmResult:
         """
@@ -217,7 +227,8 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         request_id = await self._remote_client.create_run(
             algorithm_parameters=algorithm_parameters,
             algorithm_name=self._remote_name,
-            custom_configuration=self._remote_config,
+            custom_configuration=self._generate_remote_config_from_remote_payload(payload=payload, **run_args)
+            or self._remote_config,
             parent_request=SdkParentRequest.create(
                 algorithm_name=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name, request_id=run_args["request_id"]
             )
