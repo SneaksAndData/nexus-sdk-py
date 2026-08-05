@@ -14,15 +14,14 @@ from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
     ExternalSocketProvider,
+    SocketCollection,
 )
-from nexus_client_sdk.nexus.core.app_core import Nexus
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
+from nexus_client_sdk.nexus.core.app_core import Nexus
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
-from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
-
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
     UserTelemetry,
@@ -49,7 +48,7 @@ class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         payload: TestAlgorithmPayload,
-        _: ExternalSocketProvider,
+        socket_collection: SocketCollection,
         *readers: "InputReader",
         cache: InputCache
     ):
@@ -62,12 +61,16 @@ class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
             cache=cache,
             *readers,
         )
+        self._socket_collection = socket_collection
 
     async def _read_input(self, **_) -> pandas.DataFrame:
         self._logger.info(
             "Payload: {payload}",
             payload=self._payload.to_json(),
         )
+        assert (
+            self._socket_collection.input_socket("test").data_format == "text"
+        ), "Unexpected data format for socket 'test'"
         return pandas.DataFrame({"x": self._payload.x, "y": self._payload.y})
 
 

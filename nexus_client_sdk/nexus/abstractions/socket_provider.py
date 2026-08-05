@@ -18,7 +18,7 @@
 #
 
 import json
-import warnings
+from typing_extensions import deprecated
 from typing import final, Self, TypeVar
 
 import dynaconf
@@ -113,7 +113,7 @@ class SocketCollection:
 
 
 @final
-@warnings.deprecated("This module is deprecated and will be removed in 1.7. Use SocketCollection instead.")
+@deprecated("This module is deprecated and will be removed in 1.7. Use SocketCollection instead.")
 class ExternalSocketProvider:
     """
     Wraps a socket collection

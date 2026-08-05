@@ -51,8 +51,8 @@ class SocketOverridePayload(AlgorithmPayload):
     Algorithm payload that may provide data socket overrides
     """
 
-    input_sockets: list[InputSocket] | None = None
-    output_sockets: list[OutputSocket] | None = None
+    input_sockets: list[InputSocket] | None
+    output_sockets: list[OutputSocket] | None
 
 
 @dataclass

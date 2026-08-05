@@ -102,7 +102,6 @@ class NexusBootstrapper:
         # algorithm loading
         self._algorithm_classes: set[type[BaselineAlgorithm]] = set()
         self._algorithm_resolvers: list[Callable[[AlgorithmPayload], str]] = []
-        self._default_config = NEXUS_FRAMEWORK_CONFIGURATION.default
 
     async def _get_payload(
         self, payload_type: type[AlgorithmPayload], save_content: bool
@@ -147,13 +146,25 @@ class NexusBootstrapper:
 
     def _load_data_sockets(self) -> SocketCollection:
         base_collection = SocketCollection.empty()
-        if self._default_config.inputs.sockets and len(self._default_config.inputs.sockets) > 0:
+        if (
+            NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets
+            and len(NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets) > 0
+        ):
             base_collection = base_collection.with_inputs(
-                [InputSocket.from_dict(socket_dict) for socket_dict in self._default_config.inputs.sockets]
+                [
+                    InputSocket.from_dict(socket_dict)
+                    for socket_dict in NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets
+                ]
             )
-        if self._default_config.outputs.sockets and len(self._default_config.outputs.sockets) > 0:
+        if (
+            "outputs" in NEXUS_FRAMEWORK_CONFIGURATION.default
+            and len(NEXUS_FRAMEWORK_CONFIGURATION.default.outputs.sockets) > 0
+        ):
             base_collection = base_collection.with_outputs(
-                [OutputSocket.from_dict(socket_dict) for socket_dict in self._default_config.outputs.sockets]
+                [
+                    OutputSocket.from_dict(socket_dict)
+                    for socket_dict in NEXUS_FRAMEWORK_CONFIGURATION.default.outputs.sockets
+                ]
             )
 
         return base_collection
