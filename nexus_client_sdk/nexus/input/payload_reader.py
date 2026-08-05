@@ -16,17 +16,16 @@
 #  limitations under the License.
 #
 
-from dataclasses import dataclass
 import base64
+from dataclasses import dataclass
 from functools import partial
 from pydoc import locate
 from typing import final
 
-from adapta.process_communication import DataSocket
 from adapta.utils import session_with_retries
-
 from dataclasses_json import DataClassJsonMixin
 
+from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket, OutputSocket
 from nexus_client_sdk.nexus.async_extensions.async_exec import run_blocking
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 
@@ -52,8 +51,8 @@ class SocketOverridePayload(AlgorithmPayload):
     Algorithm payload that may provide data socket overrides
     """
 
-    input_sockets: list[DataSocket] | None = None
-    output_sockets: list[DataSocket] | None = None
+    input_sockets: list[InputSocket] | None = None
+    output_sockets: list[OutputSocket] | None = None
 
 
 @dataclass
