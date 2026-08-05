@@ -6,12 +6,14 @@ from typing import final, Callable
 from adapta.logs import LoggerInterface
 from adapta.metrics import MetricsProvider
 from adapta.metrics.providers.void_provider import VoidMetricsProvider
+from adapta.process_communication import DataSocket
 from adapta.storage.blob.base import StorageClient
 from injector import Injector, Module, singleton
 
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.nexus.abstractions.logger_factory import BootstrapLoggerFactory, LoggerFactory
 from nexus_client_sdk.nexus.abstractions.metrics_provider_factory import MetricsProviderFactory
+from nexus_client_sdk.nexus.abstractions.socket_provider import ExternalSocketProvider
 from nexus_client_sdk.nexus.algorithms import BaselineAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
@@ -30,7 +32,7 @@ from nexus_client_sdk.nexus.core.app_dependencies import (
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
-from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader, SocketOverridePayload
 from nexus_client_sdk.nexus.telemetry.payload_recorder import (
     PayloadTelemetry,
     FailedPayloadRecorder,
@@ -101,6 +103,7 @@ class NexusBootstrapper:
         # algorithm loading
         self._algorithm_classes: set[type[BaselineAlgorithm]] = set()
         self._algorithm_resolvers: list[Callable[[AlgorithmPayload], str]] = []
+        self._default_config = NEXUS_FRAMEWORK_CONFIGURATION.default
 
     async def _get_payload(
         self, payload_type: type[AlgorithmPayload], save_content: bool
@@ -142,6 +145,15 @@ class NexusBootstrapper:
         Resolves algorithm classes based on the payload received. Resolver must return a fully qualified import name for the algorithm class.
         """
         self._algorithm_resolvers.append(resolver)
+
+    def _load_socket_provider(self) -> ExternalSocketProvider:
+        base_provider = ExternalSocketProvider.empty()
+        if self._default_config.inputs.sockets and len(self._default_config.inputs.sockets) > 0:
+            base_provider = base_provider.merge_sockets(
+                [DataSocket.from_dict(socket_dict) for socket_dict in self._default_config.inputs.sockets]
+            )
+
+        return base_provider
 
     def _load_additional_modules(self):
         for additional_module in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.additional_modules:
@@ -256,6 +268,7 @@ class NexusBootstrapper:
             app_injector = extension(app_injector)
 
         payload_read_results: dict[str, AlgorithmPayloadReader] = {}
+        socket_provider = self._load_socket_provider()
 
         for payload_type in self._payload_types:
             payload, reader = await self._get_payload(
@@ -272,6 +285,18 @@ class NexusBootstrapper:
             if payload is not None:
                 for resolver in self._algorithm_resolvers:
                     self._load_algorithm(resolver(payload))
+
+                if isinstance(payload, SocketOverridePayload):
+                    socket_provider = socket_provider.merge_sockets(payload.input_sockets or []).merge_sockets(
+                        payload.output_sockets or []
+                    )
+
+        # bind fully configured socket provider instance
+        app_injector.binder.bind(
+            socket_provider.__class__,
+            to=socket_provider,
+            scope=singleton,
+        )
 
         logger_factory = LoggerFactory(
             fixed_template=logger_fixed_template,

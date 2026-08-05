@@ -67,6 +67,14 @@ class ExternalSocketProvider:
 
         raise FatalStartupConfigurationError(f"Unknown type for input sockets: {type(sockets_list)}")
 
+    def merge_sockets(self, sockets: list[DataSocket]) -> Self:
+        """
+        Adds new sockets into existing sockets and updates sockets with a matching alias
+        """
+        for socket in sockets:
+            self._sockets[socket.alias] = socket
+        return self
+
     @classmethod
     def empty(cls) -> Self:
         """
