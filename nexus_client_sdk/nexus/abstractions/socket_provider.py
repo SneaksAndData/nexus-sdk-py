@@ -31,10 +31,6 @@ from nexus_client_sdk.nexus.exceptions.startup_error import (
 _TSocket = TypeVar("_TSocket", bound=DataSocket)
 
 
-def _from_generic_socket(socket: DataSocket, _: type[_TSocket]) -> _TSocket:
-    return socket
-
-
 @final
 class InputSocket(DataSocket):
     """
