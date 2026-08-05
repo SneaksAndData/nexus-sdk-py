@@ -18,8 +18,8 @@
 #
 
 import json
-from typing_extensions import deprecated
 from typing import final, Self, TypeVar
+from typing_extensions import deprecated
 
 import dynaconf
 from adapta.process_communication import DataSocket
