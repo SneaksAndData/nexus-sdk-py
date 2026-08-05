@@ -18,10 +18,11 @@ from dataclasses_json import DataClassJsonMixin
 from nexus_client_sdk.clients.nexus_receiver_client import NexusReceiverClient
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.access_token import AccessToken
+from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.configurations.algorithm_configuration import NexusConfiguration
-from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, SocketOverridePayload
 from nexus_client_sdk.testing import generate_payload_url
 
 
@@ -42,7 +43,7 @@ class TestEnum(Enum):
 
 
 @dataclass
-class TestAlgorithmPayload(AlgorithmPayload, DataClassJsonMixin):
+class TestAlgorithmPayload(SocketOverridePayload, DataClassJsonMixin):
     x: list[int]
     y: list[int]
     z: list[int]
@@ -149,6 +150,8 @@ def payloads(
             z=_rand_range(10),
             enum_value=random.choice(list(TestEnum)),
             alg_class="tests.sample_algorithm.sample_main.TestAlgorithm",
+            input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
+            output_sockets=[],
         )
         for _ in range(10)
     ]
@@ -174,6 +177,8 @@ def negative_z_payload() -> tuple[str, str]:
             z=[0, -1, 10],
             enum_value=TestEnum.A,
             alg_class="tests.sample_algorithm.sample_main.TestAlgorithm",
+            input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
+            output_sockets=[],
         ),
         S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
     )

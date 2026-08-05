@@ -16,16 +16,16 @@
 #  limitations under the License.
 #
 
-from dataclasses import dataclass
 import base64
+from dataclasses import dataclass
 from functools import partial
 from pydoc import locate
 from typing import final
 
 from adapta.utils import session_with_retries
-
 from dataclasses_json import DataClassJsonMixin
 
+from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket, OutputSocket
 from nexus_client_sdk.nexus.async_extensions.async_exec import run_blocking
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 
@@ -43,6 +43,16 @@ class AlgorithmPayload(DataClassJsonMixin):
 
     def __post_init__(self):
         self.validate()
+
+
+@dataclass
+class SocketOverridePayload(AlgorithmPayload):
+    """
+    Algorithm payload that may provide data socket overrides
+    """
+
+    input_sockets: list[InputSocket] | None
+    output_sockets: list[OutputSocket] | None
 
 
 @dataclass

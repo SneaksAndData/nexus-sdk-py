@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Self
 
 from dataclasses_json import DataClassJsonMixin
+from typing_extensions import deprecated
 
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
@@ -25,6 +26,9 @@ from dataclasses_json import DataClassJsonMixin
 
 
 @dataclass
+@deprecated(
+    "Legacy configuration will be removed in 1.7. Please migrate your custom configurations to Dynacof TOML files."
+)
 class NexusConfiguration(DataClassJsonMixin, ABC):
     """
     Base class for algorithm configurations
