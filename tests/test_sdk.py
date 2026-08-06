@@ -57,7 +57,9 @@ async def test_sdk_run(
         result["total_executed_by_cache"] == 5 and run_meta.payload_uri
     )  # expect 1 run of each: XYSAMPLE, ZSAMPLE, ZPROCESSOR, ZZPROCESSOR, XYPROCESSOR
 
-    # TODO: Ensure no telemetry recorders fail
+    assert "Telemetry recoding failed" not in caplog.text
+    assert "Post processing task failed" not in caplog.text
+    assert "Some post-processing operations did not complete or failed" not in caplog.text
 
 
 @pytest.mark.asyncio(loop_scope="package")
