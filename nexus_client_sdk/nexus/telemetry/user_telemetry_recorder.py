@@ -116,7 +116,7 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         algorithm_payload: TPayload,
         algorithm_result: TResult,
         run_id: str,
-        **inputs: TInputs,
+        **inputs: TTelemetry,
     ) -> UserTelemetry:
         """
         Produces the dataframe to record as user-level telemetry data.
