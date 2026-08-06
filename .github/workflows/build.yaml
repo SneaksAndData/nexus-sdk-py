@@ -47,7 +47,6 @@ jobs:
       - name: Unit test
         env:
           NEXUS__SDK_LOG_LEVEL: INFO
-          ROOT_PATH_FOR_DYNACONF: ${{ github.workspace }}/tests
         run: |
           set -euxo pipefail
           
