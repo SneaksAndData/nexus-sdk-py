@@ -11,7 +11,7 @@ from pandas import DataFrame
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
-from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import UserTelemetryRecorder, UserTelemetry, TInputs
+from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import UserTelemetryRecorder, UserTelemetry, TTelemetry
 
 
 @final
