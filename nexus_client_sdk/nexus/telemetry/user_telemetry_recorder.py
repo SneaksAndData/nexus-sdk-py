@@ -70,7 +70,7 @@ class UserTelemetry:
         self._telemetry_path_segments = telemetry_path_segments
 
     @property
-    def telemetry(self) -> Iterator[pandas.DataFrame | polars.DataFrame]:
+    def telemetry(self) -> Iterator[TTelemetry]:
         """
         User telemetry data
         """
