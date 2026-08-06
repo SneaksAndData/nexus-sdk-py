@@ -38,7 +38,7 @@ from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import TPayload, TResult
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 
-TInputs = TypeVar("TInputs", pandas.DataFrame, polars.DataFrame)
+TTelemetry = TypeVar("TTelemetry", pandas.DataFrame, polars.DataFrame)
 
 
 @final
