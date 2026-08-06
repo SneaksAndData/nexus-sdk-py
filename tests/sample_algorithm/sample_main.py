@@ -26,7 +26,7 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
     UserTelemetry,
     UserTelemetryPathSegment,
-    TInputs,
+    TTelemetry,
 )
 from tests.conftest import TestAlgorithmPayload, TestAlgorithmConfiguration
 
