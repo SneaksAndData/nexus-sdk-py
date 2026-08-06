@@ -26,6 +26,7 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
     UserTelemetry,
     UserTelemetryPathSegment,
+    TTelemetry,
 )
 from tests.conftest import TestAlgorithmPayload, TestAlgorithmConfiguration
 
@@ -245,11 +246,7 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
         super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer)
 
     async def _compute(
-        self,
-        algorithm_payload: TestAlgorithmPayload,
-        algorithm_result: TestResult,
-        run_id: str,
-        **inputs: pandas.DataFrame
+        self, algorithm_payload: TestAlgorithmPayload, algorithm_result: TestResult, run_id: str, **inputs: TTelemetry
     ) -> UserTelemetry:
         return UserTelemetry(
             iter([pandas.DataFrame({"x": algorithm_payload.x, "result": algorithm_result.result()["number"]})]),
