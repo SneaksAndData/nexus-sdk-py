@@ -28,7 +28,6 @@ from injector import inject
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
-    NexusObject,
     TPayload,
     AlgorithmResult,
 )
