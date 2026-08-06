@@ -146,7 +146,7 @@ class TelemetryRecorder(NexusCoreObject):
         user_recorder: UserTelemetryRecorder,
         run_id: str,
         result: AlgorithmResult,
-        **inputs: TInputs,
+        **inputs: TTelemetry,
     ) -> Task:
         """
         Creates an awaitable task that records user telemetry using provided recorder type.
