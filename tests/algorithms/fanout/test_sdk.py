@@ -11,6 +11,7 @@ from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, use_algorithm_root
 from tests.algorithms.fanout.sample_main import main as fanout_algorithm_main
+from tests.algorithms.shared import find_telemetry_objects
 from tests.conftest import payloads_for_algorithm
 
 os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
@@ -50,3 +51,6 @@ async def test_sdk_run_fanout(
         result["total_executed_by_cache"] == 5 and run_meta.payload_uri
     )  # expect 1 run of each: XYSAMPLE, ZSAMPLE, ZPROCESSOR, ZZPROCESSOR, XYPROCESSOR
     assert len(spawned_children) == 1 and spawned_children[0].request_id
+    input_telemetry_objects, user_telemetry_objects = find_telemetry_objects(test_args.request_id)
+    assert len(input_telemetry_objects) == 3  # 3 processors injected into algorithm
+    assert len(user_telemetry_objects) == 2  # 1 user telemetry + 1 payload telemetry

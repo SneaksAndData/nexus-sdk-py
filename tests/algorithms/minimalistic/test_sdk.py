@@ -3,7 +3,6 @@ import json
 import os
 import sys
 
-import boto3
 import pytest
 import requests
 from cassandra.cluster import Session
@@ -13,6 +12,7 @@ from nexus_client_sdk.models.scheduler import RequestLifeCycleStage
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, use_algorithm_root
+from tests.algorithms.shared import find_telemetry_objects
 from tests.conftest import payloads, negative_z_payload
 from tests.algorithms.minimalistic.sample_main import main as sample_algorithm_main, NegativeZError
 
@@ -29,31 +29,6 @@ compressed_test_cases = [
     NexusDefaultArguments(sas_uri=payload_url, request_id=request_id)
     for payload_url, request_id in payloads(compress=True)
 ]
-
-
-def _find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
-    s3_client = boto3.client(
-        "s3",
-        endpoint_url=os.environ["PROTEUS__AWS_ENDPOINT"],
-        aws_access_key_id=os.environ["PROTEUS__AWS_ACCESS_KEY_ID"],
-        aws_secret_access_key=os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"],
-    )
-    input_prefix = "telemetry/telemetry_group=inputs/"
-    user_prefix = "telemetry/telemetry_group=user"
-
-    input_objects = [
-        item["Key"]
-        for item in s3_client.list_objects_v2(Bucket="nexus-sdk-tests", Prefix=input_prefix).get("Contents", [])
-        if request_id in item["Key"]
-    ]
-    user_objects = [
-        item["Key"]
-        for item in s3_client.list_objects_v2(Bucket="nexus-sdk-tests", Prefix=user_prefix).get("Contents", [])
-        if request_id in item["Key"]
-    ]
-
-    return input_objects, user_objects
-
 
 @pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.parametrize("test_args", test_cases)
@@ -77,7 +52,7 @@ async def test_sdk_run(
         result["total_executed_by_cache"] == 5 and run_meta.payload_uri
     )  # expect 1 run of each: XYSAMPLE, ZSAMPLE, ZPROCESSOR, ZZPROCESSOR, XYPROCESSOR
 
-    input_telemetry_objects, user_telemetry_objects = _find_telemetry_objects(test_args.request_id)
+    input_telemetry_objects, user_telemetry_objects = find_telemetry_objects(test_args.request_id)
     assert len(input_telemetry_objects) == 3  # 3 processors injected into algorithm
     assert len(user_telemetry_objects) == 2  # 1 user telemetry + 1 payload telemetry
 
