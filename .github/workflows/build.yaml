@@ -47,6 +47,8 @@ jobs:
       - name: Unit test
         env:
           NEXUS__SDK_LOG_LEVEL: INFO
+          ROOT_PATH_FOR_DYNACONF: ${{ github.workspace }}/tests
+          CONFIG_EXTENSION_PATH_OVERRIDE: ${{ github.workspace }}/tests/config_extensions
         run: |
           set -euxo pipefail
           
