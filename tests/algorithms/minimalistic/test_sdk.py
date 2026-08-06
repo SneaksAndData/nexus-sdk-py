@@ -2,7 +2,6 @@ import asyncio
 import json
 import os
 import sys
-from pathlib import Path
 
 import pytest
 import requests
@@ -12,6 +11,7 @@ from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.scheduler import RequestLifeCycleStage
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
+from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, use_algorithm_root
 from tests.conftest import payloads, negative_z_payload
 from tests.algorithms.minimalistic.sample_main import main as sample_algorithm_main, NegativeZError
 
@@ -30,11 +30,6 @@ compressed_test_cases = [
 ]
 
 
-runtime_config_stub = (
-    open(Path(__file__).parent / "mock_data" / "applied_configuration.json", encoding="utf-8").read().replace("\n", " ")
-)
-
-
 @pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.parametrize("test_args", test_cases)
 async def test_sdk_run(
@@ -43,12 +38,13 @@ async def test_sdk_run(
     cql_session: Session,
 ) -> None:
     algorithm = "hello-world"  # do not force load config, so bootstrapping can be covered properly
-    # create initial fake record
-    cql_session.execute(
-        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{runtime_config_stub}', '{{}}', '{{}}')"
-    )
-    sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
-    await sample_algorithm_main()
+    with use_algorithm_root("minimalistic"):
+        # create initial fake record
+        cql_session.execute(
+            f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
+        )
+        sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
+        await sample_algorithm_main()
     await asyncio.sleep(1)
     result = json.loads(requests.get(scheduler.get_run_result(test_args.request_id, algorithm).result_uri).text)
     run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
@@ -64,14 +60,15 @@ async def test_sdk_run(
 async def test_sdk_run_compressed(
     test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session
 ) -> None:
-    NEXUS_FRAMEWORK_CONFIGURATION.load()
-    algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
-    # create initial fake record
-    cql_session.execute(
-        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{runtime_config_stub}', '{{}}', '{{}}')"
-    )
-    sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
-    await sample_algorithm_main()
+    with use_algorithm_root("minimalistic"):
+        NEXUS_FRAMEWORK_CONFIGURATION.load()
+        algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
+        # create initial fake record
+        cql_session.execute(
+            f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
+        )
+        sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
+        await sample_algorithm_main()
     await asyncio.sleep(1)
 
     run_result = scheduler.get_run_result(test_args.request_id, algorithm)
@@ -87,15 +84,16 @@ async def test_sdk_run_compressed(
 
 @pytest.mark.asyncio(loop_scope="package")
 async def test_failing_reader(scheduler: NexusSchedulerClient, cql_session: Session) -> None:
-    NEXUS_FRAMEWORK_CONFIGURATION.load()
-    payload_url, request_id = negative_z_payload()
-    algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
-    # create initial fake record
-    cql_session.execute(
-        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{request_id}', 'RUNNING', '{payload_url}', '{runtime_config_stub}', '{{}}', '{{}}')"
-    )
-    sys.argv = ["", "--sas-uri", payload_url, "--request-id", request_id]
-    await sample_algorithm_main()
+    with use_algorithm_root("minimalistic"):
+        NEXUS_FRAMEWORK_CONFIGURATION.load()
+        payload_url, request_id = negative_z_payload()
+        algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
+        # create initial fake record
+        cql_session.execute(
+            f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{request_id}', 'RUNNING', '{payload_url}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
+        )
+        sys.argv = ["", "--sas-uri", payload_url, "--request-id", request_id]
+        await sample_algorithm_main()
     await asyncio.sleep(1)
     run_details = scheduler.get_request_metadata(request_id, algorithm)
     run_result = scheduler.get_run_result(request_id, algorithm)

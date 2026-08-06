@@ -53,7 +53,8 @@ class TestAlgorithmPayload(SocketOverridePayload, DataClassJsonMixin):
 
 @pytest.fixture(scope="session", autouse=True)
 def run_configuration():
-    os.environ["ROOT_PATH_FOR_DYNACONF"] = str(pathlib.Path(__file__).parent.resolve() / "algorithms" / "minimalistic")
+    if "ROOT_PATH_FOR_DYNACONF" not in os.environ:
+        os.environ["ROOT_PATH_FOR_DYNACONF"] = str(pathlib.Path(__file__).parent.resolve() / "algorithms" / "minimalistic")
     os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
     os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
     os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"] = "minioadmin"
@@ -134,7 +135,8 @@ def cql_session():
     cluster.shutdown()
 
 
-def payloads(
+def payloads_for_algorithm(
+    algorithm_class: str,
     compress: bool = False,
 ) -> list[tuple[str, str]]:
     upload_path = S3Path(bucket="nexus", path="units")
@@ -148,7 +150,7 @@ def payloads(
             y=_rand_range(10),
             z=_rand_range(10),
             enum_value=random.choice(list(TestEnum)),
-            alg_class="tests.algorithms.minimalistic.sample_main.TestAlgorithm",
+            alg_class=algorithm_class,
             input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
             output_sockets=[],
         )
@@ -165,7 +167,13 @@ def payloads(
     ]
 
 
-def negative_z_payload() -> tuple[str, str]:
+def payloads(
+    compress: bool = False,
+) -> list[tuple[str, str]]:
+    return payloads_for_algorithm("tests.algorithms.minimalistic.sample_main.TestAlgorithm", compress=compress)
+
+
+def negative_z_payload(algorithm_class: str = "tests.algorithms.minimalistic.sample_main.TestAlgorithm") -> tuple[str, str]:
     upload_path = S3Path(bucket="nexus", path="units")
 
     return generate_payload_url(
@@ -175,7 +183,7 @@ def negative_z_payload() -> tuple[str, str]:
             y=[4, 5, 6],
             z=[0, -1, 10],
             enum_value=TestEnum.A,
-            alg_class="tests.algorithms.minimalistic.sample_main.TestAlgorithm",
+            alg_class=algorithm_class,
             input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
             output_sockets=[],
         ),

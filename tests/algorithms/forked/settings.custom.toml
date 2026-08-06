@@ -1,0 +1,20 @@
+dynaconf_merge = true
+algorithm_name = "hello-world-forked"
+
+[runtime]
+algorithms = ["tests.algorithms.forked.sample_main.TestForkedAlgorithm"]
+additional_modules = [
+    "nexus_client_sdk.nexus.core.app_dependencies.QueryEnabledStoreModule",
+    "nexus_client_sdk.nexus.core.app_dependencies.ExternalSocketsModule",
+    "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
+]
+log_enrichment_function = "tests.algorithms.forked.sample_main.enrich_from_payload"
+log_tagging_function = "tests.algorithms.forked.sample_main.tags_from_payload"
+metric_tagging_function = "tests.algorithms.forked.sample_main.tag_metrics"
+configuration_types = [
+    "tests.conftest.TestAlgorithmConfiguration"
+]
+
+[runtime.payload]
+types = ["tests.conftest.TestAlgorithmPayload"]
+serialization_mode = "always"
