@@ -26,6 +26,7 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
     UserTelemetry,
     UserTelemetryPathSegment,
+    TInputs,
 )
 from tests.conftest import TestAlgorithmPayload, TestAlgorithmConfiguration
 
@@ -245,14 +246,33 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
         super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer)
 
     async def _compute(
-        self,
-        algorithm_payload: TestAlgorithmPayload,
-        algorithm_result: TestResult,
-        run_id: str,
-        **inputs: pandas.DataFrame
+        self, algorithm_payload: TestAlgorithmPayload, algorithm_result: TestResult, run_id: str, **inputs: TInputs
     ) -> UserTelemetry:
         return UserTelemetry(
             iter([pandas.DataFrame({"x": algorithm_payload.x, "result": algorithm_result.result()["number"]})]),
+            UserTelemetryPathSegment("analysis", "test-recording"),
+        )
+
+
+@singleton
+class TestRemoteAlgorithmLaunchesKeyTelemetry(UserTelemetryRecorder):
+    @inject
+    def __init__(
+        self,
+        _: TestAlgorithmConfiguration,
+        algorithm_payload: TestAlgorithmPayload,
+        metrics_provider: MetricsProvider,
+        logger_factory: LoggerFactory,
+        storage_client: StorageClient,
+        serializer: TelemetrySerializer,
+    ):
+        super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer)
+
+    async def _compute(
+        self, algorithm_payload: TestAlgorithmPayload, algorithm_result: TestResult, run_id: str, **inputs: TInputs
+    ) -> UserTelemetry:
+        return UserTelemetry(
+            iter([pandas.DataFrame({"remote_algorithm_launches": inputs["remote_algorithm_launches"]})]),
             UserTelemetryPathSegment("analysis", "test-recording"),
         )
 
@@ -283,6 +303,10 @@ async def main():
     def alg_from_payload(payload: TestAlgorithmPayload) -> str:
         return payload.alg_class
 
-    nexus = Nexus.create().with_algorithm_resolvers(alg_from_payload).on_complete(TestUserAnalyticsTelemetry)
+    nexus = (
+        Nexus.create()
+        .with_algorithm_resolvers(alg_from_payload)
+        .on_complete(TestUserAnalyticsTelemetry, TestRemoteAlgorithmLaunchesKeyTelemetry)
+    )
 
     await nexus.activate()

@@ -14,7 +14,7 @@ from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
     UserTelemetry,
-    TTelemetryInputValue,
+    TInputs,
 )
 
 
@@ -40,7 +40,7 @@ class PayloadTelemetry(UserTelemetryRecorder[str, AlgorithmResult]):
         algorithm_payload: str,
         algorithm_result: AlgorithmResult,
         run_id: str,
-        **inputs: TTelemetryInputValue,
+        **inputs: TInputs,
     ) -> UserTelemetry:
         return UserTelemetry(
             iter(
@@ -80,7 +80,7 @@ class FailedPayloadRecorder(UserTelemetryRecorder[str, AlgorithmResult]):
         algorithm_payload: str,
         algorithm_result: AlgorithmResult,
         run_id: str,
-        **inputs: TTelemetryInputValue,
+        **inputs: TInputs,
     ) -> UserTelemetry:
         return UserTelemetry(
             iter(

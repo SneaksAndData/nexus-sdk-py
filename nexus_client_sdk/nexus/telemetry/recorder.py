@@ -40,7 +40,7 @@ from nexus_client_sdk.nexus.core.serializers import (
 )
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
-    TTelemetryInputValue,
+    TInputs,
 )
 
 
@@ -146,7 +146,7 @@ class TelemetryRecorder(NexusCoreObject):
         user_recorder: UserTelemetryRecorder,
         run_id: str,
         result: AlgorithmResult,
-        **inputs: TTelemetryInputValue,
+        **inputs: TInputs,
     ) -> Task:
         """
         Creates an awaitable task that records user telemetry using provided recorder type.

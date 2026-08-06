@@ -37,7 +37,7 @@ from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import TPayload, TResult
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 
-TTelemetryInputValue = TypeVar("TTelemetryInputValue", pandas.DataFrame, polars.DataFrame, dict[str, list[str]])
+TInputs = TypeVar("TInputs", pandas.DataFrame, polars.DataFrame, dict[str, list[str]])
 
 
 @final
@@ -115,7 +115,7 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         algorithm_payload: TPayload,
         algorithm_result: TResult,
         run_id: str,
-        **inputs: TTelemetryInputValue,
+        **inputs: TInputs,
     ) -> UserTelemetry:
         """
         Produces telemetry to record as user-level telemetry data.
@@ -132,7 +132,7 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         algorithm_result: TResult,
         telemetry_base_path: str,
         run_id: str,
-        **inputs: TTelemetryInputValue,
+        **inputs: TInputs,
     ) -> None:
         """
         Record user-defined telemetry data.
