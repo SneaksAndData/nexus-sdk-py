@@ -17,6 +17,7 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import (
     SocketCollection,
 )
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.core.app_core import Nexus
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
@@ -227,6 +228,13 @@ class TestAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
         super().__init__(metrics_provider, logger_factory, xy_processor, z_processor, zz_processor, cache=cache)
 
     async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
+        assert (
+            "extra_parameters" in NEXUS_FRAMEWORK_CONFIGURATION.default
+        ), "Expected settings.test_algorithm.extra.toml to be merged into main config"
+        assert (
+            NEXUS_FRAMEWORK_CONFIGURATION.default.extra_parameters.parameter_y == "test"
+        ), "Unexpected or missing value of extra_parameters.parameter_y"
+
         return TestResult(xy, z, self._cache.total_evaluated_inputs())
 
 
