@@ -1,5 +1,5 @@
 """
- Fan-out algorithm that spawns remote algorithms without awaiting their results.
+ Shared algorithm that spawns remote algorithms without awaiting their results.
 """
 
 #  Copyright (c) 2023-2026. ECCO Data & AI and other project contributors.
