@@ -21,6 +21,7 @@ import asyncio
 import random
 from abc import abstractmethod
 from functools import partial
+from injector import inject
 
 from adapta.metrics import MetricsProvider
 from adapta.utils.decorators import run_time_metrics_async
@@ -62,6 +63,7 @@ class ForkedAlgorithm(BaselineAlgorithm[TPayload, AlgorithmResult]):
         F1_1 --> F0_3["F(0)"]
     """
 
+    @inject
     def __init__(
         self,
         metrics_provider: MetricsProvider,
@@ -151,11 +153,11 @@ class ForkedAlgorithm(BaselineAlgorithm[TPayload, AlgorithmResult]):
                 "Forking node with: {forks}, after the node run",
                 forks=",".join([fork.alias() for fork in fork_list]),
             )
-            scheduled_children: dict[asyncio.Task, RemoteAlgorithm] = {
-                await _spawn(alg, alg_ix, **kwargs): alg for alg_ix, alg in enumerate(algorithms)
+            scheduled_forks: dict[asyncio.Task, RemoteAlgorithm] = {
+                await _spawn(fork, fork_ix, **kwargs): fork for fork_ix, fork in enumerate(fork_list)
             }
             done, _ = await asyncio.wait(
-                list(scheduled_children.keys()),
+                list(scheduled_forks.keys()),
                 return_when=asyncio.ALL_COMPLETED,
             )
             for task in done:
