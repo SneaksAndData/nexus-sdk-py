@@ -327,7 +327,7 @@ class Nexus:
                             user_recorder=self._injector.get(on_complete_task_class),
                             run_id=self._run_args.request_id,
                             result=self._algorithm_run_task.result(),
-                            **algorithm.inputs,
+                            **{**algorithm.inputs, "remote_algorithm_launches": algorithm.remote_algorithm_launches},
                         )
                         for on_complete_task_class in self._on_complete_tasks
                     ]

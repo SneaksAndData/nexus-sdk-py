@@ -51,6 +51,7 @@ class BaselineAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         self._input_processors = input_processors
         self._cache = cache
         self._inputs: dict = {}
+        self._remote_algorithm_launches: dict[str, list[str]] = {}
 
     @property
     def inputs(self) -> dict:
@@ -58,6 +59,13 @@ class BaselineAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         Inputs generated for this algorithm run.
         """
         return self._inputs
+
+    @property
+    def remote_algorithm_launches(self) -> dict:
+        """
+        Remote algorithm launches generated for this algorithm run.
+        """
+        return self._remote_algorithm_launches
 
     @abstractmethod
     async def _run(self, **kwargs) -> AlgorithmResult:

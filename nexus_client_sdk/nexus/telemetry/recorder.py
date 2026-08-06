@@ -40,6 +40,7 @@ from nexus_client_sdk.nexus.core.serializers import (
 )
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
+    TelemetryInputValue,
 )
 
 
@@ -145,7 +146,7 @@ class TelemetryRecorder(NexusCoreObject):
         user_recorder: UserTelemetryRecorder,
         run_id: str,
         result: AlgorithmResult,
-        **inputs: DataFrame,
+        **inputs: TelemetryInputValue,
     ) -> Task:
         """
         Creates an awaitable task that records user telemetry using provided recorder type.
@@ -153,7 +154,7 @@ class TelemetryRecorder(NexusCoreObject):
         :param user_recorder: Recorder type to record user telemetry.
         :param run_id: The request_id to record user telemetry for.
         :param result: Result of the algorithm.
-        :param inputs: Algorithm input data.
+        :param inputs: Algorithm input kwargs and telemetry metadata kwargs.
         """
         return asyncio.create_task(
             user_recorder.record(

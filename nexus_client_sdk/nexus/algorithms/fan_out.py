@@ -104,11 +104,16 @@ class FanOutAlgorithm(BaselineAlgorithm[TPayload], ABC):
                 count=str(len(algorithms)),
                 algorithms=",".join([alg.alias() for alg in algorithms]),
             )
+
+            scheduled_children: dict[asyncio.Task, RemoteAlgorithm] = {
+                await _spawn(alg, alg_ix, **kwargs): alg for alg_ix, alg in enumerate(algorithms)
+            }
             done, _ = await asyncio.wait(
-                [await _spawn(alg, alg_ix, **kwargs) for alg_ix, alg in enumerate(algorithms)],
+                list(scheduled_children.keys()),
                 return_when=asyncio.ALL_COMPLETED,
             )
             for task in done:
+                child_algorithm = scheduled_children[task]
                 if task.exception() is not None:
                     self._logger.error(
                         "Child algorithm failed",
@@ -122,6 +127,9 @@ class FanOutAlgorithm(BaselineAlgorithm[TPayload], ABC):
                     self._metrics_provider.increment(
                         metric_name="child_algorithm_run_scheduled",
                         tags=self._metric_tags,
+                    )
+                    self._remote_algorithm_launches.setdefault(child_algorithm.remote_name, []).extend(
+                        child_algorithm.spawned_request_ids
                     )
 
             successful_rate = sum(1 for task in done if task.exception() is None) / len(done)
@@ -149,6 +157,9 @@ class FanOutAlgorithm(BaselineAlgorithm[TPayload], ABC):
         if child_algorithms:
             if NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.async_spawn_enabled == "1":
                 asyncio.create_task(_spawn_children(child_algorithms))
+                self._logger.warning(
+                    "Fan-out async spawn is enabled. Telemetry may not include completed child request IDs."
+                )
             else:
                 await _spawn_children(child_algorithms)
         else:

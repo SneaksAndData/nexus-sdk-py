@@ -22,7 +22,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import partial
-from typing import final, Generic, Iterator
+from typing import final, Generic, Iterator, TypeAlias
 
 from pandas import DataFrame
 
@@ -36,6 +36,10 @@ from injector import inject
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import TPayload, TResult
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
+
+
+TelemetryRemoteAlgorithms: TypeAlias = dict[str, list[str]]
+TelemetryInputValue: TypeAlias = DataFrame | TelemetryRemoteAlgorithms
 
 
 @final
@@ -113,10 +117,16 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         algorithm_payload: TPayload,
         algorithm_result: TResult,
         run_id: str,
-        **inputs: DataFrame,
+        **inputs: TelemetryInputValue,
     ) -> UserTelemetry:
         """
-        Produces the dataframe to record as user-level telemetry data.
+        Produces telemetry to record as user-level telemetry data.
+
+        :param algorithm_payload: Parsed payload for the current run.
+        :param algorithm_result: Result produced by the algorithm.
+        :param run_id: Request identifier for the run.
+        :param inputs: Algorithm input kwargs and telemetry metadata kwargs.
+        :return: User telemetry payload to persist.
         """
 
     async def record(
@@ -124,10 +134,15 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         algorithm_result: TResult,
         telemetry_base_path: str,
         run_id: str,
-        **inputs: DataFrame,
+        **inputs: TelemetryInputValue,
     ) -> None:
         """
         Record user-defined telemetry data.
+
+        :param algorithm_result: Result produced by the algorithm.
+        :param telemetry_base_path: Base storage path for telemetry outputs.
+        :param run_id: Request identifier for the run.
+        :param inputs: Algorithm input kwargs and telemetry metadata kwargs.
         """
 
         @run_time_metrics_async(

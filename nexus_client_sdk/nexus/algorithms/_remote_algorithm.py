@@ -89,6 +89,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         self._compress_payload = compress_payload
         self._is_hard_dependency = is_hard_dependency
         self._force_run = force_run
+        self._spawned_request_ids: list[str] = []
 
     @abstractmethod
     def _generate_tag(self, **kwargs) -> str:
@@ -130,6 +131,20 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
     def _metric_tags(self) -> dict[str, str]:
         return {"algorithm": self.__class__.alias()}
 
+    @property
+    def remote_name(self) -> str:
+        """
+        Name of the remote algorithm that this wrapper targets.
+        """
+        return self._remote_name
+
+    @property
+    def spawned_request_ids(self) -> list[str]:
+        """
+        Request IDs spawned during the latest successful run.
+        """
+        return self._spawned_request_ids
+
     def _compress_remote_payload(self, payload: AlgorithmPayload) -> dict:
         """
         Compress the payload using the specified compression algorithm.
@@ -162,6 +177,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             },
         )
         async def _measured_run(**run_args) -> AlgorithmResult:
+            self._spawned_request_ids = []
             payloads = await self._run(**run_args)
             tag = self._generate_tag(**run_args)
 
@@ -173,6 +189,8 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
                 )
                 for payload in payloads
             ]
+
+            self._spawned_request_ids = request_ids
 
             return self._transform_submission_result(request_ids, tag)
 
