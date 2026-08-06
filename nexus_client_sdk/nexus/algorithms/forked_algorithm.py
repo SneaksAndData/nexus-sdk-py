@@ -19,19 +19,20 @@
 
 import asyncio
 import random
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from functools import partial
 
 from adapta.metrics import MetricsProvider
 from adapta.utils.decorators import run_time_metrics_async
+from injector import inject
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
-    NexusObject,
     TPayload,
     AlgorithmResult,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
+from nexus_client_sdk.nexus.algorithms import BaselineAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.input_processor import (
@@ -39,7 +40,7 @@ from nexus_client_sdk.nexus.input.input_processor import (
 )
 
 
-class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
+class ForkedAlgorithm(BaselineAlgorithm[TPayload], ABC):
     """
     Forked algorithm is an algorithm that returns a result (main scenario run) and then fires off one or more forked runs
     with different configurations as specified in fork class implementation.
@@ -62,6 +63,7 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         F1_1 --> F0_3["F(0)"]
     """
 
+    @inject
     def __init__(
         self,
         metrics_provider: MetricsProvider,
@@ -69,17 +71,12 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         *input_processors: InputProcessor,
         cache: InputCache,
     ):
-        super().__init__(metrics_provider, logger_factory)
-        self._input_processors = input_processors
-        self._cache = cache
-        self._inputs: dict = {}
-
-    @property
-    def inputs(self) -> dict:
-        """
-        Inputs generated for this algorithm run.
-        """
-        return self._inputs
+        super().__init__(
+            metrics_provider,
+            logger_factory,
+            *input_processors,
+            cache=cache,
+        )
 
     @abstractmethod
     async def _get_forks(self, **kwargs) -> list[RemoteAlgorithm]:
@@ -122,10 +119,6 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         """
         Sets inputs for the forked run - if this node is **NOT** the root node
         """
-
-    @property
-    def _metric_tags(self) -> dict[str, str]:
-        return {"algorithm": self.__class__.alias()}
 
     async def run(self, **kwargs) -> AlgorithmResult:
         """
