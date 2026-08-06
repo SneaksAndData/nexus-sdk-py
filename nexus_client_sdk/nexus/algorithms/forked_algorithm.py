@@ -30,7 +30,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
     AlgorithmResult,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
-from nexus_client_sdk.nexus.algorithms._spawning_algorithm import SpawningAlgorithm
+from nexus_client_sdk.nexus.algorithms._directed_graph_algorithm import DirectedGraphAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.input_processor import (
@@ -38,7 +38,7 @@ from nexus_client_sdk.nexus.input.input_processor import (
 )
 
 
-class ForkedAlgorithm(SpawningAlgorithm[TPayload], ABC):
+class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
     """
     Forked algorithm is an algorithm that returns a result (main scenario run) and then fires off one or more forked runs
     with different configurations as specified in fork class implementation.

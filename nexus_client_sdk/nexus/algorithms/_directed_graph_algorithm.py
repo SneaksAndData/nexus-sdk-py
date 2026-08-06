@@ -28,7 +28,7 @@ from nexus_client_sdk.nexus.algorithms._baseline_algorithm import BaselineAlgori
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
 
 
-class SpawningAlgorithm(BaselineAlgorithm[TPayload], ABC):
+class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload], ABC):
     """
     Base class for all algorithm implementations which spawns remote algorithms.
     """
