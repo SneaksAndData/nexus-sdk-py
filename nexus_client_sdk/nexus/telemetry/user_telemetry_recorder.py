@@ -63,7 +63,7 @@ class UserTelemetry:
 
     def __init__(
         self,
-        telemetry: Iterator[pandas.DataFrame | polars.DataFrame],
+        telemetry: Iterator[TTelemetry],
         *telemetry_path_segments: UserTelemetryPathSegment,
     ):
         self._telemetry = telemetry
