@@ -40,7 +40,7 @@ from nexus_client_sdk.nexus.core.serializers import (
 )
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
-    TInputs,
+    TTelemetry,
 )
 
 
