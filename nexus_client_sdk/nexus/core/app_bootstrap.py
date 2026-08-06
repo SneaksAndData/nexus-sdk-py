@@ -1,3 +1,5 @@
+import glob
+import os
 from datetime import datetime
 from enum import Enum
 from pydoc import locate
@@ -7,6 +9,7 @@ from adapta.logs import LoggerInterface
 from adapta.metrics import MetricsProvider
 from adapta.metrics.providers.void_provider import VoidMetricsProvider
 from adapta.storage.blob.base import StorageClient
+from dynaconf.loaders import settings_loader
 from injector import Injector, Module, singleton
 
 from nexus_client_sdk.models.access_token import AccessToken
@@ -224,6 +227,17 @@ class NexusBootstrapper:
         if algorithm_class is None:
             raise FatalStartupConfigurationError(f"Failed to locate a provided algorithm class: {algorithm}")
         self._algorithm_classes.add(algorithm_class)
+        # load linked configuration if exists
+        config_location = os.path.join(
+            os.getenv("CONFIG_EXTENSION_PATH_OVERRIDE", "config_extensions"),
+            "**",
+            f"settings.{algorithm_class.alias()}*.toml",
+        )
+        matching_configurations = [
+            os.path.abspath(conf) for conf in glob.glob(config_location, recursive=True) if os.path.isfile(conf)
+        ]
+        for matching_config in matching_configurations:
+            settings_loader(NEXUS_FRAMEWORK_CONFIGURATION.default, filename=matching_config)
 
     def _load_configured_algorithms(self):
         for algorithm in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.algorithms:
