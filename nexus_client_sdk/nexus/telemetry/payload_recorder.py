@@ -11,7 +11,7 @@ from pandas import DataFrame
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
-from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import UserTelemetryRecorder, UserTelemetry
+from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import UserTelemetryRecorder, UserTelemetry, TInputs
 
 
 @final
@@ -32,7 +32,7 @@ class PayloadTelemetry(UserTelemetryRecorder[str, AlgorithmResult]):
         super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer)
 
     async def _compute(
-        self, algorithm_payload: str, algorithm_result: AlgorithmResult, run_id: str, **inputs: DataFrame
+        self, algorithm_payload: str, algorithm_result: AlgorithmResult, run_id: str, **inputs: TInputs
     ) -> UserTelemetry:
         return UserTelemetry(
             iter(
@@ -68,7 +68,7 @@ class FailedPayloadRecorder(UserTelemetryRecorder[str, AlgorithmResult]):
         super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer)
 
     async def _compute(
-        self, algorithm_payload: str, algorithm_result: AlgorithmResult, run_id: str, **inputs: DataFrame
+        self, algorithm_payload: str, algorithm_result: AlgorithmResult, run_id: str, **inputs: TInputs
     ) -> UserTelemetry:
         return UserTelemetry(
             iter(

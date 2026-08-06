@@ -37,7 +37,12 @@ runtime_config_stub = (
 
 @pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.parametrize("test_args", test_cases)
-async def test_sdk_run(test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session) -> None:
+async def test_sdk_run(
+    test_args: NexusDefaultArguments,
+    scheduler: NexusSchedulerClient,
+    cql_session: Session,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     algorithm = "hello-world"  # do not force load config, so bootstrapping can be covered properly
     # create initial fake record
     cql_session.execute(
@@ -51,6 +56,11 @@ async def test_sdk_run(test_args: NexusDefaultArguments, scheduler: NexusSchedul
     assert (
         result["total_executed_by_cache"] == 5 and run_meta.payload_uri
     )  # expect 1 run of each: XYSAMPLE, ZSAMPLE, ZPROCESSOR, ZZPROCESSOR, XYPROCESSOR
+
+    # Ensure no telemetry recorders fail
+    for record in caplog.records:
+        if "Post processing task failed" in record.message:
+            pytest.fail(f"Telemetry failure captured: {record.message}")
 
 
 @pytest.mark.asyncio(loop_scope="package")
