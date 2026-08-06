@@ -1,0 +1,5 @@
+dynaconf_merge = true
+
+[extra_parameters]
+parameter_x = 1
+parameter_y = "test"
