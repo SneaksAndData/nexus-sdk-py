@@ -6,8 +6,8 @@ from adapta.metrics import MetricsProvider
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
-from nexus_client_sdk.nexus.algorithms import ForkedAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
+from nexus_client_sdk.nexus.algorithms.forked_algorithm import ForkedAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.core.app_core import Nexus
 from tests.conftest import TestAlgorithmPayload
