@@ -1,5 +1,5 @@
 from nexus_client_sdk.nexus.execution.trees import get_tree
-from tests.sample_algorithm.sample_main import TestAlgorithm
+from tests.algorithm.minimalistic.sample_main import TestAlgorithm
 
 
 def test_tree_generation():

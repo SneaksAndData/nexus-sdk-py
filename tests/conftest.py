@@ -53,8 +53,7 @@ class TestAlgorithmPayload(SocketOverridePayload, DataClassJsonMixin):
 
 @pytest.fixture(scope="session", autouse=True)
 def run_configuration():
-    if "ROOT_PATH_FOR_DYNACONF" not in os.environ:
-        os.environ["ROOT_PATH_FOR_DYNACONF"] = str(pathlib.Path(__file__).parent.resolve())
+    os.environ["ROOT_PATH_FOR_DYNACONF"] = str(pathlib.Path(__file__).parent.resolve() / "algorithm" / "minimalistic")
     os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
     os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
     os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"] = "minioadmin"
@@ -149,7 +148,7 @@ def payloads(
             y=_rand_range(10),
             z=_rand_range(10),
             enum_value=random.choice(list(TestEnum)),
-            alg_class="tests.sample_algorithm.sample_main.TestAlgorithm",
+            alg_class="tests.algorithm.minimalistic.sample_main.TestAlgorithm",
             input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
             output_sockets=[],
         )
@@ -176,7 +175,7 @@ def negative_z_payload() -> tuple[str, str]:
             y=[4, 5, 6],
             z=[0, -1, 10],
             enum_value=TestEnum.A,
-            alg_class="tests.sample_algorithm.sample_main.TestAlgorithm",
+            alg_class="tests.algorithm.minimalistic.sample_main.TestAlgorithm",
             input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
             output_sockets=[],
         ),

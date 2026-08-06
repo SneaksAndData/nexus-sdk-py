@@ -13,7 +13,7 @@ from nexus_client_sdk.models.scheduler import RequestLifeCycleStage
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from tests.conftest import payloads, negative_z_payload
-from tests.sample_algorithm.sample_main import main as sample_algorithm_main, NegativeZError
+from tests.algorithm.minimalistic.sample_main import main as sample_algorithm_main, NegativeZError
 
 os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
 os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
