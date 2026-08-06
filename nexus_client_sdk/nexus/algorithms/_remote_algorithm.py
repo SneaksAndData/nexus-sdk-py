@@ -177,7 +177,6 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             },
         )
         async def _measured_run(**run_args) -> AlgorithmResult:
-            self._spawned_request_ids = []
             payloads = await self._run(**run_args)
             tag = self._generate_tag(**run_args)
 
