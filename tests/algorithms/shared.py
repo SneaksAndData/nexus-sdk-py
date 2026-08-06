@@ -2,6 +2,17 @@ import os
 
 import boto3
 
+from tests.algorithms.minimalistic.sample_main import (
+    XYProcessor,
+    ZProcessor,
+    ZZProcessor,
+    TestResult,
+    TestUserAnalyticsTelemetry,
+    tags_from_payload,
+    enrich_from_payload,
+    tag_metrics,
+)
+
 
 def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
     s3_client = boto3.client(

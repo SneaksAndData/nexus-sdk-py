@@ -11,7 +11,7 @@ from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.core.app_core import Nexus
 from tests.conftest import TestAlgorithmPayload
-from tests.algorithms.minimalistic.sample_main import (
+from tests.algorithms.shared import (
     XYProcessor,
     ZProcessor,
     ZZProcessor,
