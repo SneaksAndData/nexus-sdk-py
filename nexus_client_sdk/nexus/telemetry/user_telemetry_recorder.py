@@ -22,9 +22,10 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import partial
-from typing import final, Generic, Iterator
+from typing import final, Generic, Iterator, TypeVar
 
-from pandas import DataFrame
+import pandas
+import polars
 
 from adapta.process_communication import DataSocket
 from adapta.storage.blob.base import StorageClient
@@ -36,6 +37,8 @@ from injector import inject
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import TPayload, TResult
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
+
+TTelemetry = TypeVar("TTelemetry", pandas.DataFrame, polars.DataFrame)
 
 
 @final
@@ -60,14 +63,14 @@ class UserTelemetry:
 
     def __init__(
         self,
-        telemetry: Iterator[DataFrame],
+        telemetry: Iterator[TTelemetry],
         *telemetry_path_segments: UserTelemetryPathSegment,
     ):
         self._telemetry = telemetry
         self._telemetry_path_segments = telemetry_path_segments
 
     @property
-    def telemetry(self) -> Iterator[DataFrame]:
+    def telemetry(self) -> Iterator[TTelemetry]:
         """
         User telemetry data
         """
@@ -113,7 +116,7 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         algorithm_payload: TPayload,
         algorithm_result: TResult,
         run_id: str,
-        **inputs: DataFrame,
+        **inputs: TTelemetry,
     ) -> UserTelemetry:
         """
         Produces the dataframe to record as user-level telemetry data.
@@ -124,7 +127,7 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         algorithm_result: TResult,
         telemetry_base_path: str,
         run_id: str,
-        **inputs: DataFrame,
+        **inputs: TTelemetry,
     ) -> None:
         """
         Record user-defined telemetry data.
