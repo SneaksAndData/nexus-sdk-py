@@ -246,7 +246,7 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
         super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer)
 
     async def _compute(
-        self, algorithm_payload: TestAlgorithmPayload, algorithm_result: TestResult, run_id: str, **inputs: TInputs
+        self, algorithm_payload: TestAlgorithmPayload, algorithm_result: TestResult, run_id: str, **inputs: TTelemetry
     ) -> UserTelemetry:
         return UserTelemetry(
             iter([pandas.DataFrame({"x": algorithm_payload.x, "result": algorithm_result.result()["number"]})]),
