@@ -229,10 +229,10 @@ class NexusBootstrapper:
         self._algorithm_classes.add(algorithm_class)
         # load linked configuration if exists
         config_location = os.path.join(
-        os.getenv("CONFIG_EXTENSION_PATH_OVERRIDE", "config_extensions"),
-        "**", 
-        f"settings.{algorithm_class.alias()}*.toml"
-)
+            os.getenv("CONFIG_EXTENSION_PATH_OVERRIDE", "config_extensions"),
+            "**",
+            f"settings.{algorithm_class.alias()}*.toml",
+        )
         matching_configurations = [
             os.path.abspath(conf) for conf in glob.glob(config_location, recursive=True) if os.path.isfile(conf)
         ]
