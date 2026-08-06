@@ -127,7 +127,7 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         algorithm_result: TResult,
         telemetry_base_path: str,
         run_id: str,
-        **inputs: TInputs,
+        **inputs: TTelemetry,
     ) -> None:
         """
         Record user-defined telemetry data.
