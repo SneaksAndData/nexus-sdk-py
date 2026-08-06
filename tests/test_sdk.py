@@ -2,8 +2,10 @@ import asyncio
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
+import boto3
 import pytest
 import requests
 from cassandra.cluster import Session
@@ -35,6 +37,37 @@ runtime_config_stub = (
 )
 
 
+def _find_telemetry_objects(request_id: str, timeout_s: int = 10) -> tuple[list[str], list[str]]:
+    s3_client = boto3.client(
+        "s3",
+        endpoint_url=os.environ["PROTEUS__AWS_ENDPOINT"],
+        aws_access_key_id=os.environ["PROTEUS__AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"],
+    )
+    input_prefix = "telemetry/telemetry_group=inputs/"
+    user_prefix = (
+        "telemetry/telemetry_group=user/recorder_class=test_user_analytics_telemetry/"
+        f"analysis=test-recording/{request_id}_"
+    )
+
+    end_time = time.time() + timeout_s
+    while True:
+        input_objects = [
+            item["Key"]
+            for item in s3_client.list_objects_v2(Bucket="nexus-sdk-tests", Prefix=input_prefix).get("Contents", [])
+            if item["Key"].endswith(f"/{request_id}")
+        ]
+        user_objects = [
+            item["Key"]
+            for item in s3_client.list_objects_v2(Bucket="nexus-sdk-tests", Prefix=user_prefix).get("Contents", [])
+        ]
+        if input_objects and user_objects:
+            return input_objects, user_objects
+        if time.time() >= end_time:
+            return input_objects, user_objects
+        time.sleep(1)
+
+
 @pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.parametrize("test_args", test_cases)
 async def test_sdk_run(
@@ -56,7 +89,8 @@ async def test_sdk_run(
         result["total_executed_by_cache"] == 5 and run_meta.payload_uri
     )  # expect 1 run of each: XYSAMPLE, ZSAMPLE, ZPROCESSOR, ZZPROCESSOR, XYPROCESSOR
 
-    # TODO: Ensure no telemetry recorders fail
+    input_telemetry_objects, user_telemetry_objects = _find_telemetry_objects(test_args.request_id)
+    assert input_telemetry_objects and user_telemetry_objects
 
 
 @pytest.mark.asyncio(loop_scope="package")
