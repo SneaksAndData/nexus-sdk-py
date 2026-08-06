@@ -2,7 +2,6 @@ import asyncio
 import json
 import os
 import sys
-import time
 from pathlib import Path
 
 import boto3
@@ -37,7 +36,7 @@ runtime_config_stub = (
 )
 
 
-def _find_telemetry_objects(request_id: str, timeout_s: int = 10) -> tuple[list[str], list[str]]:
+def _find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
     s3_client = boto3.client(
         "s3",
         endpoint_url=os.environ["PROTEUS__AWS_ENDPOINT"],
@@ -50,22 +49,16 @@ def _find_telemetry_objects(request_id: str, timeout_s: int = 10) -> tuple[list[
         f"analysis=test-recording/{request_id}_"
     )
 
-    end_time = time.time() + timeout_s
-    while True:
-        input_objects = [
-            item["Key"]
-            for item in s3_client.list_objects_v2(Bucket="nexus-sdk-tests", Prefix=input_prefix).get("Contents", [])
-            if item["Key"].endswith(f"/{request_id}")
-        ]
-        user_objects = [
-            item["Key"]
-            for item in s3_client.list_objects_v2(Bucket="nexus-sdk-tests", Prefix=user_prefix).get("Contents", [])
-        ]
-        if input_objects and user_objects:
-            return input_objects, user_objects
-        if time.time() >= end_time:
-            return input_objects, user_objects
-        time.sleep(1)
+    input_objects = [
+        item["Key"]
+        for item in s3_client.list_objects_v2(Bucket="nexus-sdk-tests", Prefix=input_prefix).get("Contents", [])
+        if item["Key"].endswith(f"/{request_id}")
+    ]
+    user_objects = [
+        item["Key"] for item in s3_client.list_objects_v2(Bucket="nexus-sdk-tests", Prefix=user_prefix).get("Contents", [])
+    ]
+
+    return input_objects, user_objects
 
 
 @pytest.mark.asyncio(loop_scope="package")
@@ -90,7 +83,7 @@ async def test_sdk_run(
     )  # expect 1 run of each: XYSAMPLE, ZSAMPLE, ZPROCESSOR, ZZPROCESSOR, XYPROCESSOR
 
     input_telemetry_objects, user_telemetry_objects = _find_telemetry_objects(test_args.request_id)
-    assert input_telemetry_objects and user_telemetry_objects
+    assert input_telemetry_objects and len(user_telemetry_objects) == 1
 
 
 @pytest.mark.asyncio(loop_scope="package")
