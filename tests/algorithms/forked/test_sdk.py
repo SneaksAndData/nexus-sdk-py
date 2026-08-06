@@ -43,7 +43,10 @@ async def test_sdk_run_forked(
     await asyncio.sleep(1)
     result = json.loads(requests.get(scheduler.get_run_result(test_args.request_id, algorithm).result_uri).text)
     run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
+    spawned_fork_tag = f"forked-child-{test_args.request_id}"
+    spawned_forks = list(scheduler.get_run_results(spawned_fork_tag, "hello-world"))
 
     assert (
         result["total_executed_by_cache"] == 5 and run_meta.payload_uri
     )  # expect 1 run of each: XYSAMPLE, ZSAMPLE, ZPROCESSOR, ZZPROCESSOR, XYPROCESSOR
+    assert len(spawned_forks) == 1 and spawned_forks[0].request_id

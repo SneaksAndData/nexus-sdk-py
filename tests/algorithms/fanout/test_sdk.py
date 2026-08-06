@@ -43,7 +43,10 @@ async def test_sdk_run_fanout(
     await asyncio.sleep(1)
     result = json.loads(requests.get(scheduler.get_run_result(test_args.request_id, algorithm).result_uri).text)
     run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
+    spawned_child_tag = f"fanout-child-{test_args.request_id}"
+    spawned_children = list(scheduler.get_run_results(spawned_child_tag, "hello-world"))
 
     assert (
         result["total_executed_by_cache"] == 5 and run_meta.payload_uri
     )  # expect 1 run of each: XYSAMPLE, ZSAMPLE, ZPROCESSOR, ZZPROCESSOR, XYPROCESSOR
+    assert len(spawned_children) == 1 and spawned_children[0].request_id
