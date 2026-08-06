@@ -6,7 +6,7 @@ algorithm_name = "hello-world"
 [runtime]
 
 # Nexus algorithm implementations to activate. At least one must be supplied
-algorithms = ["tests.algorithm.minimalistic.sample_main.TestAlgorithm"]
+algorithms = ["tests.algorithms.minimalistic.sample_main.TestAlgorithm"]
 
 # additional modules for the DI container
 # use these to provide custom services
@@ -18,15 +18,15 @@ additional_modules = [
 
 # optional function that applies additional context to all logs emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-log_enrichment_function = "tests.algorithm.minimalistic.sample_main.enrich_from_payload"
+log_enrichment_function = "tests.algorithms.minimalistic.sample_main.enrich_from_payload"
 
 # optional function that applies additional tags (as metadata) to all logs emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-log_tagging_function = "tests.algorithm.minimalistic.sample_main.tags_from_payload"
+log_tagging_function = "tests.algorithms.minimalistic.sample_main.tags_from_payload"
 
 # optional function that applies additional tagging to all metrics emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-metric_tagging_function = "tests.algorithm.minimalistic.sample_main.tag_metrics"
+metric_tagging_function = "tests.algorithms.minimalistic.sample_main.tag_metrics"
 
 configuration_types = [
     "tests.conftest.TestAlgorithmConfiguration"

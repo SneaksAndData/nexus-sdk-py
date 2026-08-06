@@ -81,7 +81,7 @@ type code, such as variable reassignment, frequent data copying due to lack of r
 Nexus's design makes life even easier when using AI code generation, as it is essentially a framework an AI agent can follow to generate a working data science pipeline. Nexus takes care of result accounting, error handling, logging, metric reporting and, most importantly, *execution flow*. A key feature in Nexus is automatic resolution of execution graph via **dependency injection**.
 In essence, a developer just needs to specify which inputs are required for an algorithm to run, and provide class implementations for this, and Nexus will take care of the rest. This also implies that whether an IO operation happens, such as a database read or a file load, Nexus will utilize `asyncio` coroutines to run multiple IO ops in parallel, significantly increasing the execution speed, without any need for a developer to understand async programming.
 
-For a example of how to use Nexus, take a look at a [Sample Algorithm](tests/algorithm/minimalistic) and a corresponding [test configuration](tests/conftest.py) and a [test](tests/test_sdk.py) itself.
+For a example of how to use Nexus, take a look at a [Sample Algorithm](tests/algorithms/minimalistic) and a corresponding [test configuration](tests/conftest.py) and a [test](tests/algorithms/minimalistic/test_sdk.py) itself.
 
 ### Execution tree
 
@@ -89,7 +89,7 @@ Nexus provides a set of utilities that allow viewing and inspecting the executio
 
 ```python
 from nexus_client_sdk.nexus.execution.trees import get_tree
-from tests.algorithm.minimalistic.sample_main import TestAlgorithm
+from tests.algorithms.minimalistic.sample_main import TestAlgorithm
 
 print(get_tree(TestAlgorithm).serialize())
 
