@@ -41,7 +41,6 @@ async def test_sdk_run(
     test_args: NexusDefaultArguments,
     scheduler: NexusSchedulerClient,
     cql_session: Session,
-    caplog: pytest.LogCaptureFixture,
 ) -> None:
     algorithm = "hello-world"  # do not force load config, so bootstrapping can be covered properly
     # create initial fake record
