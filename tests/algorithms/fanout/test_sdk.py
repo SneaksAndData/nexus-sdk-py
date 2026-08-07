@@ -25,6 +25,23 @@ fanout_test_cases = [
 ]
 
 
+async def _wait_for_tagged_results(
+    scheduler: NexusSchedulerClient,
+    tag: str,
+    algorithm: str,
+    timeout_seconds: float = 10.0,
+    poll_interval_seconds: float = 0.5,
+):
+    deadline = asyncio.get_running_loop().time() + timeout_seconds
+    while True:
+        results = list(scheduler.get_run_results(tag, algorithm))
+        if results:
+            return results
+        if asyncio.get_running_loop().time() >= deadline:
+            return results
+        await asyncio.sleep(poll_interval_seconds)
+
+
 @pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.parametrize("test_args", fanout_test_cases)
 async def test_sdk_run_fanout(
@@ -45,7 +62,7 @@ async def test_sdk_run_fanout(
     result = json.loads(requests.get(scheduler.get_run_result(test_args.request_id, algorithm).result_uri).text)
     run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
     spawned_child_tag = f"fanout-child-{test_args.request_id}"
-    spawned_children = list(scheduler.get_run_results(spawned_child_tag, "hello-world"))
+    spawned_children = await _wait_for_tagged_results(scheduler, spawned_child_tag, "hello-world")
 
     assert (
         result["total_executed_by_cache"] == 5 and run_meta.payload_uri
