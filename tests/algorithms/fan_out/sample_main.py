@@ -1,0 +1,156 @@
+from dataclasses import dataclass
+
+import pandas
+from adapta.metrics import MetricsProvider
+from injector import inject, singleton
+
+from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
+from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
+from nexus_client_sdk.nexus.algorithms import FanOutAlgorithm, RemoteAlgorithm
+from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.core.app_core import Nexus
+from tests.algorithms.shared import (
+    XYProcessor,
+    ZProcessor,
+    ZZProcessor,
+    TestResult,
+    TestUserAnalyticsTelemetry as SharedTestUserAnalyticsTelemetry,
+    tags_from_payload as shared_tags_from_payload,
+    enrich_from_payload as shared_enrich_from_payload,
+    tag_metrics as shared_tag_metrics,
+    TestAlgorithmPayload,
+)
+
+
+class TestUserAnalyticsTelemetry(SharedTestUserAnalyticsTelemetry):
+    pass
+
+
+def tags_from_payload(payload: TestAlgorithmPayload, run_args):
+    return shared_tags_from_payload(payload, run_args)
+
+
+def enrich_from_payload(payload: TestAlgorithmPayload, run_args):
+    return shared_enrich_from_payload(payload, run_args)
+
+
+def tag_metrics(payload: TestAlgorithmPayload, run_args):
+    return shared_tag_metrics(payload, run_args)
+
+
+@dataclass
+class FanOutRemoteSpawnResult(AlgorithmResult):
+    request_ids: list[str]
+    tag: str
+
+    def result(self) -> dict:
+        return {"request_ids": self.request_ids, "tag": self.tag}
+
+    def to_kwargs(self) -> dict:
+        return {}
+
+
+@singleton
+class FanOutChildRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
+    @inject
+    def __init__(
+        self,
+        metrics_provider: MetricsProvider,
+        logger_factory: LoggerFactory,
+        remote_client: NexusSchedulerAsyncClient,
+        payload: TestAlgorithmPayload,
+        cache: InputCache,
+    ):
+        super().__init__(
+            metrics_provider,
+            logger_factory,
+            remote_client,
+            NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.remote_name,
+            is_hard_dependency=True,
+            cache=cache,
+        )
+        self._payload = payload
+
+    async def _context_open(self):
+        pass
+
+    async def _context_close(self):
+        pass
+
+    def _generate_tag(self, request_id: str, **kwargs) -> str:
+        return f"{NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.remote_tag_prefix}-{request_id}"
+
+    async def _run(self, **kwargs) -> list[TestAlgorithmPayload]:
+        payload = TestAlgorithmPayload.from_dict(
+            {
+                **self._payload.to_dict(),
+                "alg_class": "tests.algorithms.minimalistic.sample_main.TestAlgorithm",
+            }
+        )
+        return [payload]
+
+    def _transform_submission_result(self, request_ids: list[str], tag: str) -> AlgorithmResult:
+        return FanOutRemoteSpawnResult(request_ids=request_ids, tag=tag)
+
+
+@singleton
+class TestAlgorithm(FanOutAlgorithm[TestAlgorithmPayload]):
+    async def _context_open(self):
+        pass
+
+    async def _context_close(self):
+        pass
+
+    @inject
+    def __init__(
+        self,
+        metrics_provider: MetricsProvider,
+        logger_factory: LoggerFactory,
+        remote_client: NexusSchedulerAsyncClient,
+        payload: TestAlgorithmPayload,
+        xy_processor: XYProcessor,
+        z_processor: ZProcessor,
+        zz_processor: ZZProcessor,
+        cache: InputCache,
+    ):
+        super().__init__(metrics_provider, logger_factory, xy_processor, z_processor, zz_processor, cache=cache)
+        self._logger_factory = logger_factory
+        self._remote_client = remote_client
+        self._payload = payload
+
+    async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
+        assert (
+            "extra_parameters" in NEXUS_FRAMEWORK_CONFIGURATION.default
+        ), "Expected settings.test_algorithm.extra.toml to be merged into main config"
+        assert (
+            NEXUS_FRAMEWORK_CONFIGURATION.default.extra_parameters.parameter_y == "test"
+        ), "Unexpected or missing value of extra_parameters.parameter_y"
+
+        return TestResult(xy, z, self._cache.total_evaluated_inputs())
+
+    async def _get_branches(self, **kwargs) -> list[RemoteAlgorithm]:
+        return [
+            FanOutChildRemoteAlgorithm(
+                metrics_provider=self._metrics_provider,
+                logger_factory=self._logger_factory,
+                remote_client=self._remote_client,
+                payload=self._payload,
+                cache=self._cache,
+            )
+        ]
+
+
+async def main():
+    """
+    Main entry point.
+    :return:
+    """
+
+    def alg_from_payload(payload: TestAlgorithmPayload) -> str:
+        return payload.alg_class
+
+    nexus = Nexus.create().with_algorithm_resolvers(alg_from_payload).on_complete(TestUserAnalyticsTelemetry)
+
+    await nexus.activate()
