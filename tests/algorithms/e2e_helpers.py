@@ -4,9 +4,11 @@ from pathlib import Path
 
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 
-RUNTIME_CONFIG_STUB = (Path(__file__).parent.parent / "mock_data" / "applied_configuration.json").read_text(
-    encoding="utf-8"
-).replace("\n", " ")
+RUNTIME_CONFIG_STUB = (
+    (Path(__file__).parent.parent / "mock_data" / "applied_configuration.json")
+    .read_text(encoding="utf-8")
+    .replace("\n", " ")
+)
 
 
 @contextmanager

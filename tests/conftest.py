@@ -54,7 +54,9 @@ class TestAlgorithmPayload(SocketOverridePayload, DataClassJsonMixin):
 @pytest.fixture(scope="session", autouse=True)
 def run_configuration():
     if "ROOT_PATH_FOR_DYNACONF" not in os.environ:
-        os.environ["ROOT_PATH_FOR_DYNACONF"] = str(pathlib.Path(__file__).parent.resolve() / "algorithms" / "minimalistic")
+        os.environ["ROOT_PATH_FOR_DYNACONF"] = str(
+            pathlib.Path(__file__).parent.resolve() / "algorithms" / "minimalistic"
+        )
     os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
     os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
     os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"] = "minioadmin"
@@ -173,7 +175,9 @@ def payloads(
     return payloads_for_algorithm("tests.algorithms.minimalistic.sample_main.TestAlgorithm", compress=compress)
 
 
-def negative_z_payload(algorithm_class: str = "tests.algorithms.minimalistic.sample_main.TestAlgorithm") -> tuple[str, str]:
+def negative_z_payload(
+    algorithm_class: str = "tests.algorithms.minimalistic.sample_main.TestAlgorithm",
+) -> tuple[str, str]:
     upload_path = S3Path(bucket="nexus", path="units")
 
     return generate_payload_url(

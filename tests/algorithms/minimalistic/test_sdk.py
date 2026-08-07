@@ -30,6 +30,7 @@ compressed_test_cases = [
     for payload_url, request_id in payloads(compress=True)
 ]
 
+
 @pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.parametrize("test_args", test_cases)
 async def test_sdk_run(

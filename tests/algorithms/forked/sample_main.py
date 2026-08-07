@@ -16,11 +16,27 @@ from tests.algorithms.shared import (
     ZProcessor,
     ZZProcessor,
     TestResult,
-    TestUserAnalyticsTelemetry,
-    tags_from_payload,
-    enrich_from_payload,
-    tag_metrics,
+    TestUserAnalyticsTelemetry as SharedTestUserAnalyticsTelemetry,
+    tags_from_payload as shared_tags_from_payload,
+    enrich_from_payload as shared_enrich_from_payload,
+    tag_metrics as shared_tag_metrics,
 )
+
+
+class TestUserAnalyticsTelemetry(SharedTestUserAnalyticsTelemetry):
+    pass
+
+
+def tags_from_payload(payload: TestAlgorithmPayload, run_args):
+    return shared_tags_from_payload(payload, run_args)
+
+
+def enrich_from_payload(payload: TestAlgorithmPayload, run_args):
+    return shared_enrich_from_payload(payload, run_args)
+
+
+def tag_metrics(payload: TestAlgorithmPayload, run_args):
+    return shared_tag_metrics(payload, run_args)
 
 
 @dataclass
@@ -121,6 +137,12 @@ class TestForkedAlgorithm(ForkedAlgorithm[TestAlgorithmPayload]):
 
     async def _fork_inputs(self, **kwargs) -> dict:
         return await self._default_inputs(**kwargs)
+
+    async def _run(self, **kwargs) -> AlgorithmResult:
+        if await self._is_forked(**kwargs):
+            return await self._fork_run(**kwargs)
+
+        return await self._main_run(**kwargs)
 
 
 async def main():
