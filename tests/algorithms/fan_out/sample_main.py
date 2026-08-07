@@ -60,8 +60,8 @@ class FanOutChildRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
     async def _context_close(self):
         pass
 
-    def _generate_tag(self, request_id: str, **kwargs) -> str:
-        return f"fanout-child-{request_id}"
+    def _generate_tag(self, **kwargs) -> str:
+        return f"fanout-child-{kwargs['request_id']}"
 
     async def _run(self, **kwargs) -> list[TestAlgorithmPayload]:
         payload = TestAlgorithmPayload.from_dict(
@@ -77,7 +77,7 @@ class FanOutChildRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
 
 
 @singleton
-class TestAlgorithm(FanOutAlgorithm[TestAlgorithmPayload]):
+class TestFanOutAlgorithm(FanOutAlgorithm[TestAlgorithmPayload]):
     async def _context_open(self):
         pass
 
@@ -121,17 +121,3 @@ class TestAlgorithm(FanOutAlgorithm[TestAlgorithmPayload]):
                 cache=self._cache,
             )
         ]
-
-
-async def main():
-    """
-    Main entry point.
-    :return:
-    """
-
-    def alg_from_payload(payload: TestAlgorithmPayload) -> str:
-        return payload.alg_class
-
-    nexus = Nexus.create().with_algorithm_resolvers(alg_from_payload).on_complete(TestUserAnalyticsTelemetry)
-
-    await nexus.activate()

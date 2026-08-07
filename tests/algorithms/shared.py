@@ -25,6 +25,7 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import (
     ExternalSocketProvider,
 )
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.core.app_core import Nexus
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
@@ -317,3 +318,17 @@ def tag_metrics(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict
     return {
         "y_tag": str(sum(payload.y)),
     }
+
+
+async def main():
+    """
+    Main entry point.
+    :return:
+    """
+
+    def alg_from_payload(payload: TestAlgorithmPayload) -> str:
+        return payload.alg_class
+
+    nexus = Nexus.create().with_algorithm_resolvers(alg_from_payload).on_complete(TestUserAnalyticsTelemetry)
+
+    await nexus.activate()

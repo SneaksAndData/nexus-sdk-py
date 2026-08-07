@@ -15,7 +15,7 @@ from tests.algorithms.shared import (
     find_telemetry_objects,
     payloads_for_algorithm,
 )
-from tests.algorithms.forked.sample_main import main as sample_algorithm_main
+from tests.algorithms.shared import main as sample_algorithm_main
 
 os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
 os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"

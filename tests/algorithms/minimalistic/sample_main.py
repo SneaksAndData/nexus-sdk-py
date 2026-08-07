@@ -6,7 +6,6 @@ from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
-from nexus_client_sdk.nexus.core.app_core import Nexus
 from tests.algorithms.shared import (
     XYProcessor,
     ZProcessor,
@@ -37,7 +36,7 @@ def tag_metrics(payload: TestAlgorithmPayload, run_args):
 
 
 @singleton
-class TestAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
+class TestMinimalisticAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
     async def _context_open(self):
         pass
 
@@ -65,17 +64,3 @@ class TestAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
         ), "Unexpected or missing value of extra_parameters.parameter_y"
 
         return TestResult(xy, z, self._cache.total_evaluated_inputs())
-
-
-async def main():
-    """
-    Main entry point.
-    :return:
-    """
-
-    def alg_from_payload(payload: TestAlgorithmPayload) -> str:
-        return payload.alg_class
-
-    nexus = Nexus.create().with_algorithm_resolvers(alg_from_payload).on_complete(TestUserAnalyticsTelemetry)
-
-    await nexus.activate()

@@ -77,7 +77,7 @@ class ForkedChildRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
 
 
 @singleton
-class TestAlgorithm(ForkedAlgorithm[TestAlgorithmPayload]):
+class TestForkedAlgorithm(ForkedAlgorithm[TestAlgorithmPayload]):
     async def _context_open(self):
         pass
 
@@ -136,17 +136,3 @@ class TestAlgorithm(ForkedAlgorithm[TestAlgorithmPayload]):
 
     async def _fork_inputs(self, **kwargs) -> dict:
         return await self._default_inputs(**kwargs)
-
-
-async def main():
-    """
-    Main entry point.
-    :return:
-    """
-
-    def alg_from_payload(payload: TestAlgorithmPayload) -> str:
-        return payload.alg_class
-
-    nexus = Nexus.create().with_algorithm_resolvers(alg_from_payload).on_complete(TestUserAnalyticsTelemetry)
-
-    await nexus.activate()
