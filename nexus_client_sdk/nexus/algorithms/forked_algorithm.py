@@ -28,6 +28,7 @@ from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
     AlgorithmResult,
+    DirectedGraphResult,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms._directed_graph_algorithm import DirectedGraphAlgorithm
@@ -156,7 +157,7 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
             logger=self._logger,
         )()
 
-        await self._spawn_remote_algorithms(
+        remote_algorithm_results = await self._spawn_remote_algorithms(
             remote_algorithms=forks,
             async_spawn_enabled=NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.async_spawn_enabled == "1",
             spawn_base_delay_seconds=int(
@@ -164,5 +165,8 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
             ),
             **kwargs,
         )
+
+        if isinstance(run_result, DirectedGraphResult):
+            return run_result.set_remote_algorithm_results(remote_algorithm_results=remote_algorithm_results)
 
         return run_result

@@ -18,7 +18,7 @@ from injector import inject, singleton
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
-from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
+from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult, DirectedGraphResult
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
     SocketCollection,
     InputSocket,

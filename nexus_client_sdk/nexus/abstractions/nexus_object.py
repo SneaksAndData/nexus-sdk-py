@@ -47,6 +47,21 @@ class AlgorithmResult(ABC):
         """
 
 
+class DirectedGraphResult(AlgorithmResult, ABC):
+    """
+    Interface for directed graph algorithm run result.
+    It stores a list of remote algorithm results.
+    """
+
+    remote_algorithm_results: list[AlgorithmResult] | None = None
+
+    def set_remote_algorithm_results(self, remote_algorithm_results: list[AlgorithmResult]):
+        """
+        Set remote algorithm results.
+        """
+        self.remote_algorithm_results = remote_algorithm_results
+
+
 TPayload = TypeVar("TPayload")
 TResult = TypeVar("TResult", pandas.DataFrame, polars.DataFrame, AlgorithmResult)
 
