@@ -93,8 +93,7 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload], ABC):
             if async_spawn_enabled:
                 asyncio.create_task(_spawn_remote_algorithm(remote_algorithms))
                 self._logger.warning(
-                    template="Async spawn enabled, so Remote Algorithms AlgorithmResult class will not be present in "
-                    "Directed Graph AlgorithmResult class.",
+                    "Async spawn enabled, so remote algorithm results will not be available in the DirectedGraphResult."
                 )
                 return []
 
