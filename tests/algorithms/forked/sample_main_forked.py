@@ -7,7 +7,7 @@ from injector import inject, singleton
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
-from nexus_client_sdk.nexus.algorithms import FanOutAlgorithm, RemoteAlgorithm
+from nexus_client_sdk.nexus.algorithms import RemoteAlgorithm, ForkedAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from tests.algorithms.shared import (
@@ -20,7 +20,7 @@ from tests.algorithms.shared import (
 
 
 @dataclass
-class FanOutRemoteSpawnResult(AlgorithmResult):
+class ForkedRemoteSpawnResult(AlgorithmResult):
     request_ids: list[str]
     tag: str
 
@@ -32,7 +32,7 @@ class FanOutRemoteSpawnResult(AlgorithmResult):
 
 
 @singleton
-class FanOutChildRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
+class ForkedChildRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
     @inject
     def __init__(
         self,
@@ -46,7 +46,7 @@ class FanOutChildRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
             metrics_provider,
             logger_factory,
             remote_client,
-            NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.remote_name,
+            NEXUS_FRAMEWORK_CONFIGURATION.default.forked.remote_name,
             is_hard_dependency=True,
             cache=cache,
         )
@@ -58,24 +58,24 @@ class FanOutChildRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
     async def _context_close(self):
         pass
 
-    def _generate_tag(self, **kwargs) -> str:
-        return f"fanout-child-{kwargs['request_id']}"
+    def _generate_tag(self, request_id: str, **kwargs) -> str:
+        return f"forked-child-{request_id}"
 
     async def _run(self, **kwargs) -> list[TestAlgorithmPayload]:
         payload = TestAlgorithmPayload.from_dict(
             {
                 **self._payload.to_dict(),
-                "alg_class": "tests.algorithms.minimalistic.sample_main.TestAlgorithm",
+                "alg_class": "tests.algorithms.minimalistic.sample_main_minimalistic.TestMinimalisticAlgorithm",
             }
         )
         return [payload]
 
     def _transform_submission_result(self, request_ids: list[str], tag: str) -> AlgorithmResult:
-        return FanOutRemoteSpawnResult(request_ids=request_ids, tag=tag)
+        return ForkedRemoteSpawnResult(request_ids=request_ids, tag=tag)
 
 
 @singleton
-class TestFanOutAlgorithm(FanOutAlgorithm[TestAlgorithmPayload]):
+class TestForkedAlgorithm(ForkedAlgorithm[TestAlgorithmPayload]):
     async def _context_open(self):
         pass
 
@@ -99,7 +99,7 @@ class TestFanOutAlgorithm(FanOutAlgorithm[TestAlgorithmPayload]):
         self._remote_client = remote_client
         self._payload = payload
 
-    async def _run(
+    async def _main_run(
         self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs
     ) -> TestDirectedGraphResult:
         assert (
@@ -111,9 +111,20 @@ class TestFanOutAlgorithm(FanOutAlgorithm[TestAlgorithmPayload]):
 
         return TestDirectedGraphResult(xy, z, self._cache.total_evaluated_inputs())
 
-    async def _get_branches(self, **kwargs) -> list[RemoteAlgorithm]:
+    async def _fork_run(
+        self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs
+    ) -> TestDirectedGraphResult:
+        return await self._main_run(xy=xy, z=z, zz=zz, **kwargs)
+
+    async def _is_forked(self, **kwargs) -> bool:
+        return self._payload.is_forked
+
+    async def _get_forks(self, **kwargs) -> list[RemoteAlgorithm]:
+        if await self._is_forked():
+            return []
+
         return [
-            FanOutChildRemoteAlgorithm(
+            ForkedChildRemoteAlgorithm(
                 metrics_provider=self._metrics_provider,
                 logger_factory=self._logger_factory,
                 remote_client=self._remote_client,
@@ -121,3 +132,9 @@ class TestFanOutAlgorithm(FanOutAlgorithm[TestAlgorithmPayload]):
                 cache=self._cache,
             )
         ]
+
+    async def _main_inputs(self, **kwargs) -> dict:
+        return await self._default_inputs(**kwargs)
+
+    async def _fork_inputs(self, **kwargs) -> dict:
+        return await self._default_inputs(**kwargs)

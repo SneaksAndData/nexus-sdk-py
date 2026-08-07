@@ -31,7 +31,7 @@ def set_config_extension_path_override(monkeypatch):
 def payloads(
     compress: bool = False,
 ) -> list[tuple[str, str]]:
-    return payloads_for_algorithm("tests.algorithms.fan_out.sample_main.TestFanOutAlgorithm", compress=compress)
+    return payloads_for_algorithm("tests.algorithms.fan_out.sample_main_fan_out.TestFanOutAlgorithm", compress=compress)
 
 
 test_cases = [
