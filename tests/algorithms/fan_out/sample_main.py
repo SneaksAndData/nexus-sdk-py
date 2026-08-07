@@ -15,7 +15,6 @@ from tests.algorithms.shared import (
     ZProcessor,
     ZZProcessor,
     TestAlgorithmPayload,
-    TestUserAnalyticsTelemetry,
     TestDirectedGraphResult,
 )
 

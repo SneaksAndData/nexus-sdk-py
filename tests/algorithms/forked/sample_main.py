@@ -10,14 +10,12 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.algorithms import RemoteAlgorithm, ForkedAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
-from nexus_client_sdk.nexus.core.app_core import Nexus
 from tests.algorithms.shared import (
     XYProcessor,
     ZProcessor,
     ZZProcessor,
-    TestResult,
     TestAlgorithmPayload,
-    TestUserAnalyticsTelemetry,
+    TestDirectedGraphResult,
 )
 
 
@@ -101,7 +99,9 @@ class TestForkedAlgorithm(ForkedAlgorithm[TestAlgorithmPayload]):
         self._remote_client = remote_client
         self._payload = payload
 
-    async def _main_run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
+    async def _main_run(
+        self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs
+    ) -> TestDirectedGraphResult:
         assert (
             "extra_parameters" in NEXUS_FRAMEWORK_CONFIGURATION.default
         ), "Expected settings.test_algorithm.extra.toml to be merged into main config"
@@ -109,9 +109,11 @@ class TestForkedAlgorithm(ForkedAlgorithm[TestAlgorithmPayload]):
             NEXUS_FRAMEWORK_CONFIGURATION.default.extra_parameters.parameter_y == "test"
         ), "Unexpected or missing value of extra_parameters.parameter_y"
 
-        return TestResult(xy, z, self._cache.total_evaluated_inputs())
+        return TestDirectedGraphResult(xy, z, self._cache.total_evaluated_inputs())
 
-    async def _fork_run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
+    async def _fork_run(
+        self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs
+    ) -> TestDirectedGraphResult:
         return await self._main_run(xy=xy, z=z, zz=zz, **kwargs)
 
     async def _is_forked(self, **kwargs) -> bool:
