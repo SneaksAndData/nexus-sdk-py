@@ -29,11 +29,11 @@ def set_config_extension_path_override(monkeypatch):
 
 
 def payloads() -> list[tuple[str, str]]:
-    return payloads_for_algorithm("tests.algorithms.forked.sample_main.TestAlgorithm", is_forked=False)
+    return payloads_for_algorithm("tests.algorithms.forked.sample_main.TestForkedAlgorithm", is_forked=False)
 
 
 def payloads_forked() -> list[tuple[str, str]]:
-    return payloads_for_algorithm("tests.algorithms.forked.sample_main.TestAlgorithm", is_forked=True)
+    return payloads_for_algorithm("tests.algorithms.forked.sample_main.TestForkedAlgorithm", is_forked=True)
 
 
 test_cases = [

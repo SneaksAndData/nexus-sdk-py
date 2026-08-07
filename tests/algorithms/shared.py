@@ -111,7 +111,7 @@ class TestAlgorithmPayload(SocketOverridePayload, DataClassJsonMixin):
     z: list[int]
     enum_value: TestEnum
     alg_class: str
-    is_forked: bool
+    is_forked: bool | None = None
 
 
 @final
