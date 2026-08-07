@@ -1,8 +1,5 @@
 from pathlib import Path
 
-
-CONFIG_EXTENSION_PATH_OVERRIDE = "CONFIG_EXTENSION_PATH_OVERRIDE"
-
 ALGORITHMS_ROOT = Path(__file__).parent
 
 RUNTIME_CONFIG_STUB = (

@@ -1,14 +1,14 @@
 from nexus_client_sdk.nexus.execution.trees import get_tree
-from tests.algorithms.minimalistic.sample_main import TestAlgorithm
+from tests.algorithms.minimalistic.sample_main import TestMinimalisticAlgorithm
 
 
 def test_tree_generation():
-    tree = get_tree(TestAlgorithm)
-    assert len(tree.root_node.children) == 3 and tree.root_node.class_name == TestAlgorithm.__name__
+    tree = get_tree(TestMinimalisticAlgorithm)
+    assert len(tree.root_node.children) == 3 and tree.root_node.class_name == TestMinimalisticAlgorithm.__name__
 
 
 def test_tree_serialization():
-    mermaid_tree = get_tree(TestAlgorithm).serialize(sort_nodes=True)
+    mermaid_tree = get_tree(TestMinimalisticAlgorithm).serialize(sort_nodes=True)
 
     assert (
         mermaid_tree

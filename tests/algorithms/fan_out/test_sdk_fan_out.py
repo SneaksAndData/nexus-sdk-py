@@ -15,7 +15,7 @@ from tests.algorithms.shared import (
     find_telemetry_objects,
     payloads_for_algorithm,
 )
-from tests.algorithms.fan_out.sample_main import main as sample_algorithm_main
+from tests.algorithms.shared import main as sample_algorithm_main
 
 os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
 os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
@@ -31,7 +31,7 @@ def set_config_extension_path_override(monkeypatch):
 def payloads(
     compress: bool = False,
 ) -> list[tuple[str, str]]:
-    return payloads_for_algorithm("tests.algorithms.fan_out.sample_main.TestAlgorithm", compress=compress)
+    return payloads_for_algorithm("tests.algorithms.fan_out.sample_main.TestFanOutAlgorithm", compress=compress)
 
 
 test_cases = [

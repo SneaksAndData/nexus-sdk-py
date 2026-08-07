@@ -23,6 +23,7 @@ from abc import ABC
 
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
+    AlgorithmResult,
 )
 from nexus_client_sdk.nexus.algorithms._baseline_algorithm import BaselineAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
@@ -39,7 +40,7 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload], ABC):
         async_spawn_enabled: bool,
         spawn_base_delay_seconds: int,
         **kwargs
-    ):
+    ) -> list[AlgorithmResult]:
         async def _spawn(remote_algorithm: RemoteAlgorithm, run_index: int, **remote_args) -> asyncio.Task:
             if spawn_base_delay_seconds > 0 and run_index > 0:
                 jitter = spawn_base_delay_seconds + random.random() * spawn_base_delay_seconds
@@ -50,7 +51,7 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload], ABC):
 
         async def _spawn_remote_algorithm(
             algorithms: list[RemoteAlgorithm],
-        ) -> None:
+        ) -> list[AlgorithmResult]:
             self._logger.info(
                 "Launching {count} remote algorithm(s): {algorithms}",
                 count=str(len(algorithms)),
@@ -60,6 +61,7 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload], ABC):
                 [await _spawn(alg, alg_ix, **kwargs) for alg_ix, alg in enumerate(algorithms)],
                 return_when=asyncio.ALL_COMPLETED,
             )
+            remote_results = []
             for task in done:
                 if task.exception() is not None:
                     self._logger.error(
@@ -75,6 +77,7 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload], ABC):
                         metric_name="remote_algorithm_run_scheduled",
                         tags=self._metric_tags,
                     )
+                    remote_results.append(task.result())
 
             successful_rate = sum(1 for task in done if task.exception() is None) / len(done)
             self._metrics_provider.gauge(
@@ -83,10 +86,18 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload], ABC):
                 tags=self._metric_tags,
             )
 
+            return remote_results
+
         if remote_algorithms:
             if async_spawn_enabled:
                 asyncio.create_task(_spawn_remote_algorithm(remote_algorithms))
-            else:
-                await _spawn_remote_algorithm(remote_algorithms)
-        else:
-            self._logger.info("No remote algorithms to dispatch")
+                self._logger.warning(
+                    template="Async spawn enabled, so Remote Algorithms AlgorithmResult class will not be present in "
+                    "Directed Graph AlgorithmResult class.",
+                )
+                return []
+
+            return await _spawn_remote_algorithm(remote_algorithms)
+
+        self._logger.info("No remote algorithms to dispatch")
+        return []
