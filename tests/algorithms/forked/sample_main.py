@@ -16,28 +16,8 @@ from tests.algorithms.shared import (
     ZProcessor,
     ZZProcessor,
     TestResult,
-    TestUserAnalyticsTelemetry as SharedTestUserAnalyticsTelemetry,
-    tags_from_payload as shared_tags_from_payload,
-    enrich_from_payload as shared_enrich_from_payload,
-    tag_metrics as shared_tag_metrics,
     TestAlgorithmPayload,
 )
-
-
-class TestUserAnalyticsTelemetry(SharedTestUserAnalyticsTelemetry):
-    pass
-
-
-def tags_from_payload(payload: TestAlgorithmPayload, run_args):
-    return shared_tags_from_payload(payload, run_args)
-
-
-def enrich_from_payload(payload: TestAlgorithmPayload, run_args):
-    return shared_enrich_from_payload(payload, run_args)
-
-
-def tag_metrics(payload: TestAlgorithmPayload, run_args):
-    return shared_tag_metrics(payload, run_args)
 
 
 @dataclass
