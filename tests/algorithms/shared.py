@@ -24,7 +24,7 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import (
     InputSocket,
     ExternalSocketProvider,
 )
-from nexus_client_sdk.nexus.configurations.algorithm_configuration import NexusConfiguration
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
@@ -93,16 +93,6 @@ def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
     ]
 
     return input_objects, user_objects
-
-
-@dataclass
-class TestAlgorithmConfiguration(NexusConfiguration):
-    @classmethod
-    def from_environment(cls) -> "NexusConfiguration":
-        return TestAlgorithmConfiguration.from_json(os.getenv("NEXUS__TEST_ALG_CONFIGURATION"))
-
-    c1: str
-    c2: str
 
 
 class TestEnum(Enum):
@@ -203,7 +193,6 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
         xysample: XYSampleReader,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        conf: TestAlgorithmConfiguration,
         cache: InputCache,
     ):
         super().__init__(
@@ -214,11 +203,9 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
             cache=cache,
         )
 
-        self.conf = conf
-
     async def _process_input(self, xysample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
-        self._logger.info("Config: {config}", config=self.conf.to_json())
-        if self.conf.c1 == "sum":
+        self._logger.info("Config: {config}", config=NEXUS_FRAMEWORK_CONFIGURATION.default.conf.to_json())
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.conf.c1 == "sum":
             return pandas.DataFrame({"s": [int(xysample["x"].sum()) + int(xysample["y"].sum())]})
 
         return pandas.DataFrame({"s": [int(xysample["x"].sum()) / int(xysample["y"].sum())]})
@@ -232,7 +219,6 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
         zsample: ZSampleReader,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        my_conf: TestAlgorithmConfiguration,
         cache: InputCache,
     ):
         super().__init__(
@@ -243,11 +229,9 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
             cache=cache,
         )
 
-        self.conf = my_conf
-
     async def _process_input(self, zsample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
-        self._logger.info("Config: {config}", config=self.conf.to_json())
-        if self.conf.c2 == "mean":
+        self._logger.info("Config: {config}", config=NEXUS_FRAMEWORK_CONFIGURATION.default.conf.to_json())
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.conf.c2 == "mean":
             return pandas.DataFrame({"v": [float(zsample.mean())]})
 
         return pandas.DataFrame({"v": [float(zsample.sum() / zsample.size)]})
@@ -261,7 +245,6 @@ class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
         z: ZProcessor,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        my_conf: TestAlgorithmConfiguration,
         cache: InputCache,
     ):
         super().__init__(
@@ -271,8 +254,6 @@ class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
             payload=None,
             cache=cache,
         )
-
-        self.conf = my_conf
 
     async def _process_input(self, request_id: str, z: pandas.DataFrame, **_) -> pandas.DataFrame:
         self._logger.info("ZZ invoked")
@@ -301,7 +282,6 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
     @inject
     def __init__(
         self,
-        _: TestAlgorithmConfiguration,
         algorithm_payload: TestAlgorithmPayload,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
