@@ -166,7 +166,4 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
             **kwargs,
         )
 
-        if isinstance(run_result, DirectedGraphResult):
-            return run_result.set_remote_algorithm_results(remote_algorithm_results=remote_algorithm_results)
-
-        return run_result
+        return self._resolve_result(run_result=run_result, remote_algorithm_results=remote_algorithm_results)

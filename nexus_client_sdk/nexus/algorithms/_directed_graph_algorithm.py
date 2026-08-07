@@ -24,6 +24,7 @@ from abc import ABC
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
     AlgorithmResult,
+    DirectedGraphResult,
 )
 from nexus_client_sdk.nexus.algorithms._baseline_algorithm import BaselineAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
@@ -101,3 +102,13 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload], ABC):
 
         self._logger.info("No remote algorithms to dispatch")
         return []
+
+    @staticmethod
+    def _resolve_result(
+        run_result: AlgorithmResult, remote_algorithm_results: list[AlgorithmResult]
+    ) -> AlgorithmResult:
+        if isinstance(run_result, DirectedGraphResult):
+            run_result.set_remote_algorithm_results(remote_algorithm_results=remote_algorithm_results)
+            return run_result
+
+        return run_result

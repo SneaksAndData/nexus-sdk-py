@@ -281,6 +281,20 @@ class TestResult(AlgorithmResult):
         pass
 
 
+@dataclass
+class TestDirectedGraphResult(TestResult, DirectedGraphResult):
+    def result(self) -> pandas.DataFrame | polars.DataFrame | dict:
+        return {
+            "number": math.sqrt(float(self.xy.sum()) + float(self.z.sum())),
+            "total_executed_by_cache": self.executed,
+            "remote_algorithm_request_ids": [
+                request_id
+                for remote_algorithm_result in self.remote_algorithm_results
+                for request_id in remote_algorithm_result.request_ids
+            ],
+        }
+
+
 @singleton
 class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
     @inject
