@@ -103,12 +103,15 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload], ABC):
         self._logger.info("No remote algorithms to dispatch")
         return []
 
-    @staticmethod
     def _resolve_result(
-        run_result: AlgorithmResult, remote_algorithm_results: list[AlgorithmResult]
+        self, run_result: AlgorithmResult, remote_algorithm_results: list[AlgorithmResult]
     ) -> AlgorithmResult:
         if isinstance(run_result, DirectedGraphResult):
             run_result.set_remote_algorithm_results(remote_algorithm_results=remote_algorithm_results)
             return run_result
+
+        self._logger.warning(
+            "Algorithm run result is not a DirectedGraphResult, so remote algorithm results will not be set in the result."
+        )
 
         return run_result
