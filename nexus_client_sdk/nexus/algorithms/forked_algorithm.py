@@ -162,6 +162,7 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
             spawn_base_delay_seconds=int(
                 NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.spawn_base_delay_seconds
             ),
+            **kwargs,
         )
 
         return run_result

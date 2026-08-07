@@ -104,6 +104,7 @@ class FanOutAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
             remote_algorithms=child_algorithms,
             async_spawn_enabled=NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.async_spawn_enabled == "1",
             spawn_base_delay_seconds=int(NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.spawn_base_delay_seconds),
+            **kwargs,
         )
 
         return run_result
