@@ -42,12 +42,12 @@ def payloads(
     compress: bool = False,
 ) -> list[tuple[str, str]]:
     return payloads_for_algorithm(
-        "tests.algorithms.minimalistic.sample_main.TestMinimalisticAlgorithm", compress=compress
+        "tests.algorithms.minimalistic.sample_main_minimalistic.TestMinimalisticAlgorithm", compress=compress
     )
 
 
 def negative_z_payload(
-    algorithm_class: str = "tests.algorithms.minimalistic.sample_main.TestMinimalisticAlgorithm",
+    algorithm_class: str = "tests.algorithms.minimalistic.sample_main_minimalistic.TestMinimalisticAlgorithm",
 ) -> tuple[str, str]:
     upload_path = S3Path(bucket="nexus", path="units")
 
