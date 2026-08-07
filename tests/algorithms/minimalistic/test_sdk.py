@@ -15,7 +15,7 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.testing import generate_payload_url
-from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, use_algorithm_root
+from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
 from tests.algorithms.shared import (
     find_telemetry_objects,
     payloads_for_algorithm,
@@ -29,6 +29,13 @@ os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
 os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
 os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"] = "minioadmin"
 os.environ["PROTEUS__AWS_ACCESS_KEY_ID"] = "minioadmin"
+
+
+@pytest.fixture(autouse=True)
+def set_config_extension_path_override(monkeypatch):
+    monkeypatch.setenv(
+        "CONFIG_EXTENSION_PATH_OVERRIDE", get_config_extension_path_override(algorithm_name="minimalistic")
+    )
 
 
 def payloads(
@@ -74,15 +81,14 @@ async def test_sdk_run_minimalistic(
     scheduler: NexusSchedulerClient,
     cql_session: Session,
 ) -> None:
-    with use_algorithm_root(algorithm_name="minimalistic"):
-        NEXUS_FRAMEWORK_CONFIGURATION.load()
-        algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
-        # create initial fake record
-        cql_session.execute(
-            f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
-        )
-        sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
-        await sample_algorithm_main()
+    NEXUS_FRAMEWORK_CONFIGURATION.load()
+    algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
+    # create initial fake record
+    cql_session.execute(
+        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
+    )
+    sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
+    await sample_algorithm_main()
     await asyncio.sleep(1)
     result = json.loads(requests.get(scheduler.get_run_result(test_args.request_id, algorithm).result_uri).text)
     run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
@@ -100,15 +106,14 @@ async def test_sdk_run_minimalistic(
 async def test_sdk_run_compressed(
     test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session
 ) -> None:
-    with use_algorithm_root(algorithm_name="minimalistic"):
-        NEXUS_FRAMEWORK_CONFIGURATION.load()
-        algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
-        # create initial fake record
-        cql_session.execute(
-            f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
-        )
-        sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
-        await sample_algorithm_main()
+    NEXUS_FRAMEWORK_CONFIGURATION.load()
+    algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
+    # create initial fake record
+    cql_session.execute(
+        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
+    )
+    sys.argv = ["", "--sas-uri", test_args.sas_uri, "--request-id", test_args.request_id]
+    await sample_algorithm_main()
     await asyncio.sleep(1)
 
     run_result = scheduler.get_run_result(test_args.request_id, algorithm)
@@ -124,16 +129,15 @@ async def test_sdk_run_compressed(
 
 @pytest.mark.asyncio(loop_scope="package")
 async def test_failing_reader(scheduler: NexusSchedulerClient, cql_session: Session) -> None:
-    with use_algorithm_root(algorithm_name="minimalistic"):
-        NEXUS_FRAMEWORK_CONFIGURATION.load()
-        payload_url, request_id = negative_z_payload()
-        algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
-        # create initial fake record
-        cql_session.execute(
-            f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{request_id}', 'RUNNING', '{payload_url}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
-        )
-        sys.argv = ["", "--sas-uri", payload_url, "--request-id", request_id]
-        await sample_algorithm_main()
+    NEXUS_FRAMEWORK_CONFIGURATION.load()
+    payload_url, request_id = negative_z_payload()
+    algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
+    # create initial fake record
+    cql_session.execute(
+        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{request_id}', 'RUNNING', '{payload_url}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
+    )
+    sys.argv = ["", "--sas-uri", payload_url, "--request-id", request_id]
+    await sample_algorithm_main()
     await asyncio.sleep(1)
     run_details = scheduler.get_request_metadata(request_id, algorithm)
     run_result = scheduler.get_run_result(request_id, algorithm)
