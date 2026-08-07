@@ -317,6 +317,44 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
         )
 
 
+@singleton
+class TestDirectedGraphUserAnalyticsTelemetry(UserTelemetryRecorder):
+    @inject
+    def __init__(
+        self,
+        algorithm_payload: TestAlgorithmPayload,
+        metrics_provider: MetricsProvider,
+        logger_factory: LoggerFactory,
+        storage_client: StorageClient,
+        serializer: TelemetrySerializer,
+    ):
+        super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer)
+
+    async def _compute(
+        self,
+        algorithm_payload: TestAlgorithmPayload,
+        algorithm_result: TestDirectedGraphResult,
+        run_id: str,
+        **inputs: TTelemetry
+    ) -> UserTelemetry:
+        return UserTelemetry(
+            iter(
+                [
+                    pandas.DataFrame(
+                        {
+                            "remote_algorithm_request_ids": [
+                                request_id
+                                for remote_algorithm_result in algorithm_result.remote_algorithm_results
+                                for request_id in remote_algorithm_result.request_ids
+                            ]
+                        }
+                    )
+                ]
+            ),
+            UserTelemetryPathSegment("analysis", "test-recording"),
+        )
+
+
 def tags_from_payload(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
     return {"x_tag": str(sum(payload.x))}
 
@@ -334,15 +372,31 @@ def tag_metrics(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict
     }
 
 
+def alg_from_payload(payload: TestAlgorithmPayload) -> str:
+    return payload.alg_class
+
+
 async def main():
     """
     Main entry point.
     :return:
     """
 
-    def alg_from_payload(payload: TestAlgorithmPayload) -> str:
-        return payload.alg_class
-
     nexus = Nexus.create().with_algorithm_resolvers(alg_from_payload).on_complete(TestUserAnalyticsTelemetry)
+
+    await nexus.activate()
+
+
+async def main_directed_graph():
+    """
+    Main entry point.
+    :return:
+    """
+
+    nexus = (
+        Nexus.create()
+        .with_algorithm_resolvers(alg_from_payload)
+        .on_complete(TestUserAnalyticsTelemetry, TestDirectedGraphUserAnalyticsTelemetry)
+    )
 
     await nexus.activate()

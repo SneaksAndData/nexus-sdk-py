@@ -15,7 +15,7 @@ from tests.algorithms.shared import (
     find_telemetry_objects,
     payloads_for_algorithm,
 )
-from tests.algorithms.shared import main as sample_algorithm_main
+from tests.algorithms.shared import main_directed_graph as sample_algorithm_main
 
 os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
 os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
@@ -64,7 +64,7 @@ async def test_sdk_run_fan_out(
 
     input_telemetry_objects, user_telemetry_objects = find_telemetry_objects(test_args.request_id)
     assert len(input_telemetry_objects) == 3  # 3 processors injected into algorithm
-    assert len(user_telemetry_objects) == 2  # 1 user telemetry + 1 payload telemetry
+    assert len(user_telemetry_objects) == 3  # 2 user telemetry + 1 payload telemetry
 
     for remote_request_id in result["remote_algorithm_request_ids"]:
         remote_result = scheduler.get_run_result(remote_request_id, algorithm)
