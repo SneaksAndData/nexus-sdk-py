@@ -17,8 +17,6 @@
 #  limitations under the License.
 #
 
-import asyncio
-import random
 from abc import abstractmethod, ABC
 from functools import partial
 
@@ -32,7 +30,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
     AlgorithmResult,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
-from nexus_client_sdk.nexus.algorithms._baseline_algorithm import BaselineAlgorithm
+from nexus_client_sdk.nexus.algorithms._directed_graph_algorithm import DirectedGraphAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.input_processor import (
@@ -40,7 +38,7 @@ from nexus_client_sdk.nexus.input.input_processor import (
 )
 
 
-class ForkedAlgorithm(BaselineAlgorithm[TPayload], ABC):
+class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
     """
     Forked algorithm is an algorithm that returns a result (main scenario run) and then fires off one or more forked runs
     with different configurations as specified in fork class implementation.
@@ -141,45 +139,6 @@ class ForkedAlgorithm(BaselineAlgorithm[TPayload], ABC):
         async def _measured_run(**run_args) -> AlgorithmResult:
             return await self._run(**run_args)
 
-        async def _spawn(remote_algorithm: RemoteAlgorithm, run_index: int, **remote_args) -> asyncio.Task:
-            delay = int(NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.spawn_base_delay_seconds)
-            # skip delay if not provided, or if spawning the first fork
-            if delay > 0 and run_index > 0:
-                jitter = delay + random.random() * delay
-                self._logger.info("Spawning fork in {jitter:.2f}", jitter=jitter)
-                await asyncio.sleep(delay + random.random() * delay)
-
-            return asyncio.create_task(remote_algorithm.run(**remote_args))
-
-        async def _spawn_forks(fork_list: list[RemoteAlgorithm]) -> None:
-            self._logger.info(
-                "Forking node with: {forks}, after the node run",
-                forks=",".join([fork.alias() for fork in fork_list]),
-            )
-            done, _ = await asyncio.wait(
-                [await _spawn(fork, fork_ix, **kwargs) for fork_ix, fork in enumerate(fork_list)],
-                return_when=asyncio.ALL_COMPLETED,
-            )
-            for task in done:
-                if task.exception() is not None:
-                    self._logger.error("Forked run failed", exception=task.exception())
-                    self._metrics_provider.increment(
-                        metric_name="forked_algorithm_run_failed",
-                        tags=self._metric_tags,
-                    )
-                else:
-                    self._metrics_provider.increment(
-                        metric_name="forked_algorithm_run_scheduled",
-                        tags=self._metric_tags,
-                    )
-            successful_forks_rate = sum(1 for task in done if task.exception() is None) / len(done)
-
-            self._metrics_provider.gauge(
-                metric_name="forked_algorithm_forks_scheduled_rate",
-                metric_value=successful_forks_rate,
-                tags=self._metric_tags,
-            )
-
         if await self._is_forked(**kwargs):
             self._inputs = await self._fork_inputs(**kwargs)
         else:
@@ -197,12 +156,12 @@ class ForkedAlgorithm(BaselineAlgorithm[TPayload], ABC):
             logger=self._logger,
         )()
 
-        if len(forks) > 0:
-            if NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.async_spawn_enabled == "1":
-                asyncio.create_task(_spawn_forks(forks))
-            else:
-                await _spawn_forks(forks)
-        else:
-            self._logger.info("Leaf algorithm node: proceeding with this node run only")
+        await self._spawn_remote_algorithms(
+            remote_algorithms=forks,
+            async_spawn_enabled=NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.async_spawn_enabled == "1",
+            spawn_base_delay_seconds=int(
+                NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.spawn_base_delay_seconds
+            ),
+        )
 
         return run_result

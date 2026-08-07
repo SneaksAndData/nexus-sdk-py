@@ -17,8 +17,6 @@
 #  limitations under the License.
 #
 
-import asyncio
-import random
 from abc import abstractmethod, ABC
 from functools import partial
 
@@ -32,15 +30,15 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
     AlgorithmResult,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
-from nexus_client_sdk.nexus.algorithms._baseline_algorithm import BaselineAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
+from nexus_client_sdk.nexus.algorithms._directed_graph_algorithm import DirectedGraphAlgorithm
 from nexus_client_sdk.nexus.configurations.runtime_configuration import (
     NEXUS_FRAMEWORK_CONFIGURATION,
 )
 from nexus_client_sdk.nexus.input.input_processor import InputProcessor
 
 
-class FanOutAlgorithm(BaselineAlgorithm[TPayload], ABC):
+class FanOutAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
     """
     Algorithm that executes its own logic and then spawns one or more remote algorithms
     without awaiting their results (fan-out). This produces a simple execution
@@ -87,50 +85,6 @@ class FanOutAlgorithm(BaselineAlgorithm[TPayload], ABC):
         async def _measured_run(**run_args) -> AlgorithmResult:
             return await self._run(**run_args)
 
-        async def _spawn(remote_algorithm: RemoteAlgorithm, run_index: int, **remote_args) -> asyncio.Task:
-            delay = int(NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.spawn_base_delay_seconds)
-            if delay > 0 and run_index > 0:
-                jitter = delay + random.random() * delay
-                self._logger.info("Spawning child algorithm in {jitter:.2f}s", jitter=jitter)
-                await asyncio.sleep(jitter)
-
-            return asyncio.create_task(remote_algorithm.run(**remote_args))
-
-        async def _spawn_children(
-            algorithms: list[RemoteAlgorithm],
-        ) -> None:
-            self._logger.info(
-                "Launching {count} child algorithm(s): {algorithms}",
-                count=str(len(algorithms)),
-                algorithms=",".join([alg.alias() for alg in algorithms]),
-            )
-            done, _ = await asyncio.wait(
-                [await _spawn(alg, alg_ix, **kwargs) for alg_ix, alg in enumerate(algorithms)],
-                return_when=asyncio.ALL_COMPLETED,
-            )
-            for task in done:
-                if task.exception() is not None:
-                    self._logger.error(
-                        "Child algorithm failed",
-                        exception=task.exception(),
-                    )
-                    self._metrics_provider.increment(
-                        metric_name="child_algorithm_run_schedule_failed",
-                        tags=self._metric_tags,
-                    )
-                else:
-                    self._metrics_provider.increment(
-                        metric_name="child_algorithm_run_scheduled",
-                        tags=self._metric_tags,
-                    )
-
-            successful_rate = sum(1 for task in done if task.exception() is None) / len(done)
-            self._metrics_provider.gauge(
-                metric_name="child_algorithm_scheduled_rate",
-                metric_value=successful_rate,
-                tags=self._metric_tags,
-            )
-
         self._logger.info("Starting main run")
 
         self._inputs = await self._cache.resolve(*self._input_processors, **kwargs)
@@ -146,12 +100,10 @@ class FanOutAlgorithm(BaselineAlgorithm[TPayload], ABC):
 
         child_algorithms = await self._get_branches(**self._inputs, **kwargs)
 
-        if child_algorithms:
-            if NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.async_spawn_enabled == "1":
-                asyncio.create_task(_spawn_children(child_algorithms))
-            else:
-                await _spawn_children(child_algorithms)
-        else:
-            self._logger.info("No child algorithms to dispatch")
+        await self._spawn_remote_algorithms(
+            remote_algorithms=child_algorithms,
+            async_spawn_enabled=NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.async_spawn_enabled == "1",
+            spawn_base_delay_seconds=int(NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.spawn_base_delay_seconds),
+        )
 
         return run_result
