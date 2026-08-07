@@ -1,5 +1,6 @@
 import json
 import os
+import pathlib
 import sys
 from contextlib import contextmanager
 
@@ -17,6 +18,7 @@ from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import
 
 @pytest.fixture(scope="session", autouse=True)
 def run_configuration():
+    os.environ["ROOT_PATH_FOR_DYNACONF"] = str(pathlib.Path(__file__).parent.resolve())
     os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
     os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
     os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"] = "minioadmin"

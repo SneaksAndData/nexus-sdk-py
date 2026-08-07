@@ -18,19 +18,17 @@ additional_modules = [
 
 # optional function that applies additional context to all logs emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-log_enrichment_function = "tests.algorithms.minimalistic.sample_main.enrich_from_payload"
+log_enrichment_function = "tests.algorithms.shared.enrich_from_payload"
 
 # optional function that applies additional tags (as metadata) to all logs emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-log_tagging_function = "tests.algorithms.minimalistic.sample_main.tags_from_payload"
+log_tagging_function = "tests.algorithms.shared.tags_from_payload"
 
 # optional function that applies additional tagging to all metrics emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-metric_tagging_function = "tests.algorithms.minimalistic.sample_main.tag_metrics"
+metric_tagging_function = "tests.algorithms.shared.tag_metrics"
 
-configuration_types = [
-    "tests.algorithms.shared.TestAlgorithmConfiguration"
-]
+configuration_types = []
 
 [runtime.payload]
 
@@ -194,3 +192,7 @@ provider = "adapta.metrics.providers.void_provider.VoidMetricsProvider"
 
 # Initialization configuration for the MetricsProvider defined under `provider`
 init_args = {"metric_namespace" = "sdk"}
+
+[conf]
+c1 = "sum"
+c2 = "mean"

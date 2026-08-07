@@ -21,11 +21,7 @@ stop:
     kind delete cluster
 
 start-kind-cluster:
-    if kind get clusters | grep -qx kind; then \
-      echo "Kind cluster 'kind' already exists, skipping creation."; \
-    else \
-      kind create cluster --config=integration_tests/kind.yaml; \
-    fi
+    kind create cluster --config=integration_tests/kind.yaml
 
 install-ingress-controller:
     kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
@@ -47,7 +43,6 @@ scylla:
     kubectl rollout status deployment/scylla --timeout=180s
 
 minio:
-    kubectl delete job minio-setup --ignore-not-found
     kubectl apply -f integration_tests/manifests/minio.yaml
     kubectl rollout status deployment/minio --timeout=180s
 
