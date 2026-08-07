@@ -89,13 +89,13 @@ Nexus provides a set of utilities that allow viewing and inspecting the executio
 
 ```python
 from nexus_client_sdk.nexus.execution.trees import get_tree
-from tests.algorithms.minimalistic.sample_main import TestMinimalisticAlgorithm
+from tests.algorithms.minimalistic.sample_main_minimalistic import TestMinimalisticAlgorithm
 
 print(get_tree(TestMinimalisticAlgorithm).serialize())
 
 # graph TB
-# TESTALGORITHM["TestAlgorithm"] --> XYPROCESSOR["XYProcessor"] --> XYREADER["XYReader"]
-# TESTALGORITHM["TestAlgorithm"] --> ZPROCESSOR["ZProcessor"] --> ZREADER["ZReader"]
+# TESTMINIMALISTICALGORITHM["TestMinimalisticAlgorithm"] --> XYPROCESSOR["XYProcessor"] --> XYREADER["XYReader"]
+# TESTMINIMALISTICALGORITHM["TestMinimalisticAlgorithm"] --> ZPROCESSOR["ZProcessor"] --> ZREADER["ZReader"]
 ```
 
 ## Handling Compressed Payloads
