@@ -41,11 +41,13 @@ def set_config_extension_path_override(monkeypatch):
 def payloads(
     compress: bool = False,
 ) -> list[tuple[str, str]]:
-    return payloads_for_algorithm("tests.algorithms.minimalistic.sample_main.TestAlgorithm", compress=compress)
+    return payloads_for_algorithm(
+        "tests.algorithms.minimalistic.sample_main.TestMinimalisticAlgorithm", compress=compress
+    )
 
 
 def negative_z_payload(
-    algorithm_class: str = "tests.algorithms.minimalistic.sample_main.TestAlgorithm",
+    algorithm_class: str = "tests.algorithms.minimalistic.sample_main.TestMinimalisticAlgorithm",
 ) -> tuple[str, str]:
     upload_path = S3Path(bucket="nexus", path="units")
 
