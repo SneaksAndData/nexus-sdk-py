@@ -22,5 +22,6 @@ from nexus_client_sdk.nexus.algorithms.recursive import *
 from nexus_client_sdk.nexus.algorithms.distributed import *
 from nexus_client_sdk.nexus.algorithms._baseline_algorithm import *
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import *
+from nexus_client_sdk.nexus.algorithms._directed_graph_algorithm import *
 from nexus_client_sdk.nexus.algorithms.fan_out import *
 from nexus_client_sdk.nexus.algorithms.forked_algorithm import *
