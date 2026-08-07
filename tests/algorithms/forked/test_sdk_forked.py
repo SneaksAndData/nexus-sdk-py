@@ -41,7 +41,7 @@ test_cases = [
 ]
 
 test_cases_forked = [
-    NexusDefaultArguments(sas_uri=payload_url, request_id=request_id) for payload_url, request_id in payloads()
+    NexusDefaultArguments(sas_uri=payload_url, request_id=request_id) for payload_url, request_id in payloads_forked()
 ]
 
 
