@@ -42,6 +42,7 @@ from nexus_client_sdk.testing import generate_payload_url
 def payloads_for_algorithm(
     algorithm_class: str,
     compress: bool = False,
+    is_forked: bool = False,
 ) -> list[tuple[str, str]]:
     upload_path = S3Path(bucket="nexus", path="units")
 
@@ -57,6 +58,7 @@ def payloads_for_algorithm(
             alg_class=algorithm_class,
             input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
             output_sockets=[],
+            is_forked=is_forked,
         )
         for _ in range(10)
     ]
@@ -108,6 +110,7 @@ class TestAlgorithmPayload(SocketOverridePayload, DataClassJsonMixin):
     z: list[int]
     enum_value: TestEnum
     alg_class: str
+    is_forked: bool
 
 
 @final

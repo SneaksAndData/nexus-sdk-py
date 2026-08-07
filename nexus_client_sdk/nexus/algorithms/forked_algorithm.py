@@ -32,7 +32,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
     AlgorithmResult,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
-from nexus_client_sdk.nexus.algorithms import BaselineAlgorithm
+from nexus_client_sdk.nexus.algorithms._baseline_algorithm import BaselineAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.input_processor import (
@@ -120,6 +120,12 @@ class ForkedAlgorithm(BaselineAlgorithm[TPayload], ABC):
         Sets inputs for the forked run - if this node is **NOT** the root node
         """
 
+    async def _run(self, **kwargs) -> AlgorithmResult:
+        if await self._is_forked(**kwargs):
+            return await self._fork_run(**kwargs)
+
+        return await self._main_run(**kwargs)
+
     async def run(self, **kwargs) -> AlgorithmResult:
         """
         Coroutine that executes the algorithm logic.
@@ -133,10 +139,7 @@ class ForkedAlgorithm(BaselineAlgorithm[TPayload], ABC):
             },
         )
         async def _measured_run(**run_args) -> AlgorithmResult:
-            if await self._is_forked(**run_args):
-                return await self._fork_run(**run_args)
-
-            return await self._main_run(**run_args)
+            return await self._run(**run_args)
 
         async def _spawn(remote_algorithm: RemoteAlgorithm, run_index: int, **remote_args) -> asyncio.Task:
             delay = int(NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.spawn_base_delay_seconds)

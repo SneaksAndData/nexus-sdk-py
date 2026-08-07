@@ -1,0 +1,11 @@
+dynaconf_merge = true
+
+[extra_parameters]
+parameter_x = 1
+parameter_y = "test"
+
+[remote_algorithm]
+dry_run = "1"
+
+[forked]
+remote_name = "hello-world"
