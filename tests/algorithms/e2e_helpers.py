@@ -23,7 +23,6 @@ def use_algorithm_root(algorithm_name: str) -> Iterator[None]:
     algorithm_extension_root = ALGORITHMS_ROOT / algorithm_name / "config_extensions"
     os.environ[CONFIG_EXTENSION_PATH_OVERRIDE] = str(algorithm_extension_root)
 
-    NEXUS_FRAMEWORK_CONFIGURATION._configuration = None
     try:
         yield
     finally:
@@ -31,5 +30,3 @@ def use_algorithm_root(algorithm_name: str) -> Iterator[None]:
             os.environ.pop(CONFIG_EXTENSION_PATH_OVERRIDE, None)
         else:
             os.environ[CONFIG_EXTENSION_PATH_OVERRIDE] = previous_extension_path
-
-        NEXUS_FRAMEWORK_CONFIGURATION._configuration = None
