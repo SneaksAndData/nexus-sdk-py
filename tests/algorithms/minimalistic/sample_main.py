@@ -11,14 +11,13 @@ from tests.algorithms.shared import (
     XYProcessor,
     ZProcessor,
     ZZProcessor,
-    NegativeZError,
     TestResult,
     TestUserAnalyticsTelemetry as SharedTestUserAnalyticsTelemetry,
     tags_from_payload as shared_tags_from_payload,
     enrich_from_payload as shared_enrich_from_payload,
     tag_metrics as shared_tag_metrics,
+    TestAlgorithmPayload,
 )
-from tests.conftest import TestAlgorithmPayload
 
 
 class TestUserAnalyticsTelemetry(SharedTestUserAnalyticsTelemetry):

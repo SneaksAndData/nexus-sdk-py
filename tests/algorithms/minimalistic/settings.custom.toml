@@ -29,13 +29,13 @@ log_tagging_function = "tests.algorithms.minimalistic.sample_main.tags_from_payl
 metric_tagging_function = "tests.algorithms.minimalistic.sample_main.tag_metrics"
 
 configuration_types = [
-    "tests.conftest.TestAlgorithmConfiguration"
+    "tests.algorithms.shared.TestAlgorithmConfiguration"
 ]
 
 [runtime.payload]
 
 # payload types supported by this Nexus application. At least one must be provided
-types = ["tests.conftest.TestAlgorithmPayload"]
+types = ["tests.algorithms.shared.TestAlgorithmPayload"]
 
 # optional raw payload serialization for later analysis
 # you can serialize payload via user telemetry, however that won't catch failed payloads

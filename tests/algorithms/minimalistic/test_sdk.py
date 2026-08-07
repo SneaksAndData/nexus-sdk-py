@@ -5,21 +5,57 @@ import sys
 
 import pytest
 import requests
+from adapta.storage.blob.s3_storage_client import S3StorageClient
+from adapta.storage.models import S3Path
 from cassandra.cluster import Session
 
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.scheduler import RequestLifeCycleStage
+from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
+from nexus_client_sdk.testing import generate_payload_url
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, use_algorithm_root
-from tests.algorithms.shared import find_telemetry_objects
-from tests.conftest import payloads, negative_z_payload
-from tests.algorithms.minimalistic.sample_main import main as sample_algorithm_main, NegativeZError
+from tests.algorithms.shared import (
+    find_telemetry_objects,
+    payloads_for_algorithm,
+    TestAlgorithmPayload,
+    TestEnum,
+    NegativeZError,
+)
+from tests.algorithms.minimalistic.sample_main import main as sample_algorithm_main
 
 os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
 os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
 os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"] = "minioadmin"
 os.environ["PROTEUS__AWS_ACCESS_KEY_ID"] = "minioadmin"
+
+
+def payloads(
+    compress: bool = False,
+) -> list[tuple[str, str]]:
+    return payloads_for_algorithm("tests.algorithms.minimalistic.sample_main.TestAlgorithm", compress=compress)
+
+
+def negative_z_payload(
+    algorithm_class: str = "tests.algorithms.minimalistic.sample_main.TestAlgorithm",
+) -> tuple[str, str]:
+    upload_path = S3Path(bucket="nexus", path="units")
+
+    return generate_payload_url(
+        upload_path,
+        TestAlgorithmPayload(
+            x=[1, 2, 3],
+            y=[4, 5, 6],
+            z=[0, -1, 10],
+            enum_value=TestEnum.A,
+            alg_class=algorithm_class,
+            input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
+            output_sockets=[],
+        ),
+        S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
+    )
+
 
 test_cases = [
     NexusDefaultArguments(sas_uri=payload_url, request_id=request_id) for payload_url, request_id in payloads()
@@ -33,13 +69,14 @@ compressed_test_cases = [
 
 @pytest.mark.asyncio(loop_scope="package")
 @pytest.mark.parametrize("test_args", test_cases)
-async def test_sdk_run(
+async def test_sdk_run_minimalistic(
     test_args: NexusDefaultArguments,
     scheduler: NexusSchedulerClient,
     cql_session: Session,
 ) -> None:
-    algorithm = "hello-world"  # do not force load config, so bootstrapping can be covered properly
-    with use_algorithm_root("minimalistic"):
+    with use_algorithm_root(algorithm_name="minimalistic"):
+        NEXUS_FRAMEWORK_CONFIGURATION.load()
+        algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
         # create initial fake record
         cql_session.execute(
             f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{test_args.request_id}', 'RUNNING', '{test_args.sas_uri}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
@@ -63,7 +100,7 @@ async def test_sdk_run(
 async def test_sdk_run_compressed(
     test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session
 ) -> None:
-    with use_algorithm_root("minimalistic"):
+    with use_algorithm_root(algorithm_name="minimalistic"):
         NEXUS_FRAMEWORK_CONFIGURATION.load()
         algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
         # create initial fake record
@@ -87,7 +124,7 @@ async def test_sdk_run_compressed(
 
 @pytest.mark.asyncio(loop_scope="package")
 async def test_failing_reader(scheduler: NexusSchedulerClient, cql_session: Session) -> None:
-    with use_algorithm_root("minimalistic"):
+    with use_algorithm_root(algorithm_name="minimalistic"):
         NEXUS_FRAMEWORK_CONFIGURATION.load()
         payload_url, request_id = negative_z_payload()
         algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name

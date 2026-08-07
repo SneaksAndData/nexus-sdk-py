@@ -1,62 +1,22 @@
 import json
 import os
-import pathlib
-import random
 import sys
 from contextlib import contextmanager
-from dataclasses import dataclass
-from enum import Enum
 
 import pytest
 from adapta.logs import create_async_logger
 from adapta.logs.handlers.safe_stream_handler import SafeStreamHandler
-from adapta.storage.blob.s3_storage_client import S3StorageClient
-from adapta.storage.models import S3Path
 from cassandra.cluster import Cluster
-from dataclasses_json import DataClassJsonMixin
 
 from nexus_client_sdk.clients.nexus_receiver_client import NexusReceiverClient
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.access_token import AccessToken
-from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
-from nexus_client_sdk.nexus.configurations.algorithm_configuration import NexusConfiguration
-from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, SocketOverridePayload
-from nexus_client_sdk.testing import generate_payload_url
-
-
-@dataclass
-class TestAlgorithmConfiguration(NexusConfiguration):
-    @classmethod
-    def from_environment(cls) -> "NexusConfiguration":
-        return TestAlgorithmConfiguration.from_json(os.getenv("NEXUS__TEST_ALG_CONFIGURATION"))
-
-    c1: str
-    c2: str
-
-
-class TestEnum(Enum):
-    A = "A"
-    B = "B"
-    C = "C"
-
-
-@dataclass
-class TestAlgorithmPayload(SocketOverridePayload, DataClassJsonMixin):
-    x: list[int]
-    y: list[int]
-    z: list[int]
-    enum_value: TestEnum
-    alg_class: str
 
 
 @pytest.fixture(scope="session", autouse=True)
 def run_configuration():
-    if "ROOT_PATH_FOR_DYNACONF" not in os.environ:
-        os.environ["ROOT_PATH_FOR_DYNACONF"] = str(
-            pathlib.Path(__file__).parent.resolve() / "algorithms" / "minimalistic"
-        )
     os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
     os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
     os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"] = "minioadmin"
@@ -69,7 +29,6 @@ def run_configuration():
     )
     os.environ["NEXUS__INPUTS__QUERY_ENABLED_STORE__ENABLED"] = "0"
     os.environ["NEXUS__RESULT__OUTPUT_PATH"] = "s3a://nexus-sdk-tests/result"
-    os.environ["NEXUS__TELEMETRY__OUTPUT_PATH"] = "s3a://nexus-sdk-tests/telemetry"
     os.environ["NEXUS__LOGGING__DATADOG__IGNORE_FLUSH_FAILURE"] = "'False'"
 
 
@@ -136,61 +95,3 @@ def cql_session():
     yield session
     session.shutdown()
     cluster.shutdown()
-
-
-def payloads_for_algorithm(
-    algorithm_class: str,
-    compress: bool = False,
-) -> list[tuple[str, str]]:
-    upload_path = S3Path(bucket="nexus", path="units")
-
-    def _rand_range(limit: int) -> list[int]:
-        return [random.randint(0, 10) for _ in range(limit)]
-
-    generated = [
-        TestAlgorithmPayload(
-            x=_rand_range(10),
-            y=_rand_range(10),
-            z=_rand_range(10),
-            enum_value=random.choice(list(TestEnum)),
-            alg_class=algorithm_class,
-            input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
-            output_sockets=[],
-        )
-        for _ in range(10)
-    ]
-    return [
-        generate_payload_url(
-            upload_path,
-            payload,
-            S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
-            compress_payload=compress,
-        )
-        for payload in generated
-    ]
-
-
-def payloads(
-    compress: bool = False,
-) -> list[tuple[str, str]]:
-    return payloads_for_algorithm("tests.algorithms.minimalistic.sample_main.TestAlgorithm", compress=compress)
-
-
-def negative_z_payload(
-    algorithm_class: str = "tests.algorithms.minimalistic.sample_main.TestAlgorithm",
-) -> tuple[str, str]:
-    upload_path = S3Path(bucket="nexus", path="units")
-
-    return generate_payload_url(
-        upload_path,
-        TestAlgorithmPayload(
-            x=[1, 2, 3],
-            y=[4, 5, 6],
-            z=[0, -1, 10],
-            enum_value=TestEnum.A,
-            alg_class=algorithm_class,
-            input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
-            output_sockets=[],
-        ),
-        S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
-    )

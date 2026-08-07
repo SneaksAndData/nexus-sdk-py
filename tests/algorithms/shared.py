@@ -1,6 +1,8 @@
 import os
 import math
+import random
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, final
 
 import boto3
@@ -8,27 +10,65 @@ import pandas
 import polars
 from adapta.metrics import MetricsProvider
 from adapta.storage.blob.base import StorageClient
+from adapta.storage.blob.s3_storage_client import S3StorageClient
+from adapta.storage.models import S3Path
 from adapta.storage.query_enabled_store import QueryEnabledStore
+from dataclasses_json import DataClassJsonMixin
 from injector import inject, singleton
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
-    ExternalSocketProvider,
     SocketCollection,
+    InputSocket,
+    ExternalSocketProvider,
 )
+from nexus_client_sdk.nexus.configurations.algorithm_configuration import NexusConfiguration
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
+from nexus_client_sdk.nexus.input.payload_reader import SocketOverridePayload
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
     UserTelemetry,
     UserTelemetryPathSegment,
     TTelemetry,
 )
-from tests.conftest import TestAlgorithmPayload, TestAlgorithmConfiguration
+from nexus_client_sdk.testing import generate_payload_url
+
+
+def payloads_for_algorithm(
+    algorithm_class: str,
+    compress: bool = False,
+) -> list[tuple[str, str]]:
+    upload_path = S3Path(bucket="nexus", path="units")
+
+    def _rand_range(limit: int) -> list[int]:
+        return [random.randint(0, 10) for _ in range(limit)]
+
+    generated = [
+        TestAlgorithmPayload(
+            x=_rand_range(10),
+            y=_rand_range(10),
+            z=_rand_range(10),
+            enum_value=random.choice(list(TestEnum)),
+            alg_class=algorithm_class,
+            input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
+            output_sockets=[],
+        )
+        for _ in range(10)
+    ]
+    return [
+        generate_payload_url(
+            upload_path,
+            payload,
+            S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
+            compress_payload=compress,
+        )
+        for payload in generated
+    ]
 
 
 def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
@@ -39,7 +79,7 @@ def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
         aws_secret_access_key=os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"],
     )
     input_prefix = "telemetry/telemetry_group=inputs/"
-    user_prefix = "telemetry/telemetry_group=user"
+    user_prefix = "telemetry/telemetry_group=user/"
 
     input_objects = [
         item["Key"]
@@ -53,6 +93,31 @@ def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
     ]
 
     return input_objects, user_objects
+
+
+@dataclass
+class TestAlgorithmConfiguration(NexusConfiguration):
+    @classmethod
+    def from_environment(cls) -> "NexusConfiguration":
+        return TestAlgorithmConfiguration.from_json(os.getenv("NEXUS__TEST_ALG_CONFIGURATION"))
+
+    c1: str
+    c2: str
+
+
+class TestEnum(Enum):
+    A = "A"
+    B = "B"
+    C = "C"
+
+
+@dataclass
+class TestAlgorithmPayload(SocketOverridePayload, DataClassJsonMixin):
+    x: list[int]
+    y: list[int]
+    z: list[int]
+    enum_value: TestEnum
+    alg_class: str
 
 
 @final
