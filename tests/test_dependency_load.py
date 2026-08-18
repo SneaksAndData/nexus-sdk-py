@@ -5,7 +5,7 @@ from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FR
 def test_datadog_logging_init() -> None:
     NEXUS_FRAMEWORK_CONFIGURATION.load()
     assert (
-        NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.enabled == '0'
+        NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.enabled == 0
         and NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.debug == "False"
         and NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.fixed_tags == {}
         and NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.buffer_size == 1
