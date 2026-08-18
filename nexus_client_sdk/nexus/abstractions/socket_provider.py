@@ -23,7 +23,6 @@ from typing import final, Self, TypeVar
 from dynaconf import DataDict
 from typing_extensions import deprecated
 
-import dynaconf
 from adapta.process_communication import DataSocket
 
 from nexus_client_sdk.nexus.exceptions.startup_error import (
