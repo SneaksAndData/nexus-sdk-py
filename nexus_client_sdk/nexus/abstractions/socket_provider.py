@@ -19,6 +19,8 @@
 
 import json
 from typing import final, Self, TypeVar
+
+from dynaconf import DataDict
 from typing_extensions import deprecated
 
 import dynaconf
@@ -100,9 +102,7 @@ class SocketCollection:
         return cls(input_sockets=[], output_sockets=[])
 
     @classmethod
-    def from_dynaconf(
-        cls, input_sockets: list[dynaconf.utils.boxing.DynaBox], output_sockets: list[dynaconf.utils.boxing.DynaBox]
-    ) -> Self:
+    def from_dynaconf(cls, input_sockets: list[DataDict], output_sockets: list[DataDict]) -> Self:
         """
         Creates a SocketCollection from a Dynaconf entry list
         """
@@ -139,7 +139,7 @@ class ExternalSocketProvider:
         return cls(*[DataSocket.from_dict(socket_dict) for socket_dict in json.loads(socket_list_ser)])
 
     @classmethod
-    def from_dynaconf(cls, sockets_list: list[dynaconf.utils.boxing.DynaBox] | str) -> Self:
+    def from_dynaconf(cls, sockets_list: list[DataDict] | str) -> Self:
         """
         Creates a SocketProvider from a Dynaconf entry list
         :param sockets_list:
