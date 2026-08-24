@@ -35,6 +35,13 @@ def _set_env_variables() -> None:
     os.environ["PROTEUS__AWS_ACCESS_KEY_ID"] = "minioadmin"
 
 
+def _unset_env_variables() -> None:
+    os.environ.pop("PROTEUS__AWS_REGION", None)
+    os.environ.pop("PROTEUS__AWS_ENDPOINT", None)
+    os.environ.pop("PROTEUS__AWS_SECRET_ACCESS_KEY", None)
+    os.environ.pop("PROTEUS__AWS_ACCESS_KEY_ID", None)
+
+
 @pytest.fixture(autouse=True)
 def set_config_extension_path_override(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(
@@ -46,7 +53,7 @@ def payloads(
     compress: bool = False,
 ) -> list[tuple[str, str]]:
     _set_env_variables()
-    return generate_payloads(
+    payloads = generate_payloads(
         compress=compress,
         constructor_args=[
             {
@@ -62,6 +69,8 @@ def payloads(
         ],
         payload_class=TestAlgorithmPayload,
     )
+    _unset_env_variables()
+    return payloads
 
 
 def negative_z_payload(
