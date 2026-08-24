@@ -32,7 +32,7 @@ class ForkedRemoteSpawnResult(AlgorithmResult):
 
 
 @singleton
-class ForkedChildRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
+class ForkedChildAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
     @inject
     def __init__(
         self,
@@ -120,7 +120,7 @@ class TestForkedAlgorithm(ForkedAlgorithm[TestAlgorithmPayload]):
             return []
 
         return [
-            ForkedChildRemoteAlgorithm(
+            ForkedChildAlgorithm(
                 metrics_provider=self._metrics_provider,
                 logger_factory=self._logger_factory,
                 remote_client=self._remote_client,
