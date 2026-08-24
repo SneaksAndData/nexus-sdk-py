@@ -27,10 +27,12 @@ from tests.algorithms.shared import (
 )
 from tests.algorithms.shared import main as sample_algorithm_main
 
-os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
-os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
-os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"] = "minioadmin"
-os.environ["PROTEUS__AWS_ACCESS_KEY_ID"] = "minioadmin"
+
+def _set_env_variables() -> None:
+    os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
+    os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
+    os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"] = "minioadmin"
+    os.environ["PROTEUS__AWS_ACCESS_KEY_ID"] = "minioadmin"
 
 
 @pytest.fixture(autouse=True)
@@ -43,6 +45,7 @@ def set_config_extension_path_override(monkeypatch: pytest.MonkeyPatch) -> None:
 def payloads(
     compress: bool = False,
 ) -> list[tuple[str, str]]:
+    _set_env_variables()
     return generate_payloads(
         compress=compress,
         constructor_args=[
