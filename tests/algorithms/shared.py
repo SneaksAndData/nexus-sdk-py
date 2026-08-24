@@ -40,7 +40,7 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
 from nexus_client_sdk.testing import generate_payload_url
 
 
-def payloads_for_algorithm(
+def generate_payloads(
     algorithm_class: str,
     compress: bool = False,
 ) -> list[tuple[str, str]]:
