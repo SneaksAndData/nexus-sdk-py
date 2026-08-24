@@ -21,16 +21,15 @@ from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
     SocketCollection,
-    InputSocket,
     ExternalSocketProvider,
 )
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.algorithm_configuration import NexusConfiguration
 from nexus_client_sdk.nexus.core.app_core import Nexus
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
-from nexus_client_sdk.nexus.input.payload_reader import SocketOverridePayload
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, SocketOverridePayload
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
     UserTelemetry,
@@ -40,36 +39,14 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
 from nexus_client_sdk.testing import generate_payload_url
 
 
-def generate_payloads(
-    algorithm_class: str,
-    compress: bool = False,
-) -> list[tuple[str, str]]:
-    upload_path = S3Path(bucket="nexus", path="units")
+@dataclass
+class TestAlgorithmConfiguration(NexusConfiguration):
+    @classmethod
+    def from_environment(cls) -> "NexusConfiguration":
+        return TestAlgorithmConfiguration.from_json(os.getenv("NEXUS__TEST_ALG_CONFIGURATION"))
 
-    def _rand_range(limit: int) -> list[int]:
-        return [random.randint(0, 10) for _ in range(limit)]
-
-    generated = [
-        TestAlgorithmPayload(
-            x=_rand_range(10),
-            y=_rand_range(10),
-            z=_rand_range(10),
-            enum_value=random.choice(list(TestEnum)),
-            alg_class=algorithm_class,
-            input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
-            output_sockets=[],
-        )
-        for _ in range(10)
-    ]
-    return [
-        generate_payload_url(
-            upload_path,
-            payload,
-            S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
-            compress_payload=compress,
-        )
-        for payload in generated
-    ]
+    c1: str
+    c2: str
 
 
 def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
@@ -94,6 +71,39 @@ def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
     ]
 
     return input_objects, user_objects
+
+
+def rand_range(limit: int) -> list[int]:
+    return [random.randint(0, 10) for _ in range(limit)]
+
+
+def generate_payloads(
+    payload_class: type[AlgorithmPayload],
+    constructor_args: list[dict[str, Any]],
+    compress: bool = False,
+) -> list[tuple[str, str]]:
+    """
+    Build and upload payloads for algorithm test runs.
+
+    :param algorithm_class: Fully qualified algorithm class path included in each payload.
+    :param compress: Whether to upload compressed payloads.
+    :param payload_class: Payload class used to construct each payload object.
+    :param constructor_args: Optional list of constructor kwargs, one dict per payload.
+    :return: List of tuples containing payload url and request id.
+    :raises TypeError: If payload_class cannot be instantiated with provided constructor args.
+    """
+    upload_path = S3Path(bucket="nexus", path="units")
+
+    generated = [payload_class(**payload_constructor_args) for payload_constructor_args in constructor_args]
+    return [
+        generate_payload_url(
+            base_path=upload_path,
+            payload_object=payload,
+            storage_client=S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
+            compress_payload=compress,
+        )
+        for payload in generated
+    ]
 
 
 class TestEnum(Enum):
@@ -194,6 +204,7 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
         xysample: XYSampleReader,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
+        conf: TestAlgorithmConfiguration,
         cache: InputCache,
     ):
         super().__init__(
@@ -203,10 +214,11 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
             payload=None,
             cache=cache,
         )
+        self.conf = conf
 
     async def _process_input(self, xysample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
-        self._logger.info("Config: {config}", config=NEXUS_FRAMEWORK_CONFIGURATION.default.conf.to_json())
-        if NEXUS_FRAMEWORK_CONFIGURATION.default.conf.c1 == "sum":
+        self._logger.info("Config: {config}", config=self.conf.to_json())
+        if self.conf.c1 == "sum":
             return pandas.DataFrame({"s": [int(xysample["x"].sum()) + int(xysample["y"].sum())]})
 
         return pandas.DataFrame({"s": [int(xysample["x"].sum()) / int(xysample["y"].sum())]})
@@ -220,6 +232,7 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
         zsample: ZSampleReader,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
+        conf: TestAlgorithmConfiguration,
         cache: InputCache,
     ):
         super().__init__(
@@ -229,10 +242,11 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
             payload=None,
             cache=cache,
         )
+        self.conf = conf
 
     async def _process_input(self, zsample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
-        self._logger.info("Config: {config}", config=NEXUS_FRAMEWORK_CONFIGURATION.default.conf.to_json())
-        if NEXUS_FRAMEWORK_CONFIGURATION.default.conf.c2 == "mean":
+        self._logger.info("Config: {config}", config=self.conf.to_json())
+        if self.conf.c2 == "mean":
             return pandas.DataFrame({"v": [float(zsample.mean())]})
 
         return pandas.DataFrame({"v": [float(zsample.sum() / zsample.size)]})

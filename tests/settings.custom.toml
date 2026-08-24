@@ -28,7 +28,7 @@ log_tagging_function = "tests.algorithms.shared.tags_from_payload"
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
 metric_tagging_function = "tests.algorithms.shared.tag_metrics"
 
-configuration_types = []
+configuration_types = ["tests.algorithms.shared.TestAlgorithmConfiguration"]
 
 [runtime.payload]
 
@@ -192,7 +192,3 @@ provider = "adapta.metrics.providers.void_provider.VoidMetricsProvider"
 
 # Initialization configuration for the MetricsProvider defined under `provider`
 init_args = {"metric_namespace" = "sdk"}
-
-[conf]
-c1 = "sum"
-c2 = "mean"
