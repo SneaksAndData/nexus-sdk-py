@@ -61,7 +61,7 @@ def payloads(
                 "y": rand_range(limit=10),
                 "z": rand_range(limit=10),
                 "enum_value": random.choice(list(TestEnum)),
-                "alg_class": "tests.algorithms.minimalistic.sample_main.TestMinimalisticAlgorithm",
+                "alg_class": "tests.algorithms.minimalistic.sample_main_minimalistic.TestMinimalisticAlgorithm",
                 "input_sockets": [InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
                 "output_sockets": [],
             }
@@ -73,9 +73,7 @@ def payloads(
     return payloads
 
 
-def negative_z_payload(
-    algorithm_class: str = "tests.algorithms.minimalistic.sample_main.TestMinimalisticAlgorithm",
-) -> tuple[str, str]:
+def negative_z_payload() -> tuple[str, str]:
     upload_path = S3Path(bucket="nexus", path="units")
 
     return generate_payload_url(
@@ -85,7 +83,7 @@ def negative_z_payload(
             y=[4, 5, 6],
             z=[0, -1, 10],
             enum_value=TestEnum.A,
-            alg_class=algorithm_class,
+            alg_class="tests.algorithms.minimalistic.sample_main_minimalistic.TestMinimalisticAlgorithm",
             input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
             output_sockets=[],
         ),

@@ -20,6 +20,11 @@ from tests.algorithms.shared import (
 
 
 @dataclass
+class TestFanOutAlgorithmPayload(TestAlgorithmPayload):
+    pass
+
+
+@dataclass
 class FanOutRemoteSpawnResult(AlgorithmResult):
     request_ids: list[str]
     tag: str
@@ -32,14 +37,14 @@ class FanOutRemoteSpawnResult(AlgorithmResult):
 
 
 @singleton
-class FanOutChildRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
+class FanOutChildRemoteAlgorithm(RemoteAlgorithm[TestFanOutAlgorithmPayload]):
     @inject
     def __init__(
         self,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         remote_client: NexusSchedulerAsyncClient,
-        payload: TestAlgorithmPayload,
+        payload: TestFanOutAlgorithmPayload,
         cache: InputCache,
     ):
         super().__init__(
@@ -61,8 +66,8 @@ class FanOutChildRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
     def _generate_tag(self, **kwargs) -> str:
         return f"fanout-child-{kwargs['request_id']}"
 
-    async def _run(self, **kwargs) -> list[TestAlgorithmPayload]:
-        payload = TestAlgorithmPayload.from_dict(
+    async def _run(self, **kwargs) -> list[TestFanOutAlgorithmPayload]:
+        payload = TestFanOutAlgorithmPayload.from_dict(
             {
                 **self._payload.to_dict(),
                 "alg_class": "tests.algorithms.minimalistic.sample_main_minimalistic.TestMinimalisticAlgorithm",
@@ -75,7 +80,7 @@ class FanOutChildRemoteAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
 
 
 @singleton
-class TestFanOutAlgorithm(FanOutAlgorithm[TestAlgorithmPayload]):
+class TestFanOutAlgorithm(FanOutAlgorithm[TestFanOutAlgorithmPayload]):
     async def _context_open(self):
         pass
 
@@ -88,7 +93,7 @@ class TestFanOutAlgorithm(FanOutAlgorithm[TestAlgorithmPayload]):
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         remote_client: NexusSchedulerAsyncClient,
-        payload: TestAlgorithmPayload,
+        payload: TestFanOutAlgorithmPayload,
         xy_processor: XYProcessor,
         z_processor: ZProcessor,
         zz_processor: ZZProcessor,

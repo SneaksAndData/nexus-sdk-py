@@ -20,6 +20,11 @@ from tests.algorithms.shared import (
 
 
 @dataclass
+class TestForkedAlgorithmPayload(TestAlgorithmPayload):
+    is_forked: bool
+
+
+@dataclass
 class ForkedRemoteSpawnResult(AlgorithmResult):
     request_ids: list[str]
     tag: str
@@ -32,14 +37,14 @@ class ForkedRemoteSpawnResult(AlgorithmResult):
 
 
 @singleton
-class ForkedChildAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
+class ForkedChildAlgorithm(RemoteAlgorithm[TestForkedAlgorithmPayload]):
     @inject
     def __init__(
         self,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         remote_client: NexusSchedulerAsyncClient,
-        payload: TestAlgorithmPayload,
+        payload: TestForkedAlgorithmPayload,
         cache: InputCache,
     ):
         super().__init__(
@@ -61,8 +66,8 @@ class ForkedChildAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
     def _generate_tag(self, request_id: str, **kwargs) -> str:
         return f"forked-child-{request_id}"
 
-    async def _run(self, **kwargs) -> list[TestAlgorithmPayload]:
-        payload = TestAlgorithmPayload.from_dict(
+    async def _run(self, **kwargs) -> list[TestForkedAlgorithmPayload]:
+        payload = TestForkedAlgorithmPayload.from_dict(
             {
                 **self._payload.to_dict(),
                 "alg_class": "tests.algorithms.minimalistic.sample_main_minimalistic.TestMinimalisticAlgorithm",
@@ -75,7 +80,7 @@ class ForkedChildAlgorithm(RemoteAlgorithm[TestAlgorithmPayload]):
 
 
 @singleton
-class TestForkedAlgorithm(ForkedAlgorithm[TestAlgorithmPayload]):
+class TestForkedAlgorithm(ForkedAlgorithm[TestForkedAlgorithmPayload]):
     async def _context_open(self):
         pass
 
@@ -88,7 +93,7 @@ class TestForkedAlgorithm(ForkedAlgorithm[TestAlgorithmPayload]):
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         remote_client: NexusSchedulerAsyncClient,
-        payload: TestAlgorithmPayload,
+        payload: TestForkedAlgorithmPayload,
         xy_processor: XYProcessor,
         z_processor: ZProcessor,
         zz_processor: ZZProcessor,

@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import pandas
 from adapta.metrics import MetricsProvider
 from injector import inject, singleton
@@ -11,32 +13,17 @@ from tests.algorithms.shared import (
     ZProcessor,
     ZZProcessor,
     TestResult,
-    TestUserAnalyticsTelemetry as SharedTestUserAnalyticsTelemetry,
-    tags_from_payload as shared_tags_from_payload,
-    enrich_from_payload as shared_enrich_from_payload,
-    tag_metrics as shared_tag_metrics,
     TestAlgorithmPayload,
 )
 
 
-class TestUserAnalyticsTelemetry(SharedTestUserAnalyticsTelemetry):
+@dataclass
+class TestMinimalisticAlgorithmPayload(TestAlgorithmPayload):
     pass
 
 
-def tags_from_payload(payload: TestAlgorithmPayload, run_args):
-    return shared_tags_from_payload(payload, run_args)
-
-
-def enrich_from_payload(payload: TestAlgorithmPayload, run_args):
-    return shared_enrich_from_payload(payload, run_args)
-
-
-def tag_metrics(payload: TestAlgorithmPayload, run_args):
-    return shared_tag_metrics(payload, run_args)
-
-
 @singleton
-class TestMinimalisticAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
+class TestMinimalisticAlgorithm(MinimalisticAlgorithm[TestMinimalisticAlgorithmPayload]):
     async def _context_open(self):
         pass
 

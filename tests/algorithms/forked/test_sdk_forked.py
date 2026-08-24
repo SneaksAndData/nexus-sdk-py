@@ -3,19 +3,16 @@ import json
 import os
 import random
 import sys
-from dataclasses import dataclass
 
 import pytest
 import requests
 from cassandra.cluster import Session
-from dataclasses_json import DataClassJsonMixin
-
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
-from nexus_client_sdk.nexus.input.payload_reader import SocketOverridePayload
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
+from tests.algorithms.forked.sample_main_forked import TestForkedAlgorithmPayload
 from tests.algorithms.shared import (
     TestEnum,
     rand_range,
@@ -41,16 +38,6 @@ def _unset_env_variables() -> None:
 @pytest.fixture(autouse=True)
 def set_config_extension_path_override(monkeypatch):
     monkeypatch.setenv("CONFIG_EXTENSION_PATH_OVERRIDE", get_config_extension_path_override(algorithm_name="forked"))
-
-
-@dataclass
-class TestForkedAlgorithmPayload(SocketOverridePayload, DataClassJsonMixin):
-    x: list[int]
-    y: list[int]
-    z: list[int]
-    enum_value: TestEnum
-    alg_class: str
-    is_forked: bool
 
 
 def payloads(is_forked: bool) -> list[tuple[str, str]]:

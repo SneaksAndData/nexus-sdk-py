@@ -13,12 +13,11 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
+from tests.algorithms.fan_out.sample_main_fan_out import TestFanOutAlgorithmPayload
 from tests.algorithms.shared import (
-    find_telemetry_objects,
     generate_payloads,
     rand_range,
     TestEnum,
-    TestAlgorithmPayload,
 )
 from tests.algorithms.shared import main as sample_algorithm_main
 
@@ -58,7 +57,7 @@ def payloads() -> list[tuple[str, str]]:
             }
             for _ in range(10)
         ],
-        payload_class=TestAlgorithmPayload,
+        payload_class=TestFanOutAlgorithmPayload,
     )
     _unset_env_variables()
     return payloads
