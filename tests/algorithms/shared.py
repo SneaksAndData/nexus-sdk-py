@@ -1,35 +1,124 @@
+import os
 import math
+import random
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, final
 
+import boto3
 import pandas
 import polars
 from adapta.metrics import MetricsProvider
 from adapta.storage.blob.base import StorageClient
+from adapta.storage.blob.s3_storage_client import S3StorageClient
+from adapta.storage.models import S3Path
 from adapta.storage.query_enabled_store import QueryEnabledStore
+from dataclasses_json import DataClassJsonMixin
 from injector import inject, singleton
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
-    ExternalSocketProvider,
     SocketCollection,
+    ExternalSocketProvider,
 )
-from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.algorithm_configuration import NexusConfiguration
 from nexus_client_sdk.nexus.core.app_core import Nexus
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, SocketOverridePayload
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryRecorder,
     UserTelemetry,
     UserTelemetryPathSegment,
     TTelemetry,
 )
-from tests.conftest import TestAlgorithmPayload, TestAlgorithmConfiguration
+from nexus_client_sdk.testing import generate_payload_url
+
+
+@dataclass
+class TestAlgorithmConfiguration(NexusConfiguration):
+    @classmethod
+    def from_environment(cls) -> "NexusConfiguration":
+        return TestAlgorithmConfiguration.from_json(os.getenv("NEXUS__TEST_ALG_CONFIGURATION"))
+
+    c1: str
+    c2: str
+
+
+def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
+    s3_client = boto3.client(
+        "s3",
+        endpoint_url=os.environ["PROTEUS__AWS_ENDPOINT"],
+        aws_access_key_id=os.environ["PROTEUS__AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"],
+    )
+    input_prefix = "telemetry/telemetry_group=inputs/"
+    user_prefix = "telemetry/telemetry_group=user/"
+
+    input_objects = [
+        item["Key"]
+        for item in s3_client.list_objects_v2(Bucket="nexus-sdk-tests", Prefix=input_prefix).get("Contents", [])
+        if request_id in item["Key"]
+    ]
+    user_objects = [
+        item["Key"]
+        for item in s3_client.list_objects_v2(Bucket="nexus-sdk-tests", Prefix=user_prefix).get("Contents", [])
+        if request_id in item["Key"]
+    ]
+
+    return input_objects, user_objects
+
+
+def rand_range(limit: int) -> list[int]:
+    return [random.randint(0, 10) for _ in range(limit)]
+
+
+def generate_payloads(
+    payload_class: type[AlgorithmPayload],
+    constructor_args: list[dict[str, Any]],
+    compress: bool = False,
+) -> list[tuple[str, str]]:
+    """
+    Build and upload payloads for algorithm test runs.
+
+    :param algorithm_class: Fully qualified algorithm class path included in each payload.
+    :param compress: Whether to upload compressed payloads.
+    :param payload_class: Payload class used to construct each payload object.
+    :param constructor_args: Optional list of constructor kwargs, one dict per payload.
+    :return: List of tuples containing payload url and request id.
+    :raises TypeError: If payload_class cannot be instantiated with provided constructor args.
+    """
+    upload_path = S3Path(bucket="nexus", path="units")
+
+    generated = [payload_class(**payload_constructor_args) for payload_constructor_args in constructor_args]
+    return [
+        generate_payload_url(
+            base_path=upload_path,
+            payload_object=payload,
+            storage_client=S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
+            compress_payload=compress,
+        )
+        for payload in generated
+    ]
+
+
+class TestEnum(Enum):
+    A = "A"
+    B = "B"
+    C = "C"
+
+
+@dataclass
+class TestAlgorithmPayload(SocketOverridePayload, DataClassJsonMixin):
+    x: list[int]
+    y: list[int]
+    z: list[int]
+    enum_value: TestEnum
+    alg_class: str
 
 
 @final
@@ -125,7 +214,6 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
             payload=None,
             cache=cache,
         )
-
         self.conf = conf
 
     async def _process_input(self, xysample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
@@ -144,7 +232,7 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
         zsample: ZSampleReader,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        my_conf: TestAlgorithmConfiguration,
+        conf: TestAlgorithmConfiguration,
         cache: InputCache,
     ):
         super().__init__(
@@ -154,8 +242,7 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
             payload=None,
             cache=cache,
         )
-
-        self.conf = my_conf
+        self.conf = conf
 
     async def _process_input(self, zsample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
         self._logger.info("Config: {config}", config=self.conf.to_json())
@@ -173,7 +260,6 @@ class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
         z: ZProcessor,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        my_conf: TestAlgorithmConfiguration,
         cache: InputCache,
     ):
         super().__init__(
@@ -183,8 +269,6 @@ class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
             payload=None,
             cache=cache,
         )
-
-        self.conf = my_conf
 
     async def _process_input(self, request_id: str, z: pandas.DataFrame, **_) -> pandas.DataFrame:
         self._logger.info("ZZ invoked")
@@ -209,42 +293,10 @@ class TestResult(AlgorithmResult):
 
 
 @singleton
-class TestAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
-    async def _context_open(self):
-        pass
-
-    async def _context_close(self):
-        pass
-
-    @inject
-    def __init__(
-        self,
-        metrics_provider: MetricsProvider,
-        logger_factory: LoggerFactory,
-        xy_processor: XYProcessor,
-        z_processor: ZProcessor,
-        zz_processor: ZZProcessor,
-        cache: InputCache,
-    ):
-        super().__init__(metrics_provider, logger_factory, xy_processor, z_processor, zz_processor, cache=cache)
-
-    async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
-        assert (
-            "extra_parameters" in NEXUS_FRAMEWORK_CONFIGURATION.default
-        ), "Expected settings.test_algorithm.extra.toml to be merged into main config"
-        assert (
-            NEXUS_FRAMEWORK_CONFIGURATION.default.extra_parameters.parameter_y == "test"
-        ), "Unexpected or missing value of extra_parameters.parameter_y"
-
-        return TestResult(xy, z, self._cache.total_evaluated_inputs())
-
-
-@singleton
 class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
     @inject
     def __init__(
         self,
-        _: TestAlgorithmConfiguration,
         algorithm_payload: TestAlgorithmPayload,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
