@@ -32,6 +32,7 @@ class QueryEnabledStoreCollection:
          Populate this collection from the configuration.
         :return:
         """
+        self.close()
         self._stores.clear()
 
         for store_connection in store_connections:
