@@ -1,5 +1,5 @@
-import os
 import math
+import os
 import random
 from dataclasses import dataclass
 from enum import Enum
@@ -12,7 +12,6 @@ from adapta.metrics import MetricsProvider
 from adapta.storage.blob.base import StorageClient
 from adapta.storage.blob.s3_storage_client import S3StorageClient
 from adapta.storage.models import S3Path
-from dataclasses_json import DataClassJsonMixin
 from injector import inject, singleton
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
@@ -113,12 +112,17 @@ class TestEnum(Enum):
 
 
 @dataclass
-class TestAlgorithmPayload(SocketOverridePayload, DataClassJsonMixin):
+class TestAlgorithmPayload(SocketOverridePayload):
     x: list[int]
     y: list[int]
     z: list[int]
     enum_value: TestEnum
     alg_class: str
+
+
+@dataclass
+class Algorithm1Payload(TestAlgorithmPayload):
+    something_1: bool
 
 
 @final
