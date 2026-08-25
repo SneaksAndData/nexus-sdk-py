@@ -32,13 +32,6 @@ configuration_types = ["tests.algorithms.shared.TestAlgorithmConfiguration"]
 
 [runtime.payload]
 
-# payload types supported by this Nexus application. At least one must be provided
-types = [
-    "tests.algorithms.minimalistic.sample_main_minimalistic.TestMinimalisticAlgorithmPayload",
-    "tests.algorithms.fan_out.sample_main_fan_out.TestFanOutAlgorithmPayload",
-    "tests.algorithms.forked.sample_main_forked.TestForkedAlgorithmPayload"
-]
-
 # optional raw payload serialization for later analysis
 # you can serialize payload via user telemetry, however that won't catch failed payloads
 # for production scenarios recommended setup is to pair this setting with `on_failure` and

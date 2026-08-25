@@ -4,8 +4,9 @@ dynaconf_merge = true
 
 # payload types supported by this Nexus application. At least one must be provided
 types = [
-    "tests.algorithms.minimalistic.sample_main_minimalistic.TestMinimalisticAlgorithmPayload"
+    "tests.algorithms.forked.sample_main_forked.TestForkedAlgorithmPayload"
 ]
+
 
 # ADDITIONAL SERVICES
 [services]

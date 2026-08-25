@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import TypeAlias
 
 import pandas
 from adapta.metrics import MetricsProvider
@@ -18,10 +19,7 @@ from tests.algorithms.shared import (
     TestAlgorithmPayload,
 )
 
-
-@dataclass
-class TestFanOutAlgorithmPayload(TestAlgorithmPayload):
-    pass
+TestFanOutAlgorithmPayload: TypeAlias = TestAlgorithmPayload
 
 
 @dataclass
