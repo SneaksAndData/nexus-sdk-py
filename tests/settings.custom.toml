@@ -131,13 +131,6 @@ serializers = [
       # THIS IS A RESERVATION FOR https://github.com/SneaksAndData/nexus-sdk-py/issues/126
       classes = []
 
-# ADDITIONAL SERVICES
-[services]
-    # Query Enabled Stores
-    [query_enabled_store]
-
-    enabled = "0"
-
 # INPUTS - configuration for data read interfaces
 [inputs]
 
