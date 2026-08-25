@@ -1,0 +1,8 @@
+dynaconf_merge = true
+
+# ADDITIONAL SERVICES
+[services]
+    # Query Enabled Stores
+    [query_enabled_store]
+
+    enabled = "0"

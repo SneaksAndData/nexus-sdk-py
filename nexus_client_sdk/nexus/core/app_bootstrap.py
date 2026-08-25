@@ -43,6 +43,47 @@ from nexus_client_sdk.nexus.telemetry.payload_recorder import (
 from nexus_client_sdk.nexus.telemetry.recorder import TelemetryRecorder
 
 
+def _load_data_sockets() -> SocketCollection:
+    base_collection = SocketCollection.empty()
+    if (
+        NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets
+        and len(NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets) > 0
+    ):
+        base_collection = base_collection.with_inputs(
+            [InputSocket.from_dict(socket_dict) for socket_dict in NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets]
+        )
+    if (
+        "outputs" in NEXUS_FRAMEWORK_CONFIGURATION.default
+        and len(NEXUS_FRAMEWORK_CONFIGURATION.default.outputs.sockets) > 0
+    ):
+        base_collection = base_collection.with_outputs(
+            [
+                OutputSocket.from_dict(socket_dict)
+                for socket_dict in NEXUS_FRAMEWORK_CONFIGURATION.default.outputs.sockets
+            ]
+        )
+
+    return base_collection
+
+
+def _load_config_extension(extension_name: str) -> None:
+    if extension_name == "":
+        return
+
+    config_location = os.path.join(
+        os.getenv("CONFIG_EXTENSION_PATH_OVERRIDE", "config_extensions"),
+        "**",
+        f"settings.{extension_name}*.toml",
+    )
+    matching_configurations = [
+        os.path.abspath(conf) for conf in glob.glob(config_location, recursive=True) if os.path.isfile(conf)
+    ]
+    for matching_config in matching_configurations:
+        settings_loader(NEXUS_FRAMEWORK_CONFIGURATION.default, filename=matching_config)
+
+    return
+
+
 class _PayloadSerializationMode(Enum):
     """
     Serialization modes for [runtime.payload.serialization_mode]. Bootstrap-only access.
@@ -147,31 +188,6 @@ class NexusBootstrapper:
         """
         self._algorithm_resolvers.append(resolver)
 
-    def _load_data_sockets(self) -> SocketCollection:
-        base_collection = SocketCollection.empty()
-        if (
-            NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets
-            and len(NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets) > 0
-        ):
-            base_collection = base_collection.with_inputs(
-                [
-                    InputSocket.from_dict(socket_dict)
-                    for socket_dict in NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets
-                ]
-            )
-        if (
-            "outputs" in NEXUS_FRAMEWORK_CONFIGURATION.default
-            and len(NEXUS_FRAMEWORK_CONFIGURATION.default.outputs.sockets) > 0
-        ):
-            base_collection = base_collection.with_outputs(
-                [
-                    OutputSocket.from_dict(socket_dict)
-                    for socket_dict in NEXUS_FRAMEWORK_CONFIGURATION.default.outputs.sockets
-                ]
-            )
-
-        return base_collection
-
     def _load_additional_modules(self):
         for additional_module in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.additional_modules:
             module_class = locate(additional_module)
@@ -228,16 +244,7 @@ class NexusBootstrapper:
             raise FatalStartupConfigurationError(f"Failed to locate a provided algorithm class: {algorithm}")
         self._algorithm_classes.add(algorithm_class)
         # load linked configuration if exists
-        config_location = os.path.join(
-            os.getenv("CONFIG_EXTENSION_PATH_OVERRIDE", "config_extensions"),
-            "**",
-            f"settings.{algorithm_class.alias()}*.toml",
-        )
-        matching_configurations = [
-            os.path.abspath(conf) for conf in glob.glob(config_location, recursive=True) if os.path.isfile(conf)
-        ]
-        for matching_config in matching_configurations:
-            settings_loader(NEXUS_FRAMEWORK_CONFIGURATION.default, filename=matching_config)
+        _load_config_extension(algorithm_class.alias())
 
     def _load_configured_algorithms(self):
         for algorithm in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.algorithms:
@@ -280,6 +287,7 @@ class NexusBootstrapper:
         :return:
         """
         self._load_additional_modules()
+        _load_config_extension("provided")
 
         app_injector = Injector(self._injection_binds)
         self._load_payload_types()
@@ -296,7 +304,7 @@ class NexusBootstrapper:
             app_injector = extension(app_injector)
 
         payload_read_results: dict[str, AlgorithmPayloadReader] = {}
-        socket_collection = self._load_data_sockets()
+        socket_collection = _load_data_sockets()
 
         for payload_type in self._payload_types:
             payload, reader = await self._get_payload(
