@@ -65,11 +65,6 @@ class NexusRuntimeConfiguration:
                     "REMOTE_ALGORITHM.COMPRESSION_IMPORT_PATH", condition=lambda v: v is not None and v != ""
                 ),
             ),
-            Validator(
-                "INPUTS.QUERY_ENABLED_STORE.CONNECTION_STRING",
-                required=True,
-                when=Validator("INPUTS.QUERY_ENABLED_STORE.ENABLED", condition=lambda v: v == "1"),
-            ),
         ]
 
         # do not modify these, internal use only

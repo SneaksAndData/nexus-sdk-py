@@ -15,7 +15,7 @@ algorithms = []
 # additional modules for the DI container
 # use these to provide custom services
 additional_modules = [
-    "nexus_client_sdk.nexus.core.app_dependencies.QueryEnabledStoreModule",
+    "nexus_client_sdk.nexus.core.app_dependencies.QueryEnabledStoreCollectionModule",
     "nexus_client_sdk.nexus.core.app_dependencies.ExternalSocketsModule",
     "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
 ]
@@ -159,6 +159,16 @@ serializers = [
       # THIS IS A RESERVATION FOR https://github.com/SneaksAndData/nexus-sdk-py/issues/126
       classes = []
 
+# ADDITIONAL SERVICES
+[services]
+    # Query Enabled Stores
+    [query_enabled_store]
+
+    enabled = "1"
+
+    # Connection strings for all supported QES instances
+    store_connections = ["qes://engine=LOCAL;plaintext_credentials={};settings={}"]
+
 # INPUTS - configuration for data read interfaces
 [inputs]
 
@@ -175,14 +185,6 @@ serializers = [
 
 # default is empty list
 sockets = []
-
-    # Query Enabled Store configuration
-    [inputs.query_enabled_store]
-
-    enabled = "1"
-
-    # Connection string for QES
-    connection_string = "qes://engine=LOCAL;plaintext_credentials={};settings={}"
 
     # Settings for AstraClientModule
     [inputs.astra_client]
