@@ -47,3 +47,10 @@ class QueryEnabledStoreCollection:
         """
         for store in self._stores:
             store.close()
+
+    def is_empty(self) -> bool:
+        """
+         Check if this collection is empty.
+        :return:
+        """
+        return len(self._stores) == 0
