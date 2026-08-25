@@ -22,13 +22,13 @@ from pydoc import locate
 from typing import final, Any, Callable, Self
 
 from adapta.storage.blob.base import StorageClient
-from adapta.storage.query_enabled_store import QueryEnabledStore
 from injector import Module, singleton, provider
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import (
     BootstrapLoggerFactory,
 )
+from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
     ExternalSocketProvider,
 )
@@ -59,22 +59,28 @@ class BootstrapLoggerFactoryModule(Module):
 
 
 @final
-class QueryEnabledStoreModule(Module):
+class QueryEnabledStoreCollectionModule(Module):
     """
     QES module.
     """
 
     @singleton
     @provider
-    def provide(self) -> QueryEnabledStore:
+    def provide(self) -> QueryEnabledStoreCollection:
         """
         DI factory method.
         """
-        if NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.query_enabled_store.enabled == "1":
-            connection_string = NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.query_enabled_store.connection_string
-            return QueryEnabledStore.from_string(connection_string, lazy_init=False)
+        if NEXUS_FRAMEWORK_CONFIGURATION.default.services.query_enabled_store.enabled != "1":
+            return QueryEnabledStoreCollection()
 
-        return None
+        try:
+            return QueryEnabledStoreCollection().load_stores(
+                NEXUS_FRAMEWORK_CONFIGURATION.default.services.query_enabled_store.store_connections
+            )
+        except Exception as e:
+            raise FatalStartupConfigurationError(
+                "Unable to initialize QES collection. Please ensure query_enabled_store.store_connections list property is defined in TOML configuration."
+            ) from e
 
 
 @final

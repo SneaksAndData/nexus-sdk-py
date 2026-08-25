@@ -32,7 +32,6 @@ from adapta.logs import LoggerInterface
 from adapta.metrics import MetricsProvider
 from adapta.process_communication import DataSocket
 from adapta.storage.blob.base import StorageClient
-from adapta.storage.query_enabled_store import QueryEnabledStore
 from dynaconf import Validator
 from injector import Injector
 
@@ -42,6 +41,7 @@ from nexus_client_sdk.nexus.abstractions.logger_factory import (
     LoggerFactory,
 )
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
+from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
 from nexus_client_sdk.nexus.algorithms import (
     BaselineAlgorithm,
 )
@@ -358,9 +358,8 @@ class Nexus:
                         skipped_due_to_config=NEXUS_FRAMEWORK_CONFIGURATION.default.telemetry.user.enabled != "1",
                     )
             # dispose of QES instance gracefully as it might hold open connections
-            qes = self._injector.get(QueryEnabledStore)
-            if qes is not None:
-                qes.close()
+            qes = self._injector.get(QueryEnabledStoreCollection)
+            qes.close()
 
         root_logger.stop()
 

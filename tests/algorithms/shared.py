@@ -12,13 +12,13 @@ from adapta.metrics import MetricsProvider
 from adapta.storage.blob.base import StorageClient
 from adapta.storage.blob.s3_storage_client import S3StorageClient
 from adapta.storage.models import S3Path
-from adapta.storage.query_enabled_store import QueryEnabledStore
 from dataclasses_json import DataClassJsonMixin
 from injector import inject, singleton
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
+from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
 from nexus_client_sdk.nexus.abstractions.socket_provider import (
     SocketCollection,
     ExternalSocketProvider,
@@ -135,7 +135,7 @@ class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
-        store: QueryEnabledStore,
+        stores: QueryEnabledStoreCollection,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         payload: TestAlgorithmPayload,
@@ -145,7 +145,7 @@ class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
     ):
         super().__init__(
             socket=None,
-            store=store,
+            stores=stores,
             metrics_provider=metrics_provider,
             logger_factory=logger_factory,
             payload=payload,
@@ -170,7 +170,7 @@ class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
-        store: QueryEnabledStore,
+        stores: QueryEnabledStoreCollection,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         payload: TestAlgorithmPayload,
@@ -180,14 +180,14 @@ class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
     ):
         super().__init__(
             socket=None,
-            store=store,
+            stores=stores,
             metrics_provider=metrics_provider,
             logger_factory=logger_factory,
             payload=payload,
             cache=cache,
             *readers,
         )
-        assert store is None
+        assert stores.is_empty(), "QES Collection should be empty for this run"
 
     async def _read_input(self, **_) -> pandas.DataFrame:
         # negative value should abort the run and be handled accordingly
