@@ -120,11 +120,6 @@ class TestAlgorithmPayload(SocketOverridePayload):
     alg_class: str
 
 
-@dataclass
-class Algorithm1Payload(TestAlgorithmPayload):
-    something_1: bool
-
-
 @final
 class NegativeZError(FatalNexusError):
     def __init__(self):
