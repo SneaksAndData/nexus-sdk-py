@@ -8,8 +8,8 @@ Configuration management in Nexus is built on [Dynaconf](https://www.dynaconf.co
 
 ## Configuration Loading Order & Precedence
 
-Configuration settings are loaded in sequential order. Values loaded in later stages override or merge into values established by earlier stages (when `dynaconf_merge = true` is set).
-
+Configuration settings are loaded in sequential order. Values loaded in later *file-based* stages override or merge into values established by earlier stages (when `dynaconf_merge = true` is set).
+Environment variables (e.g. `NEXUS__*`) are applied by Dynaconf with higher precedence than settings files.
 ```
 1. Framework Base Configuration  (settings.toml)
        │
