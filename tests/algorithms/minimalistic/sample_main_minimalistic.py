@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import TypeAlias
 
 import pandas
 from adapta.metrics import MetricsProvider
@@ -17,9 +18,7 @@ from tests.algorithms.shared import (
 )
 
 
-@dataclass
-class TestMinimalisticAlgorithmPayload(TestAlgorithmPayload):
-    pass
+TestMinimalisticAlgorithmPayload: TypeAlias = TestAlgorithmPayload
 
 
 @singleton
