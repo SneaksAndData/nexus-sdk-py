@@ -16,7 +16,7 @@ class QueryEnabledStoreCollection:
 
     def store_for(self, socket: DataSocket) -> QueryEnabledStore | None:
         """
-        Retrieve a store for the provided socket.
+        Retrieve a store for the provided socket. Usage: stores.store_for(socket).open(...).set_parameters(...).execute(...)
         """
         matching_store_type = suggest_store(socket)
         if matching_store_type is None:
