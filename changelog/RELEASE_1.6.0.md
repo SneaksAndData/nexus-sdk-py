@@ -11,7 +11,7 @@
 ## Dependency Injection
 - Removed `add_reader(s)`, `use_processor(s)` since they were not needed. Readers and processors are automatically resolved by DI framework from an algorithm class instance constructor.
 - Developers can now provide custom modules to be loaded via `[runtime].[additional_modules]`
-  - Optional modules `QueryEnabledStoreCollectionModule`, `ExternalSocketsModule`, `CompressorModule` have been removed from defaults and should be explicitly added by a client if required.
+  - Optional modules `QueryEnabledStoreModule`, `ExternalSocketsModule`, `CompressorModule` have been removed from defaults and should be explicitly added by a client if required.
 - Developers now **must** provide payload type via `[runtime].[payload].[types]` and configuration types via `[runtime].[configuration_types]`
 
 ## Telemetry API
