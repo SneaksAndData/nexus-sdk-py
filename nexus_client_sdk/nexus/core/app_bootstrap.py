@@ -19,11 +19,9 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection
 from nexus_client_sdk.nexus.algorithms import BaselineAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
-from nexus_client_sdk.nexus.core.app_bootstrap_extensions import (
-    config_validation_extension,
-    app_configuration_loader_extension,
-)
+from nexus_client_sdk.nexus.core.app_bootstrap_extensions import config_validation_extension
 from nexus_client_sdk.nexus.core.app_dependencies import (
     BootstrapLoggerFactoryModule,
     StorageClientModule,
@@ -83,6 +81,7 @@ class NexusBootstrapper:
     """
 
     def __init__(self, run_args: NexusDefaultArguments):
+        self._configuration_model: type[NexusConfigurationModel] | None = None
         self._logger_factory: BootstrapLoggerFactory | None = None
         self._logger: LoggerInterface | None = None
         self._injection_binds = [
@@ -96,7 +95,6 @@ class NexusBootstrapper:
         self._run_args = run_args
         self._startup_extensions: list[Callable[[Injector], Injector]] = [
             config_validation_extension,
-            app_configuration_loader_extension,
         ]
         # payload processing
         self._payload_types: list[type[AlgorithmPayload]] = []
@@ -403,4 +401,23 @@ class NexusBootstrapper:
             scope=singleton,
         )
 
+        if self._configuration_model is None:
+            app_injector.binder.bind(
+                NexusConfigurationModel,
+                to=NexusConfigurationModel.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION),
+                scope=singleton,
+            )
+        else:
+            app_injector.binder.bind(
+                self._configuration_model,
+                to=self._configuration_model.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION),
+                scope=singleton,
+            )
+
         return app_injector
+
+    def set_configuration_model(self, model: type[NexusConfigurationModel]):
+        """
+        Sets configuration model for this Nexus instance.
+        """
+        self._configuration_model = model

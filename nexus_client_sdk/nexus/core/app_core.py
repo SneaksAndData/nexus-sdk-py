@@ -46,6 +46,7 @@ from nexus_client_sdk.nexus.algorithms import (
     BaselineAlgorithm,
 )
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.core.app_bootstrap import NexusBootstrapper
 from nexus_client_sdk.nexus.core.serializers import (
@@ -119,6 +120,10 @@ class Nexus:
         for resolver in resolvers:
             self._bootstrapper.register_algorithm_resolver(resolver)
 
+        return self
+
+    def with_configuration_model(self, model: type[NexusConfigurationModel]) -> Self:
+        self._bootstrapper.set_configuration_model(model)
         return self
 
     def on_complete(self, *post_processors: type[UserTelemetryRecorder]) -> Self:

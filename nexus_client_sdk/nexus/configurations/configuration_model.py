@@ -191,7 +191,6 @@ class RuntimeSettings:
     log_enrichment_function: str
     log_tagging_function: str
     metric_tagging_function: str
-    configuration_types: list[str]
     payload: RuntimePayloadSettings
     exceptions: RuntimeExceptionsSettings
 
