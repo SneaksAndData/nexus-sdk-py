@@ -28,30 +28,33 @@ class CustomConfigurationModel(NexusConfigurationModel):
     field_d: float
 
 
+def _check_base_model(model_instance: NexusConfigurationModel) -> None:
+    assert model_instance.algorithm_name == "hello-world"
+    assert isinstance(model_instance.client, NexusClientSettings)
+    assert model_instance.client.receiver == "http://localhost:5555/receiver"
+    assert model_instance.client.scheduler == "http://localhost:5555/scheduler"
+
+    assert isinstance(model_instance.result, ResultSettings)
+    assert model_instance.result.storage_client_class == "adapta.storage.blob.s3_storage_client.S3StorageClient"
+
+    assert isinstance(model_instance.telemetry, TelemetrySettings)
+    assert model_instance.telemetry.input.enabled is True
+    assert model_instance.telemetry.user.enabled is True
+
+    assert isinstance(model_instance.logging, LoggingSettings)
+    assert model_instance.logging.datadog.enabled is False
+
+    assert isinstance(model_instance.metrics, MetricsSettings)
+    assert model_instance.metrics.provider == "adapta.metrics.providers.void_provider.VoidMetricsProvider"
+
+    assert isinstance(model_instance.runtime, RuntimeSettings)
+    assert isinstance(model_instance.runtime.algorithms, list)
+
+
 def test_runtime_configuration() -> None:
     NEXUS_FRAMEWORK_CONFIGURATION.load()
     model = NexusConfigurationModel.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION)
-
-    assert model.algorithm_name == "hello-world"
-    assert isinstance(model.client, NexusClientSettings)
-    assert model.client.receiver == "http://localhost:5555/receiver"
-    assert model.client.scheduler == "http://localhost:5555/scheduler"
-
-    assert isinstance(model.result, ResultSettings)
-    assert model.result.storage_client_class == "adapta.storage.blob.s3_storage_client.S3StorageClient"
-
-    assert isinstance(model.telemetry, TelemetrySettings)
-    assert model.telemetry.input.enabled is True
-    assert model.telemetry.user.enabled is True
-
-    assert isinstance(model.logging, LoggingSettings)
-    assert model.logging.datadog.enabled is False
-
-    assert isinstance(model.metrics, MetricsSettings)
-    assert model.metrics.provider == "adapta.metrics.providers.void_provider.VoidMetricsProvider"
-
-    assert isinstance(model.runtime, RuntimeSettings)
-    assert isinstance(model.runtime.algorithms, list)
+    _check_base_model(model)
 
 
 def test_runtime_configuration_nested_models() -> None:
@@ -83,23 +86,4 @@ def test_custom_runtime_configuration(set_config_extension_path_override) -> Non
     assert model.custom_settings.field_c is True
 
     # check inherited settings
-    assert model.algorithm_name == "hello-world"
-    assert isinstance(model.client, NexusClientSettings)
-    assert model.client.receiver == "http://localhost:5555/receiver"
-    assert model.client.scheduler == "http://localhost:5555/scheduler"
-
-    assert isinstance(model.result, ResultSettings)
-    assert model.result.storage_client_class == "adapta.storage.blob.s3_storage_client.S3StorageClient"
-
-    assert isinstance(model.telemetry, TelemetrySettings)
-    assert model.telemetry.input.enabled is True
-    assert model.telemetry.user.enabled is True
-
-    assert isinstance(model.logging, LoggingSettings)
-    assert model.logging.datadog.enabled is False
-
-    assert isinstance(model.metrics, MetricsSettings)
-    assert model.metrics.provider == "adapta.metrics.providers.void_provider.VoidMetricsProvider"
-
-    assert isinstance(model.runtime, RuntimeSettings)
-    assert isinstance(model.runtime.algorithms, list)
+    _check_base_model(model)
