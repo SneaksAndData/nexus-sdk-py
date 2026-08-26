@@ -123,6 +123,9 @@ class Nexus:
         return self
 
     def with_configuration_model(self, model: type[NexusConfigurationModel]) -> Self:
+        """
+        Specify a custom configuration model to use. If omitted, with use default NexusConfigurationModel.
+        """
         self._bootstrapper.set_configuration_model(model)
         return self
 

@@ -218,8 +218,12 @@ class NexusConfigurationModel:
 
     @classmethod
     def from_runtime_configuration(cls, config: NexusRuntimeConfiguration) -> Self:
+        """
+        Constructs this model from a runtime Dynaconf instance.
+        """
+
         def _normalize_property_keys(source: dict[str, Any]) -> dict[str, Any]:
-            items = [(k, v) for k, v in source.items()]
+            items = list(source.items())
             for key, value in items:
                 source.pop(key)
                 if isinstance(value, dict):

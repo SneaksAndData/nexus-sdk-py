@@ -167,6 +167,9 @@ class NexusRuntimeConfiguration:
             raise FatalStartupConfigurationError("DYNACONF settings failed to validate") from e
 
     def load_config_extension(self, extension_name: str) -> None:
+        """
+        Loads a custom extension TOML file.
+        """
         if extension_name == "":
             return
 

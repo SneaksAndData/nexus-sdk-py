@@ -1,5 +1,3 @@
-import glob
-import os
 from datetime import datetime
 from enum import Enum
 from pydoc import locate
@@ -9,7 +7,6 @@ from adapta.logs import LoggerInterface
 from adapta.metrics import MetricsProvider
 from adapta.metrics.providers.void_provider import VoidMetricsProvider
 from adapta.storage.blob.base import StorageClient
-from dynaconf.loaders import settings_loader
 from injector import Injector, Module, singleton
 
 from nexus_client_sdk.models.access_token import AccessToken
