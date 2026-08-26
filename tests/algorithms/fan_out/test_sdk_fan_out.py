@@ -39,6 +39,8 @@ def _unset_env_variables() -> None:
 @pytest.fixture(autouse=True)
 def set_config_extension_path_override(monkeypatch):
     monkeypatch.setenv("CONFIG_EXTENSION_PATH_OVERRIDE", get_config_extension_path_override(algorithm_name="fan_out"))
+    # Force reload because runtime settings are cached globally after first load.
+    NEXUS_FRAMEWORK_CONFIGURATION._configuration = None
 
 
 def payloads() -> list[tuple[str, str]]:

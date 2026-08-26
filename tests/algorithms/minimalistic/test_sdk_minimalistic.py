@@ -47,6 +47,8 @@ def set_config_extension_path_override(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(
         "CONFIG_EXTENSION_PATH_OVERRIDE", get_config_extension_path_override(algorithm_name="minimalistic")
     )
+    # Force reload because runtime settings are cached globally after first load.
+    NEXUS_FRAMEWORK_CONFIGURATION._configuration = None
 
 
 def payloads(
@@ -117,7 +119,7 @@ async def test_sdk_run_minimalistic(
     )
     sys.argv = ["", "--sas-uri", minimalistic_test_args.sas_uri, "--request-id", minimalistic_test_args.request_id]
     await sample_algorithm_main()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     result = json.loads(
         requests.get(scheduler.get_run_result(minimalistic_test_args.request_id, algorithm).result_uri).text
     )
