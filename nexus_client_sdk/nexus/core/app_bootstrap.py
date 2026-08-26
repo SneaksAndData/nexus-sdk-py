@@ -312,6 +312,10 @@ class NexusBootstrapper:
                 save_content=NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.payload.serialization_mode
                 != _PayloadSerializationMode.OFF.value,
             )
+            if payload is not None:
+                for class_type in payload.__class__.mro():
+                    if issubclass(class_type, AlgorithmPayload):
+                        app_injector.binder.bind(class_type, to=payload, scope=singleton)
 
             logger_fixed_template |= self._log_enricher(payload, self._run_args) if self._log_enricher else {}
             logger_tags |= self._log_tagger(payload, self._run_args) if self._log_tagger else {}

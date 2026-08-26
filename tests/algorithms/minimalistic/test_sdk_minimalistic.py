@@ -20,11 +20,11 @@ from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extensi
 from tests.algorithms.shared import (
     find_telemetry_objects,
     generate_payloads,
-    TestAlgorithmPayload,
     TestEnum,
     NegativeZError,
     rand_range,
 )
+from tests.algorithms.minimalistic.sample_main_minimalistic import TestMinimalisticAlgorithmPayload
 from tests.algorithms.shared import main as sample_algorithm_main
 
 
@@ -67,7 +67,7 @@ def payloads(
             }
             for _ in range(10)
         ],
-        payload_class=TestAlgorithmPayload,
+        payload_class=TestMinimalisticAlgorithmPayload,
     )
     _unset_env_variables()
     return payloads
@@ -78,7 +78,7 @@ def negative_z_payload() -> tuple[str, str]:
 
     return generate_payload_url(
         upload_path,
-        TestAlgorithmPayload(
+        TestMinimalisticAlgorithmPayload(
             x=[1, 2, 3],
             y=[4, 5, 6],
             z=[0, -1, 10],
