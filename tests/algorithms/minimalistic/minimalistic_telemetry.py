@@ -6,8 +6,12 @@ from injector import singleton, inject
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
-from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import UserTelemetryRecorder, UserTelemetry, TTelemetry, \
-    UserTelemetryPathSegment
+from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
+    UserTelemetryRecorder,
+    UserTelemetry,
+    TTelemetry,
+    UserTelemetryPathSegment,
+)
 from tests.algorithms.minimalistic.minimalistic_inputs import TestAlgorithmPayload
 from tests.algorithms.shared import TestResult
 

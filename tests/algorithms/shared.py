@@ -38,6 +38,7 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
 )
 from nexus_client_sdk.testing import generate_payload_url
 
+
 def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
     s3_client = boto3.client(
         "s3",
@@ -115,4 +116,3 @@ class TestResult(AlgorithmResult):
 
     def to_kwargs(self) -> dict[str, Any]:
         pass
-

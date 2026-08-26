@@ -11,6 +11,7 @@ from tests.algorithms.shared import (
     TestResult,
 )
 
+
 @singleton
 class TestMinimalisticAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
     async def _context_open(self):

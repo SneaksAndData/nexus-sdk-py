@@ -122,7 +122,9 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
         self.conf = conf
 
     async def _process_input(self, xysample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
-        self._logger.info("Config: {config}", config=TypeAdapter(TestAlgorithmConfiguration).dump_json(self.conf).decode('utf-8'))
+        self._logger.info(
+            "Config: {config}", config=TypeAdapter(TestAlgorithmConfiguration).dump_json(self.conf).decode("utf-8")
+        )
         if self.conf.c1 == "sum":
             return pandas.DataFrame({"s": [int(xysample["x"].sum()) + int(xysample["y"].sum())]})
 

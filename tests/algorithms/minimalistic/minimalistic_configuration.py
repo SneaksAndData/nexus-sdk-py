@@ -8,6 +8,7 @@ class TestExtraParameters:
     parameter_x: int
     parameter_y: str
 
+
 @dataclass
 class TestAlgorithmConfiguration(NexusConfigurationModel):
     c1: str
