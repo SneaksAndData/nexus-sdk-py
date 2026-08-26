@@ -17,7 +17,7 @@ from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FR
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.testing import generate_payload_url
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
-from tests.algorithms.minimalistic.minimalistic_inputs import TestAlgorithmPayload
+from tests.algorithms.minimalistic.minimalistic_inputs import TestAlgorithmPayload, NegativeZError
 from tests.algorithms.shared import (
     find_telemetry_objects,
     generate_payloads,
