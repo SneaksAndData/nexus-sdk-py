@@ -83,10 +83,10 @@ class InputsSettings:
 
 @dataclass
 class DatadogLoggingSettings:
-    enabled: str
-    buffer_size: str
+    enabled: bool
+    buffer_size: int
     debug: str
-    max_flush_retry_time: str
+    max_flush_retry_time: int
     ignore_flush_failure: str
     fixed_tags: dict[str, str]
     attach_interrupt_handlers: str
@@ -134,6 +134,7 @@ class NexusConfigurationModel:
     """
      Nexus Configuration Model
     """
+
     algorithm_name: str
     shard_name: str
     runtime: RuntimeSettings
@@ -151,4 +152,15 @@ class NexusConfigurationModel:
 
     @classmethod
     def from_runtime_configuration(cls, config: NexusRuntimeConfiguration) -> Self:
-        return cls(**config.default.as_dict())
+        def _normalize_property_keys(source: dict[str, Any]) -> dict[str, Any]:
+            items = [(k, v) for k, v in source.items()]
+            for key, value in items:
+                source.pop(key)
+                if isinstance(value, dict):
+                    source[key.lower()] = _normalize_property_keys(value)
+                else:
+                    source[key.lower()] = value
+
+            return source
+
+        return cls(**_normalize_property_keys(config.default.as_dict()))
