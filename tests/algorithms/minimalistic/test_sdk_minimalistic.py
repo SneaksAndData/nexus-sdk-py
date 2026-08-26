@@ -47,8 +47,6 @@ def set_config_extension_path_override(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(
         "CONFIG_EXTENSION_PATH_OVERRIDE", get_config_extension_path_override(algorithm_name="minimalistic")
     )
-    # Force reload because runtime settings are cached globally after first load.
-    NEXUS_FRAMEWORK_CONFIGURATION._configuration = None
 
 
 def payloads(
