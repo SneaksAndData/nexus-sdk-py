@@ -8,7 +8,7 @@ c2 = "def"
 
 # payload types supported by this Nexus application. At least one must be provided
 types = [
-    "tests.algorithms.minimalistic.sample_main_minimalistic.TestMinimalisticAlgorithmPayload"
+    "tests.algorithms.minimalistic.minimalistic_inputs.TestAlgorithmPayload"
 ]
 
 # ADDITIONAL SERVICES

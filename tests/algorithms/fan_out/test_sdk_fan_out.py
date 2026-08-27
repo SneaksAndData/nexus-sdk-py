@@ -13,14 +13,13 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
-from tests.algorithms.fan_out.sample_main_fan_out import TestFanOutAlgorithmPayload
 from tests.algorithms.shared import (
     generate_payloads,
     rand_range,
     TestEnum,
 )
-from tests.algorithms.shared import main as sample_algorithm_main
-
+from tests.algorithms.fan_out.fan_out_inputs import TestAlgorithmPayload
+from tests.algorithms.fan_out.fan_out_main import main as sample_algorithm_main
 
 def _set_env_variables() -> None:
     os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
@@ -51,13 +50,13 @@ def payloads() -> list[tuple[str, str]]:
                 "y": rand_range(limit=10),
                 "z": rand_range(limit=10),
                 "enum_value": random.choice(list(TestEnum)),
-                "alg_class": "tests.algorithms.fan_out.sample_main_fan_out.TestFanOutAlgorithm",
+                "alg_class": "tests.algorithms.fan_out.fan_out_algorithm_sample.TestFanOutAlgorithm",
                 "input_sockets": [InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
                 "output_sockets": [],
             }
             for _ in range(10)
         ],
-        payload_class=TestFanOutAlgorithmPayload,
+        payload_class=TestAlgorithmPayload,
     )
     _unset_env_variables()
     return payloads

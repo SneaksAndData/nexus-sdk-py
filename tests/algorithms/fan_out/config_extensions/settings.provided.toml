@@ -1,10 +1,13 @@
 dynaconf_merge = true
 
+c1 = "abc"
+c2 = "def"
+
 [runtime.payload]
 
 # payload types supported by this Nexus application. At least one must be provided
 types = [
-    "tests.algorithms.fan_out.sample_main_fan_out.TestFanOutAlgorithmPayload"
+    "tests.algorithms.fan_out.fan_out_inputs.TestAlgorithmPayload"
 ]
 
 
