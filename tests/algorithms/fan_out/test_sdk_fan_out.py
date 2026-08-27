@@ -18,7 +18,7 @@ from tests.algorithms.shared import (
     rand_range,
     TestEnum,
 )
-from tests.algorithms.fan_out.fan_out_inputs import TestFanOutAlgorithmPayload
+from tests.algorithms.fan_out.fan_out_inputs import TestFanOutAlgorithmPayload, TestFanOutChilPayload
 from tests.algorithms.fan_out.fan_out_main import main as sample_algorithm_main
 
 
@@ -85,6 +85,7 @@ async def test_sdk_run_fan_out(
     await sample_algorithm_main()
     await asyncio.sleep(1)
 
+    ## Assert childs spawned
     parent_filter = json.dumps(
         {
             "requestId": fan_out_test_args.request_id,
@@ -93,8 +94,30 @@ async def test_sdk_run_fan_out(
         separators=(",", ":"),
     )
 
-    child_rows = cql_session.execute(
-        f"SELECT id FROM nexus.checkpoints WHERE parent = '{parent_filter}' ALLOW FILTERING"
-    )._current_rows
+    child_rows = list(
+        cql_session.execute(
+            f"SELECT id, payload_uri FROM nexus.checkpoints WHERE parent = '{parent_filter}' ALLOW FILTERING"
+        )
+    )
 
     assert len(child_rows) == 5  # we create 5 payloads in the remote algorithm
+
+    ## Assert that payload is correctly created and can be deserialized
+    for row in child_rows:
+        url = row.payload_uri.replace(
+            "minio.default.svc.cluster.local",
+            "localhost",
+        )
+
+        child_payload = TestFanOutChilPayload.from_dict(
+            json.loads(
+                requests.get(
+                    url,
+                    headers={"Host": "minio.default.svc.cluster.local:9000"},
+                ).text
+            )
+        )
+
+        assert child_payload.x * 10 == child_payload.y  # we set y = x * 10 in remote payload generation
+        assert child_payload.input_sockets is None
+        assert child_payload.output_sockets == []

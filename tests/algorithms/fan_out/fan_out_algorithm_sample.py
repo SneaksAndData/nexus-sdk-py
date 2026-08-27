@@ -47,9 +47,9 @@ class TestFanOutChildAlgorithm(RemoteAlgorithm[TestFanOutAlgorithmPayload]):
                 x=i,
                 y=i * 10,
                 input_sockets=None,
-                output_sockets=None,
+                output_sockets=[],
             )
-            for i in range(5)
+            for i in range(1, 6)
         ]
 
     async def _context_open(self):
