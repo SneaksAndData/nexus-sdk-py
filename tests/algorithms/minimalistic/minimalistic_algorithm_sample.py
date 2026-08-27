@@ -6,33 +6,10 @@ from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+from tests.algorithms.minimalistic.minimalistic_inputs import TestAlgorithmPayload, ZProcessor, XYProcessor, ZZProcessor
 from tests.algorithms.shared import (
-    XYProcessor,
-    ZProcessor,
-    ZZProcessor,
     TestResult,
-    TestUserAnalyticsTelemetry as SharedTestUserAnalyticsTelemetry,
-    tags_from_payload as shared_tags_from_payload,
-    enrich_from_payload as shared_enrich_from_payload,
-    tag_metrics as shared_tag_metrics,
-    TestAlgorithmPayload,
 )
-
-
-class TestUserAnalyticsTelemetry(SharedTestUserAnalyticsTelemetry):
-    pass
-
-
-def tags_from_payload(payload: TestAlgorithmPayload, run_args):
-    return shared_tags_from_payload(payload, run_args)
-
-
-def enrich_from_payload(payload: TestAlgorithmPayload, run_args):
-    return shared_enrich_from_payload(payload, run_args)
-
-
-def tag_metrics(payload: TestAlgorithmPayload, run_args):
-    return shared_tag_metrics(payload, run_args)
 
 
 @singleton

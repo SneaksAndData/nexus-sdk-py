@@ -17,15 +17,14 @@ from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FR
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.testing import generate_payload_url
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
+from tests.algorithms.minimalistic.minimalistic_inputs import TestAlgorithmPayload, NegativeZError
 from tests.algorithms.shared import (
     find_telemetry_objects,
     generate_payloads,
-    TestAlgorithmPayload,
     TestEnum,
-    NegativeZError,
     rand_range,
 )
-from tests.algorithms.shared import main as sample_algorithm_main
+from tests.algorithms.minimalistic.minimalistic_main import main as sample_algorithm_main
 
 
 def _set_env_variables() -> None:
@@ -61,7 +60,7 @@ def payloads(
                 "y": rand_range(limit=10),
                 "z": rand_range(limit=10),
                 "enum_value": random.choice(list(TestEnum)),
-                "alg_class": "tests.algorithms.minimalistic.sample_main.TestMinimalisticAlgorithm",
+                "alg_class": "tests.algorithms.minimalistic.minimalistic_algorithm_sample.TestMinimalisticAlgorithm",
                 "input_sockets": [InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
                 "output_sockets": [],
             }
@@ -74,7 +73,7 @@ def payloads(
 
 
 def negative_z_payload(
-    algorithm_class: str = "tests.algorithms.minimalistic.sample_main.TestMinimalisticAlgorithm",
+    algorithm_class: str = "tests.algorithms.minimalistic.minimalistic_algorithm_sample.TestMinimalisticAlgorithm",
 ) -> tuple[str, str]:
     upload_path = S3Path(bucket="nexus", path="units")
 

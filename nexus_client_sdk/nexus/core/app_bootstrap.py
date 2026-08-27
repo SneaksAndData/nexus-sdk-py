@@ -1,5 +1,3 @@
-import glob
-import os
 from datetime import datetime
 from enum import Enum
 from pydoc import locate
@@ -9,7 +7,6 @@ from adapta.logs import LoggerInterface
 from adapta.metrics import MetricsProvider
 from adapta.metrics.providers.void_provider import VoidMetricsProvider
 from adapta.storage.blob.base import StorageClient
-from dynaconf.loaders import settings_loader
 from injector import Injector, Module, singleton
 
 from nexus_client_sdk.models.access_token import AccessToken
@@ -19,11 +16,9 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection
 from nexus_client_sdk.nexus.algorithms import BaselineAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
-from nexus_client_sdk.nexus.core.app_bootstrap_extensions import (
-    config_validation_extension,
-    app_configuration_loader_extension,
-)
+from nexus_client_sdk.nexus.core.app_bootstrap_extensions import config_validation_extension
 from nexus_client_sdk.nexus.core.app_dependencies import (
     BootstrapLoggerFactoryModule,
     StorageClientModule,
@@ -66,24 +61,6 @@ def _load_data_sockets() -> SocketCollection:
     return base_collection
 
 
-def _load_config_extension(extension_name: str) -> None:
-    if extension_name == "":
-        return
-
-    config_location = os.path.join(
-        os.getenv("CONFIG_EXTENSION_PATH_OVERRIDE", "config_extensions"),
-        "**",
-        f"settings.{extension_name}*.toml",
-    )
-    matching_configurations = [
-        os.path.abspath(conf) for conf in glob.glob(config_location, recursive=True) if os.path.isfile(conf)
-    ]
-    for matching_config in matching_configurations:
-        settings_loader(NEXUS_FRAMEWORK_CONFIGURATION.default, filename=matching_config)
-
-    return
-
-
 class _PayloadSerializationMode(Enum):
     """
     Serialization modes for [runtime.payload.serialization_mode]. Bootstrap-only access.
@@ -101,6 +78,7 @@ class NexusBootstrapper:
     """
 
     def __init__(self, run_args: NexusDefaultArguments):
+        self._configuration_model: type[NexusConfigurationModel] | None = None
         self._logger_factory: BootstrapLoggerFactory | None = None
         self._logger: LoggerInterface | None = None
         self._injection_binds = [
@@ -114,7 +92,6 @@ class NexusBootstrapper:
         self._run_args = run_args
         self._startup_extensions: list[Callable[[Injector], Injector]] = [
             config_validation_extension,
-            app_configuration_loader_extension,
         ]
         # payload processing
         self._payload_types: list[type[AlgorithmPayload]] = []
@@ -244,7 +221,7 @@ class NexusBootstrapper:
             raise FatalStartupConfigurationError(f"Failed to locate a provided algorithm class: {algorithm}")
         self._algorithm_classes.add(algorithm_class)
         # load linked configuration if exists
-        _load_config_extension(algorithm_class.alias())
+        NEXUS_FRAMEWORK_CONFIGURATION.load_config_extension(algorithm_class.alias())
 
     def _load_configured_algorithms(self):
         for algorithm in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.algorithms:
@@ -287,7 +264,7 @@ class NexusBootstrapper:
         :return:
         """
         self._load_additional_modules()
-        _load_config_extension("provided")
+        NEXUS_FRAMEWORK_CONFIGURATION.load_config_extension("provided")
 
         app_injector = Injector(self._injection_binds)
         self._load_payload_types()
@@ -421,4 +398,23 @@ class NexusBootstrapper:
             scope=singleton,
         )
 
+        if self._configuration_model is None:
+            app_injector.binder.bind(
+                NexusConfigurationModel,
+                to=NexusConfigurationModel.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION),
+                scope=singleton,
+            )
+        else:
+            app_injector.binder.bind(
+                self._configuration_model,
+                to=self._configuration_model.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION),
+                scope=singleton,
+            )
+
         return app_injector
+
+    def set_configuration_model(self, model: type[NexusConfigurationModel]):
+        """
+        Sets configuration model for this Nexus instance.
+        """
+        self._configuration_model = model

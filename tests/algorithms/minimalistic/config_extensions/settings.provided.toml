@@ -1,8 +1,12 @@
 dynaconf_merge = true
 
+c1 = "abc"
+c2 = "def"
+
+
 # ADDITIONAL SERVICES
 [services]
     # Query Enabled Stores
-    [query_enabled_store]
+    [services.query_enabled_store]
 
     enabled = "0"
