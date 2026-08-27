@@ -1,6 +1,6 @@
 from nexus_client_sdk.nexus.core.app_core import Nexus
 from tests.algorithms.fan_out.fan_out_configuration import TestAlgorithmConfiguration
-from tests.algorithms.fan_out.fan_out_inputs import TestAlgorithmPayload
+from tests.algorithms.fan_out.fan_out_inputs import TestFanOutAlgorithmPayload
 from tests.algorithms.fan_out.fan_out_telemetry import TestUserAnalyticsTelemetry
 
 
@@ -10,7 +10,7 @@ async def main():
     :return:
     """
 
-    def alg_from_payload(payload: TestAlgorithmPayload) -> str:
+    def alg_from_payload(payload: TestFanOutAlgorithmPayload) -> str:
         return payload.alg_class
 
     nexus = (

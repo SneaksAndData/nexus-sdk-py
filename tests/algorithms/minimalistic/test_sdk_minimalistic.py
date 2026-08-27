@@ -17,7 +17,7 @@ from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FR
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.testing import generate_payload_url
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
-from tests.algorithms.minimalistic.minimalistic_inputs import TestAlgorithmPayload, NegativeZError
+from tests.algorithms.minimalistic.minimalistic_inputs import TestMinimalisticAlgorithmPayload, NegativeZError
 from tests.algorithms.shared import (
     find_telemetry_objects,
     generate_payloads,
@@ -66,7 +66,7 @@ def payloads(
             }
             for _ in range(10)
         ],
-        payload_class=TestAlgorithmPayload,
+        payload_class=TestMinimalisticAlgorithmPayload,
     )
     _unset_env_variables()
     return payloads
@@ -79,7 +79,7 @@ def negative_z_payload(
 
     return generate_payload_url(
         upload_path,
-        TestAlgorithmPayload(
+        TestMinimalisticAlgorithmPayload(
             x=[1, 2, 3],
             y=[4, 5, 6],
             z=[0, -1, 10],

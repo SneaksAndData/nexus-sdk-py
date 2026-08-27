@@ -18,7 +18,7 @@ from tests.algorithms.shared import TestEnum
 
 
 @dataclass
-class TestAlgorithmPayload(SocketOverridePayload):
+class TestMinimalisticAlgorithmPayload(SocketOverridePayload):
     x: list[int]
     y: list[int]
     z: list[int]
@@ -36,14 +36,14 @@ class NegativeZError(FatalNexusError):
 
 
 @singleton
-class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
+class XYSampleReader(InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
         stores: QueryEnabledStoreCollection,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        payload: TestAlgorithmPayload,
+        payload: TestMinimalisticAlgorithmPayload,
         socket_collection: SocketCollection,
         *readers: "InputReader",
         cache: InputCache
@@ -71,14 +71,14 @@ class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
 
 
 @singleton
-class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
+class ZSampleReader(InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
         stores: QueryEnabledStoreCollection,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        payload: TestAlgorithmPayload,
+        payload: TestMinimalisticAlgorithmPayload,
         _: ExternalSocketProvider,
         *readers: "InputReader",
         cache: InputCache
@@ -102,7 +102,7 @@ class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
 
 
 @singleton
-class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+class XYProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
@@ -132,7 +132,7 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
 
 
 @singleton
-class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+class ZProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
@@ -159,7 +159,7 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
 
 
 @singleton
-class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+class ZZProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,

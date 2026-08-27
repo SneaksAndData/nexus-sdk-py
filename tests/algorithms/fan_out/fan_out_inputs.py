@@ -18,7 +18,13 @@ from tests.algorithms.shared import TestEnum
 
 
 @dataclass
-class TestAlgorithmPayload(SocketOverridePayload):
+class TestFanOutChilPayload(SocketOverridePayload):
+    x: int
+    y: int
+
+
+@dataclass
+class TestFanOutAlgorithmPayload(SocketOverridePayload):
     x: list[int]
     y: list[int]
     z: list[int]
@@ -26,24 +32,15 @@ class TestAlgorithmPayload(SocketOverridePayload):
     alg_class: str
 
 
-@final
-class NegativeZError(FatalNexusError):
-    def __init__(self):
-        super().__init__()
-
-    def __str__(self) -> str:
-        return "Z-axis contains a negative value"
-
-
 @singleton
-class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
+class XYSampleReader(InputReader[TestFanOutAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
         stores: QueryEnabledStoreCollection,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        payload: TestAlgorithmPayload,
+        payload: TestFanOutAlgorithmPayload,
         socket_collection: SocketCollection,
         *readers: "InputReader",
         cache: InputCache
@@ -71,14 +68,14 @@ class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
 
 
 @singleton
-class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
+class ZSampleReader(InputReader[TestFanOutAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
         stores: QueryEnabledStoreCollection,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        payload: TestAlgorithmPayload,
+        payload: TestFanOutAlgorithmPayload,
         _: ExternalSocketProvider,
         *readers: "InputReader",
         cache: InputCache
@@ -102,7 +99,7 @@ class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
 
 
 @singleton
-class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+class XYProcessor(InputProcessor[TestFanOutAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
@@ -132,7 +129,7 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
 
 
 @singleton
-class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+class ZProcessor(InputProcessor[TestFanOutAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,
@@ -159,7 +156,7 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
 
 
 @singleton
-class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+class ZZProcessor(InputProcessor[TestFanOutAlgorithmPayload, pandas.DataFrame]):
     @inject
     def __init__(
         self,

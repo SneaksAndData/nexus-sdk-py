@@ -7,7 +7,7 @@ c2 = "def"
 
 # payload types supported by this Nexus application. At least one must be provided
 types = [
-    "tests.algorithms.fan_out.fan_out_inputs.TestAlgorithmPayload"
+    "tests.algorithms.fan_out.fan_out_inputs.TestFanOutAlgorithmPayload"
 ]
 
 

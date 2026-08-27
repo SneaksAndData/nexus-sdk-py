@@ -18,8 +18,9 @@ from tests.algorithms.shared import (
     rand_range,
     TestEnum,
 )
-from tests.algorithms.fan_out.fan_out_inputs import TestAlgorithmPayload
+from tests.algorithms.fan_out.fan_out_inputs import TestFanOutAlgorithmPayload
 from tests.algorithms.fan_out.fan_out_main import main as sample_algorithm_main
+
 
 def _set_env_variables() -> None:
     os.environ["PROTEUS__AWS_REGION"] = "us-east-1"
@@ -56,7 +57,7 @@ def payloads() -> list[tuple[str, str]]:
             }
             for _ in range(10)
         ],
-        payload_class=TestAlgorithmPayload,
+        payload_class=TestFanOutAlgorithmPayload,
     )
     _unset_env_variables()
     return payloads
@@ -83,7 +84,17 @@ async def test_sdk_run_fan_out(
     sys.argv = ["", "--sas-uri", fan_out_test_args.sas_uri, "--request-id", fan_out_test_args.request_id]
     await sample_algorithm_main()
     await asyncio.sleep(1)
-    result = json.loads(requests.get(scheduler.get_run_result(fan_out_test_args.request_id, algorithm).result_uri).text)
-    run_meta = scheduler.get_request_metadata(fan_out_test_args.request_id, algorithm)
-    assert True
-    # TODO: Test child spawns when https://github.com/SneaksAndData/nexus-sdk-py/issues/211 is made
+
+    parent_filter = json.dumps(
+        {
+            "requestId": fan_out_test_args.request_id,
+            "algorithmName": algorithm,
+        },
+        separators=(",", ":"),
+    )
+
+    child_rows = cql_session.execute(
+        f"SELECT id FROM nexus.checkpoints WHERE parent = '{parent_filter}' ALLOW FILTERING"
+    )._current_rows
+
+    assert len(child_rows) == 5  # we create 5 payloads in the remote algorithm

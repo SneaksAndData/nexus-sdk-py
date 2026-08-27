@@ -290,7 +290,6 @@ class NexusBootstrapper:
                 != _PayloadSerializationMode.OFF.value,
             )
             app_injector.binder.bind(payload.__class__, to=payload, scope=singleton)
-
             logger_fixed_template |= self._log_enricher(payload, self._run_args) if self._log_enricher else {}
             logger_tags |= self._log_tagger(payload, self._run_args) if self._log_tagger else {}
             metric_tags |= self._metric_tagger(payload, self._run_args) if self._metric_tagger else {}

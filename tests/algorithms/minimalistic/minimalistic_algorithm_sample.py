@@ -6,14 +6,19 @@ from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
-from tests.algorithms.minimalistic.minimalistic_inputs import TestAlgorithmPayload, ZProcessor, XYProcessor, ZZProcessor
+from tests.algorithms.minimalistic.minimalistic_inputs import (
+    TestMinimalisticAlgorithmPayload,
+    ZProcessor,
+    XYProcessor,
+    ZZProcessor,
+)
 from tests.algorithms.shared import (
     TestResult,
 )
 
 
 @singleton
-class TestMinimalisticAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
+class TestMinimalisticAlgorithm(MinimalisticAlgorithm[TestMinimalisticAlgorithmPayload]):
     async def _context_open(self):
         pass
 
