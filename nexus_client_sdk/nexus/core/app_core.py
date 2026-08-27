@@ -32,7 +32,6 @@ from adapta.logs import LoggerInterface
 from adapta.metrics import MetricsProvider
 from adapta.process_communication import DataSocket
 from adapta.storage.blob.base import StorageClient
-from adapta.storage.query_enabled_store import QueryEnabledStore
 from dynaconf import Validator
 from injector import Injector
 
@@ -42,10 +41,12 @@ from nexus_client_sdk.nexus.abstractions.logger_factory import (
     LoggerFactory,
 )
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
+from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
 from nexus_client_sdk.nexus.algorithms import (
     BaselineAlgorithm,
 )
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.core.app_bootstrap import NexusBootstrapper
 from nexus_client_sdk.nexus.core.serializers import (
@@ -119,6 +120,13 @@ class Nexus:
         for resolver in resolvers:
             self._bootstrapper.register_algorithm_resolver(resolver)
 
+        return self
+
+    def with_configuration_model(self, model: type[NexusConfigurationModel]) -> Self:
+        """
+        Specify a custom configuration model to use. If omitted, with use default NexusConfigurationModel.
+        """
+        self._bootstrapper.set_configuration_model(model)
         return self
 
     def on_complete(self, *post_processors: type[UserTelemetryRecorder]) -> Self:
@@ -358,9 +366,8 @@ class Nexus:
                         skipped_due_to_config=NEXUS_FRAMEWORK_CONFIGURATION.default.telemetry.user.enabled != "1",
                     )
             # dispose of QES instance gracefully as it might hold open connections
-            qes = self._injector.get(QueryEnabledStore)
-            if qes is not None:
-                qes.close()
+            qes = self._injector.get(QueryEnabledStoreCollection)
+            qes.close()
 
         root_logger.stop()
 

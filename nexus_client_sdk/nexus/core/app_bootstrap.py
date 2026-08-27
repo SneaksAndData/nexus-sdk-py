@@ -12,14 +12,13 @@ from injector import Injector, Module, singleton
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.nexus.abstractions.logger_factory import BootstrapLoggerFactory, LoggerFactory
 from nexus_client_sdk.nexus.abstractions.metrics_provider_factory import MetricsProviderFactory
+from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection, InputSocket, OutputSocket
 from nexus_client_sdk.nexus.algorithms import BaselineAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
-from nexus_client_sdk.nexus.core.app_bootstrap_extensions import (
-    config_validation_extension,
-    app_configuration_loader_extension,
-)
+from nexus_client_sdk.nexus.core.app_bootstrap_extensions import config_validation_extension
 from nexus_client_sdk.nexus.core.app_dependencies import (
     BootstrapLoggerFactoryModule,
     StorageClientModule,
@@ -30,13 +29,36 @@ from nexus_client_sdk.nexus.core.app_dependencies import (
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
-from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader, SocketOverridePayload
 from nexus_client_sdk.nexus.telemetry.payload_recorder import (
     PayloadTelemetry,
     FailedPayloadRecorder,
     PayloadResult,
 )
 from nexus_client_sdk.nexus.telemetry.recorder import TelemetryRecorder
+
+
+def _load_data_sockets() -> SocketCollection:
+    base_collection = SocketCollection.empty()
+    if (
+        NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets
+        and len(NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets) > 0
+    ):
+        base_collection = base_collection.with_inputs(
+            [InputSocket.from_dict(socket_dict) for socket_dict in NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets]
+        )
+    if (
+        "outputs" in NEXUS_FRAMEWORK_CONFIGURATION.default
+        and len(NEXUS_FRAMEWORK_CONFIGURATION.default.outputs.sockets) > 0
+    ):
+        base_collection = base_collection.with_outputs(
+            [
+                OutputSocket.from_dict(socket_dict)
+                for socket_dict in NEXUS_FRAMEWORK_CONFIGURATION.default.outputs.sockets
+            ]
+        )
+
+    return base_collection
 
 
 class _PayloadSerializationMode(Enum):
@@ -56,6 +78,7 @@ class NexusBootstrapper:
     """
 
     def __init__(self, run_args: NexusDefaultArguments):
+        self._configuration_model: type[NexusConfigurationModel] | None = None
         self._logger_factory: BootstrapLoggerFactory | None = None
         self._logger: LoggerInterface | None = None
         self._injection_binds = [
@@ -69,7 +92,6 @@ class NexusBootstrapper:
         self._run_args = run_args
         self._startup_extensions: list[Callable[[Injector], Injector]] = [
             config_validation_extension,
-            app_configuration_loader_extension,
         ]
         # payload processing
         self._payload_types: list[type[AlgorithmPayload]] = []
@@ -198,6 +220,8 @@ class NexusBootstrapper:
         if algorithm_class is None:
             raise FatalStartupConfigurationError(f"Failed to locate a provided algorithm class: {algorithm}")
         self._algorithm_classes.add(algorithm_class)
+        # load linked configuration if exists
+        NEXUS_FRAMEWORK_CONFIGURATION.load_config_extension(algorithm_class.alias())
 
     def _load_configured_algorithms(self):
         for algorithm in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.algorithms:
@@ -240,6 +264,7 @@ class NexusBootstrapper:
         :return:
         """
         self._load_additional_modules()
+        NEXUS_FRAMEWORK_CONFIGURATION.load_config_extension("provided")
 
         app_injector = Injector(self._injection_binds)
         self._load_payload_types()
@@ -256,6 +281,7 @@ class NexusBootstrapper:
             app_injector = extension(app_injector)
 
         payload_read_results: dict[str, AlgorithmPayloadReader] = {}
+        socket_collection = _load_data_sockets()
 
         for payload_type in self._payload_types:
             payload, reader = await self._get_payload(
@@ -272,6 +298,18 @@ class NexusBootstrapper:
             if payload is not None:
                 for resolver in self._algorithm_resolvers:
                     self._load_algorithm(resolver(payload))
+
+                if isinstance(payload, SocketOverridePayload):
+                    socket_collection = socket_collection.with_inputs(payload.input_sockets or []).with_outputs(
+                        payload.output_sockets or []
+                    )
+
+        # bind fully configured socket collection instance
+        app_injector.binder.bind(
+            socket_collection.__class__,
+            to=socket_collection,
+            scope=singleton,
+        )
 
         logger_factory = LoggerFactory(
             fixed_template=logger_fixed_template,
@@ -360,4 +398,23 @@ class NexusBootstrapper:
             scope=singleton,
         )
 
+        if self._configuration_model is None:
+            app_injector.binder.bind(
+                NexusConfigurationModel,
+                to=NexusConfigurationModel.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION),
+                scope=singleton,
+            )
+        else:
+            app_injector.binder.bind(
+                self._configuration_model,
+                to=self._configuration_model.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION),
+                scope=singleton,
+            )
+
         return app_injector
+
+    def set_configuration_model(self, model: type[NexusConfigurationModel]):
+        """
+        Sets configuration model for this Nexus instance.
+        """
+        self._configuration_model = model
