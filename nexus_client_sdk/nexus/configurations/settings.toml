@@ -32,9 +32,6 @@ log_tagging_function = ""
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
 metric_tagging_function = ""
 
-# implementations of NexusConfiguration to be read from system environment
-configuration_types = []
-
 [runtime.payload]
 
 # payload types supported by this Nexus application. At least one must be provided
@@ -162,7 +159,7 @@ serializers = [
 # ADDITIONAL SERVICES
 [services]
     # Query Enabled Stores
-    [query_enabled_store]
+    [services.query_enabled_store]
 
     enabled = "1"
 

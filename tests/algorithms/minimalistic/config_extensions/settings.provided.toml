@@ -1,5 +1,9 @@
 dynaconf_merge = true
 
+c1 = "abc"
+c2 = "def"
+
+
 [runtime.payload]
 
 # payload types supported by this Nexus application. At least one must be provided
@@ -10,6 +14,6 @@ types = [
 # ADDITIONAL SERVICES
 [services]
     # Query Enabled Stores
-    [query_enabled_store]
+    [services.query_enabled_store]
 
     enabled = "0"

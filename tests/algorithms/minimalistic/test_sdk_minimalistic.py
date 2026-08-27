@@ -17,15 +17,14 @@ from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FR
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.testing import generate_payload_url
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
+from tests.algorithms.minimalistic.minimalistic_inputs import TestAlgorithmPayload, NegativeZError
 from tests.algorithms.shared import (
     find_telemetry_objects,
     generate_payloads,
     TestEnum,
-    NegativeZError,
     rand_range,
 )
-from tests.algorithms.minimalistic.sample_main_minimalistic import TestMinimalisticAlgorithmPayload
-from tests.algorithms.shared import main as sample_algorithm_main
+from tests.algorithms.minimalistic.minimalistic_main import main as sample_algorithm_main
 
 
 def _set_env_variables() -> None:
@@ -61,29 +60,31 @@ def payloads(
                 "y": rand_range(limit=10),
                 "z": rand_range(limit=10),
                 "enum_value": random.choice(list(TestEnum)),
-                "alg_class": "tests.algorithms.minimalistic.sample_main_minimalistic.TestMinimalisticAlgorithm",
+                "alg_class": "tests.algorithms.minimalistic.minimalistic_algorithm_sample.TestMinimalisticAlgorithm",
                 "input_sockets": [InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
                 "output_sockets": [],
             }
             for _ in range(10)
         ],
-        payload_class=TestMinimalisticAlgorithmPayload,
+        payload_class=TestAlgorithmPayload,
     )
     _unset_env_variables()
     return payloads
 
 
-def negative_z_payload() -> tuple[str, str]:
+def negative_z_payload(
+    algorithm_class: str = "tests.algorithms.minimalistic.minimalistic_algorithm_sample.TestMinimalisticAlgorithm",
+) -> tuple[str, str]:
     upload_path = S3Path(bucket="nexus", path="units")
 
     return generate_payload_url(
         upload_path,
-        TestMinimalisticAlgorithmPayload(
+        TestAlgorithmPayload(
             x=[1, 2, 3],
             y=[4, 5, 6],
             z=[0, -1, 10],
             enum_value=TestEnum.A,
-            alg_class="tests.algorithms.minimalistic.sample_main_minimalistic.TestMinimalisticAlgorithm",
+            alg_class=algorithm_class,
             input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
             output_sockets=[],
         ),
@@ -117,7 +118,7 @@ async def test_sdk_run_minimalistic(
     )
     sys.argv = ["", "--sas-uri", minimalistic_test_args.sas_uri, "--request-id", minimalistic_test_args.request_id]
     await sample_algorithm_main()
-    await asyncio.sleep(2)
+    await asyncio.sleep(1)
     result = json.loads(
         requests.get(scheduler.get_run_result(minimalistic_test_args.request_id, algorithm).result_uri).text
     )

@@ -16,6 +16,7 @@ python = ">=3.11, <3.13"
 adapta = { version = "^4.1", extras = ["aws", "aws-fileio", "datadog", "storage-cassandra", "storage-delta", "storage-iceberg"] }
 injector = "^0.24.0"
 dynaconf = "^3.3"
+pydantic = "^2.13"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9"

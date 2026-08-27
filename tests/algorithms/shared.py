@@ -13,6 +13,7 @@ from adapta.storage.blob.base import StorageClient
 from adapta.storage.blob.s3_storage_client import S3StorageClient
 from adapta.storage.models import S3Path
 from injector import inject, singleton
+from pydantic import TypeAdapter
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
@@ -22,7 +23,7 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import (
     SocketCollection,
     ExternalSocketProvider,
 )
-from nexus_client_sdk.nexus.configurations.algorithm_configuration import NexusConfiguration
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.core.app_core import Nexus
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
@@ -36,16 +37,6 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     TTelemetry,
 )
 from nexus_client_sdk.testing import generate_payload_url
-
-
-@dataclass
-class TestAlgorithmConfiguration(NexusConfiguration):
-    @classmethod
-    def from_environment(cls) -> "NexusConfiguration":
-        return TestAlgorithmConfiguration.from_json(os.getenv("NEXUS__TEST_ALG_CONFIGURATION"))
-
-    c1: str
-    c2: str
 
 
 def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
@@ -143,56 +134,3 @@ class TestResult(AlgorithmResult):
 
     def to_kwargs(self) -> dict[str, Any]:
         pass
-
-
-@singleton
-class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
-    @inject
-    def __init__(
-        self,
-        algorithm_payload: TestAlgorithmPayload,
-        metrics_provider: MetricsProvider,
-        logger_factory: LoggerFactory,
-        storage_client: StorageClient,
-        serializer: TelemetrySerializer,
-    ):
-        super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer)
-
-    async def _compute(
-        self, algorithm_payload: TestAlgorithmPayload, algorithm_result: TestResult, run_id: str, **inputs: TTelemetry
-    ) -> UserTelemetry:
-        return UserTelemetry(
-            iter([pandas.DataFrame({"x": algorithm_payload.x, "result": algorithm_result.result()["number"]})]),
-            UserTelemetryPathSegment("analysis", "test-recording"),
-        )
-
-
-def tags_from_payload(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
-    return {"x_tag": str(sum(payload.x))}
-
-
-def enrich_from_payload(payload: TestAlgorithmPayload, run_args: NexusDefaultArguments) -> dict[str, dict[str, str]]:
-    return {
-        "(mean of z:{z})": {"z": payload.z[: int(len(payload.z) / 2)]},
-        "(request_id:{request_id})": {"request_id": run_args.request_id},
-    }
-
-
-def tag_metrics(payload: TestAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
-    return {
-        "y_tag": str(sum(payload.y)),
-    }
-
-
-async def main():
-    """
-    Main entry point.
-    :return:
-    """
-
-    def alg_from_payload(payload: TestAlgorithmPayload) -> str:
-        return payload.alg_class
-
-    nexus = Nexus.create().with_algorithm_resolvers(alg_from_payload).on_complete(TestUserAnalyticsTelemetry)
-
-    await nexus.activate()
