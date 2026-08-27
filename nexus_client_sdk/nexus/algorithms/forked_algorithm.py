@@ -17,21 +17,20 @@
 #  limitations under the License.
 #
 
-import asyncio
-import random
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from functools import partial
 
 from adapta.metrics import MetricsProvider
 from adapta.utils.decorators import run_time_metrics_async
+from injector import inject
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
-    NexusObject,
     TPayload,
     AlgorithmResult,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
+from nexus_client_sdk.nexus.algorithms._directed_graph_algorithm import DirectedGraphAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.input_processor import (
@@ -39,7 +38,7 @@ from nexus_client_sdk.nexus.input.input_processor import (
 )
 
 
-class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
+class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
     """
     Forked algorithm is an algorithm that returns a result (main scenario run) and then fires off one or more forked runs
     with different configurations as specified in fork class implementation.
@@ -62,6 +61,7 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         F1_1 --> F0_3["F(0)"]
     """
 
+    @inject
     def __init__(
         self,
         metrics_provider: MetricsProvider,
@@ -69,17 +69,12 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         *input_processors: InputProcessor,
         cache: InputCache,
     ):
-        super().__init__(metrics_provider, logger_factory)
-        self._input_processors = input_processors
-        self._cache = cache
-        self._inputs: dict = {}
-
-    @property
-    def inputs(self) -> dict:
-        """
-        Inputs generated for this algorithm run.
-        """
-        return self._inputs
+        super().__init__(
+            metrics_provider,
+            logger_factory,
+            *input_processors,
+            cache=cache,
+        )
 
     @abstractmethod
     async def _get_forks(self, **kwargs) -> list[RemoteAlgorithm]:
@@ -123,10 +118,6 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         Sets inputs for the forked run - if this node is **NOT** the root node
         """
 
-    @property
-    def _metric_tags(self) -> dict[str, str]:
-        return {"algorithm": self.__class__.alias()}
-
     async def run(self, **kwargs) -> AlgorithmResult:
         """
         Coroutine that executes the algorithm logic.
@@ -145,45 +136,6 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
 
             return await self._main_run(**run_args)
 
-        async def _spawn(remote_algorithm: RemoteAlgorithm, run_index: int, **remote_args) -> asyncio.Task:
-            delay = int(NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.spawn_base_delay_seconds)
-            # skip delay if not provided, or if spawning the first fork
-            if delay > 0 and run_index > 0:
-                jitter = delay + random.random() * delay
-                self._logger.info("Spawning fork in {jitter:.2f}", jitter=jitter)
-                await asyncio.sleep(delay + random.random() * delay)
-
-            return asyncio.create_task(remote_algorithm.run(**remote_args))
-
-        async def _spawn_forks(fork_list: list[RemoteAlgorithm]) -> None:
-            self._logger.info(
-                "Forking node with: {forks}, after the node run",
-                forks=",".join([fork.alias() for fork in fork_list]),
-            )
-            done, _ = await asyncio.wait(
-                [await _spawn(fork, fork_ix, **kwargs) for fork_ix, fork in enumerate(fork_list)],
-                return_when=asyncio.ALL_COMPLETED,
-            )
-            for task in done:
-                if task.exception() is not None:
-                    self._logger.error("Forked run failed", exception=task.exception())
-                    self._metrics_provider.increment(
-                        metric_name="forked_algorithm_run_failed",
-                        tags=self._metric_tags,
-                    )
-                else:
-                    self._metrics_provider.increment(
-                        metric_name="forked_algorithm_run_scheduled",
-                        tags=self._metric_tags,
-                    )
-            successful_forks_rate = sum(1 for task in done if task.exception() is None) / len(done)
-
-            self._metrics_provider.gauge(
-                metric_name="forked_algorithm_forks_scheduled_rate",
-                metric_value=successful_forks_rate,
-                tags=self._metric_tags,
-            )
-
         if await self._is_forked(**kwargs):
             self._inputs = await self._fork_inputs(**kwargs)
         else:
@@ -201,12 +153,12 @@ class ForkedAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             logger=self._logger,
         )()
 
-        if len(forks) > 0:
-            if NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.async_spawn_enabled == "1":
-                asyncio.create_task(_spawn_forks(forks))
-            else:
-                await _spawn_forks(forks)
-        else:
-            self._logger.info("Leaf algorithm node: proceeding with this node run only")
+        await self._spawn_remote_algorithms(
+            remote_algorithms=forks,
+            async_spawn_enabled=NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.async_spawn_enabled == "1",
+            spawn_base_delay_seconds=int(
+                NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.spawn_base_delay_seconds
+            ),
+        )
 
         return run_result

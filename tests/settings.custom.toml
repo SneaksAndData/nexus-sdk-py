@@ -6,36 +6,32 @@ algorithm_name = "hello-world"
 [runtime]
 
 # Nexus algorithm implementations to activate. At least one must be supplied
-algorithms = ["tests.sample_algorithm.sample_main.TestAlgorithm"]
+algorithms = []
 
 # additional modules for the DI container
 # use these to provide custom services
 additional_modules = [
-    "nexus_client_sdk.nexus.core.app_dependencies.QueryEnabledStoreModule",
+    "nexus_client_sdk.nexus.core.app_dependencies.QueryEnabledStoreCollectionModule",
     "nexus_client_sdk.nexus.core.app_dependencies.ExternalSocketsModule",
     "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
 ]
 
 # optional function that applies additional context to all logs emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-log_enrichment_function = "tests.sample_algorithm.sample_main.enrich_from_payload"
+log_enrichment_function = "tests.algorithms.minimalistic.minimalistic_telemetry.enrich_from_payload"
 
 # optional function that applies additional tags (as metadata) to all logs emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-log_tagging_function = "tests.sample_algorithm.sample_main.tags_from_payload"
+log_tagging_function = "tests.algorithms.minimalistic.minimalistic_telemetry.tags_from_payload"
 
 # optional function that applies additional tagging to all metrics emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
-metric_tagging_function = "tests.sample_algorithm.sample_main.tag_metrics"
-
-configuration_types = [
-    "tests.conftest.TestAlgorithmConfiguration"
-]
+metric_tagging_function = "tests.algorithms.minimalistic.minimalistic_telemetry.tag_metrics"
 
 [runtime.payload]
 
 # payload types supported by this Nexus application. At least one must be provided
-types = ["tests.conftest.TestAlgorithmPayload"]
+types = ["tests.algorithms.minimalistic.minimalistic_inputs.TestAlgorithmPayload"]
 
 # optional raw payload serialization for later analysis
 # you can serialize payload via user telemetry, however that won't catch failed payloads
@@ -150,14 +146,6 @@ serializers = [
 # default is empty list
 sockets = []
 
-    # Query Enabled Store configuration
-    [inputs.query_enabled_store]
-
-    enabled = "0"
-
-    # Connection string for QES
-    connection_string = ""
-
     # Settings for AstraClientModule
     [inputs.astra_client]
 
@@ -180,10 +168,10 @@ fixed_template_delimiter = ""
     [logging.datadog]
     # If enabled, remember to add PROTEUS__DD_API_KEY, PROTEUS__DD_APP_KEY and PROTEUS__DD_SITE to your environment
     # variables
-    enabled = "0"
-    buffer_size = "1"
+    enabled = 0
+    buffer_size = 1
     debug = "False"
-    max_flush_retry_time = "30"
+    max_flush_retry_time = 30
     ignore_flush_failure = "True"
     fixed_tags = {}
     attach_interrupt_handlers = "True"

@@ -1,10 +1,13 @@
 """Framework configuration"""
+import glob
+import os
 from pathlib import Path
 from pydoc import locate
 from typing import final
 
 from adapta.logs.models import LogLevel
 from dynaconf import Dynaconf, Validator, LazySettings
+from dynaconf.loaders import settings_loader
 
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 
@@ -64,11 +67,6 @@ class NexusRuntimeConfiguration:
                 when=Validator(
                     "REMOTE_ALGORITHM.COMPRESSION_IMPORT_PATH", condition=lambda v: v is not None and v != ""
                 ),
-            ),
-            Validator(
-                "INPUTS.QUERY_ENABLED_STORE.CONNECTION_STRING",
-                required=True,
-                when=Validator("INPUTS.QUERY_ENABLED_STORE.ENABLED", condition=lambda v: v == "1"),
             ),
         ]
 
@@ -167,6 +165,26 @@ class NexusRuntimeConfiguration:
             self._configuration.validators.register(*self._bootstrap_validators)
         except BaseException as e:
             raise FatalStartupConfigurationError("DYNACONF settings failed to validate") from e
+
+    def load_config_extension(self, extension_name: str) -> None:
+        """
+        Loads a custom extension TOML file.
+        """
+        if extension_name == "":
+            return
+
+        config_location = os.path.join(
+            os.getenv("CONFIG_EXTENSION_PATH_OVERRIDE", "config_extensions"),
+            "**",
+            f"settings.{extension_name}*.toml",
+        )
+        matching_configurations = [
+            os.path.abspath(conf) for conf in glob.glob(config_location, recursive=True) if os.path.isfile(conf)
+        ]
+        for matching_config in matching_configurations:
+            settings_loader(self._configuration, filename=matching_config)
+
+        return
 
 
 NEXUS_FRAMEWORK_CONFIGURATION = NexusRuntimeConfiguration()
