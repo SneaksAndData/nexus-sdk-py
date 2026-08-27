@@ -13,10 +13,10 @@ def test_tree_serialization():
     assert (
         mermaid_tree
         == """graph TB
-MINIMALISTICXYPROCESSOR["MinimalisticXYProcessor"] --> MINIMALISTICXYSAMPLEREADER["MinimalisticXYSampleReader"]
-MINIMALISTICZPROCESSOR["MinimalisticZProcessor"] --> MINIMALISTICZSAMPLEREADER["MinimalisticZSampleReader"]
-MINIMALISTICZZPROCESSOR["MinimalisticZZProcessor"] --> MINIMALISTICZPROCESSOR["MinimalisticZProcessor"]
-TESTMINIMALISTICALGORITHM["TestMinimalisticAlgorithm"] --> MINIMALISTICXYPROCESSOR["MinimalisticXYProcessor"]
-TESTMINIMALISTICALGORITHM["TestMinimalisticAlgorithm"] --> MINIMALISTICZPROCESSOR["MinimalisticZProcessor"]
-TESTMINIMALISTICALGORITHM["TestMinimalisticAlgorithm"] --> MINIMALISTICZZPROCESSOR["MinimalisticZZProcessor"]"""
+TESTMINIMALISTICALGORITHM["TestMinimalisticAlgorithm"] --> XYPROCESSOR["XYProcessor"]
+TESTMINIMALISTICALGORITHM["TestMinimalisticAlgorithm"] --> ZPROCESSOR["ZProcessor"]
+TESTMINIMALISTICALGORITHM["TestMinimalisticAlgorithm"] --> ZZPROCESSOR["ZZProcessor"]
+XYPROCESSOR["XYProcessor"] --> XYSAMPLEREADER["XYSampleReader"]
+ZPROCESSOR["ZProcessor"] --> ZSAMPLEREADER["ZSampleReader"]
+ZZPROCESSOR["ZZProcessor"] --> ZPROCESSOR["ZProcessor"]"""
     )
