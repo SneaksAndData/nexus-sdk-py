@@ -1,0 +1,5 @@
+dynaconf_merge = true
+
+[dict_property.key_b]
+prop_a = 2
+prop_b = "another_test"

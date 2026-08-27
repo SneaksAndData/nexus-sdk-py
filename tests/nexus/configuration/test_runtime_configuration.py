@@ -1,7 +1,8 @@
 from pathlib import Path
+from pydantic.dataclasses import dataclass
 
 import pytest
-from pydantic.dataclasses import dataclass
+
 
 from nexus_client_sdk.nexus.configurations.configuration_model import (
     NexusConfigurationModel,
@@ -23,9 +24,16 @@ class CustomSettings:
 
 
 @dataclass
+class CustomDictProperty:
+    prop_a: int
+    prop_b: str
+
+
+@dataclass
 class CustomConfigurationModel(NexusConfigurationModel):
     custom_settings: CustomSettings
     field_d: float
+    dict_property: dict[str, CustomDictProperty]
 
 
 def _check_base_model(model_instance: NexusConfigurationModel) -> None:
@@ -59,7 +67,7 @@ def test_runtime_configuration() -> None:
 
 def test_runtime_configuration_nested_models() -> None:
     NEXUS_FRAMEWORK_CONFIGURATION.load()
-    model = NexusConfigurationModel.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION)
+    model: NexusConfigurationModel = NexusConfigurationModel.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION)
 
     assert model.remote_algorithm.dry_run is False
     assert model.services.query_enabled_store.enabled is False
@@ -77,13 +85,17 @@ def set_config_extension_path_override(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_custom_runtime_configuration(set_config_extension_path_override) -> None:
     NEXUS_FRAMEWORK_CONFIGURATION.load()
     NEXUS_FRAMEWORK_CONFIGURATION.load_config_extension("provided")
-    model = CustomConfigurationModel.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION)
+    model: CustomConfigurationModel = CustomConfigurationModel.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION)
 
     # check custom fields
     assert model.field_d == 1.2323
     assert model.custom_settings.field_a == "a"
     assert model.custom_settings.field_b == 1
     assert model.custom_settings.field_c is True
+    assert model.dict_property == {
+        "key_a": CustomDictProperty(prop_a=1, prop_b="test"),
+        "key_b": CustomDictProperty(prop_a=2, prop_b="another_test"),
+    }
 
     # check inherited settings
     _check_base_model(model)
