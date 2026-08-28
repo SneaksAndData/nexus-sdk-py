@@ -127,7 +127,7 @@ class TestForkedAlgorithm(ForkedAlgorithm[TestForkedAlgorithmPayload, TestForked
                 metrics_provider=self._metrics_provider,
                 logger_factory=self._logger_factory,
                 remote_client=self._remote_client,
-                remote_name=self._configuration.child_algorithm_name,
+                remote_name=self._configuration.forked_algorithm_name,
                 cache=self._cache,
                 configuration=self._configuration,
                 is_hard_dependency=True,  # in order to create record for parent

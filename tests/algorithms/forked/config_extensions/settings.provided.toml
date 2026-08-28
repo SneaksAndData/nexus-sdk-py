@@ -2,7 +2,7 @@ dynaconf_merge = true
 
 c1 = "abc"
 c2 = "def"
-child_algorithm_name = "hello-world"
+forked_algorithm_name = "hello-world"
 
 [runtime.payload]
 
