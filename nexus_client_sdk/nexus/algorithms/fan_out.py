@@ -27,7 +27,7 @@ from injector import inject
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
-    AlgorithmResult,
+    AlgorithmResult, TConfiguration,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
@@ -35,7 +35,7 @@ from nexus_client_sdk.nexus.algorithms._directed_graph_algorithm import Directed
 from nexus_client_sdk.nexus.input.input_processor import InputProcessor
 
 
-class FanOutAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
+class FanOutAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
     """
     Algorithm that executes its own logic and then spawns one or more remote algorithms
     without awaiting their results (fan-out). This produces a simple execution

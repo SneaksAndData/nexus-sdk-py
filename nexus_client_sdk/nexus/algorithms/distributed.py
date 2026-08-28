@@ -23,14 +23,14 @@ from abc import ABC, abstractmethod
 
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
-    AlgorithmResult,
+    AlgorithmResult, TConfiguration,
 )
 from nexus_client_sdk.nexus.algorithms._baseline_algorithm import (
     BaselineAlgorithm,
 )
 
 
-class DistributedAlgorithm(BaselineAlgorithm[TPayload], ABC):
+class DistributedAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
     """
     Distributed algorithm base class.
     """

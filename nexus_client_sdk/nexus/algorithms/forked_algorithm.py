@@ -27,7 +27,7 @@ from injector import inject
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
-    AlgorithmResult,
+    AlgorithmResult, TConfiguration,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms._directed_graph_algorithm import DirectedGraphAlgorithm
@@ -37,7 +37,7 @@ from nexus_client_sdk.nexus.input.input_processor import (
 )
 
 
-class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
+class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
     """
     Forked algorithm is an algorithm that returns a result (main scenario run) and then fires off one or more forked runs
     with different configurations as specified in fork class implementation.

@@ -5,7 +5,7 @@ from injector import inject, singleton
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+from tests.algorithms.minimalistic.minimalistic_configuration import TestAlgorithmConfiguration
 from tests.algorithms.minimalistic.minimalistic_inputs import TestAlgorithmPayload, ZProcessor, XYProcessor, ZZProcessor
 from tests.algorithms.shared import (
     TestResult,
@@ -13,7 +13,7 @@ from tests.algorithms.shared import (
 
 
 @singleton
-class TestMinimalisticAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
+class TestMinimalisticAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload, TestAlgorithmConfiguration]):
     async def _context_open(self):
         pass
 
@@ -34,10 +34,7 @@ class TestMinimalisticAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload]):
 
     async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
         assert (
-            "extra_parameters" in NEXUS_FRAMEWORK_CONFIGURATION.default
-        ), "Expected settings.test_algorithm.extra.toml to be merged into main config"
-        assert (
-            NEXUS_FRAMEWORK_CONFIGURATION.default.extra_parameters.parameter_y == "test"
+            self._configuration.extra_parameters.parameter_y == "test"
         ), "Unexpected or missing value of extra_parameters.parameter_y"
 
         return TestResult(xy, z, self._cache.total_evaluated_inputs())
