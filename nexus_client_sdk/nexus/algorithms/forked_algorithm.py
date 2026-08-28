@@ -70,9 +70,7 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
         cache: InputCache,
         configuration: TConfiguration,
     ):
-        super().__init__(
-            metrics_provider, logger_factory, *input_processors, cache=cache, configuration_model=configuration
-        )
+        super().__init__(metrics_provider, logger_factory, *input_processors, cache=cache, configuration=configuration)
 
     @abstractmethod
     async def _get_forks(self, **kwargs) -> list[RemoteAlgorithm]:

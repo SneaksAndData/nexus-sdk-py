@@ -43,8 +43,6 @@ class MinimalisticAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
         logger_factory: LoggerFactory,
         *input_processors: InputProcessor,
         cache: InputCache,
-        configuration_model: TConfiguration,
+        configuration: TConfiguration,
     ):
-        super().__init__(
-            metrics_provider, logger_factory, *input_processors, cache=cache, configuration_model=configuration_model
-        )
+        super().__init__(metrics_provider, logger_factory, *input_processors, cache=cache, configuration=configuration)

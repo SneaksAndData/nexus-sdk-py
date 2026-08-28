@@ -47,13 +47,13 @@ class BaselineAlgorithm(NexusObject[TPayload, AlgorithmResult, TConfiguration]):
         logger_factory: LoggerFactory,
         *input_processors: InputProcessor,
         cache: InputCache,
-        configuration_model: TConfiguration,
+        configuration: TConfiguration,
     ):
         super().__init__(metrics_provider, logger_factory)
         self._input_processors = input_processors
         self._cache = cache
         self._inputs: dict = {}
-        self._configuration = configuration_model
+        self._configuration = configuration
 
     @property
     def inputs(self) -> dict:
