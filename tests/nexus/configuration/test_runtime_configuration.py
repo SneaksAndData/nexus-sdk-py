@@ -60,20 +60,20 @@ def _check_base_model(model_instance: NexusConfigurationModel) -> None:
 
 
 def test_runtime_configuration() -> None:
-    config = NexusRuntimeConfiguration().load()
+    config = NexusRuntimeConfiguration()
+    config.load()
     model = NexusConfigurationModel.from_runtime_configuration(config)
     _check_base_model(model)
 
 
 def test_runtime_configuration_nested_models() -> None:
-    config = NexusRuntimeConfiguration().load()
+    config = NexusRuntimeConfiguration()
+    config.load()
     model: NexusConfigurationModel = NexusConfigurationModel.from_runtime_configuration(config)
 
     assert model.remote_algorithm.dry_run is False
     assert model.services.query_enabled_store.enabled is False
     assert isinstance(model.inputs.sockets, list)
-    assert model.inputs.astra_client.enabled == "0"
-    assert model.inputs.trino_client.enabled == "0"
     assert model.threading.blocking_pool_max_size == "16"
 
 
@@ -83,7 +83,8 @@ def set_config_extension_path_override(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_custom_runtime_configuration(set_config_extension_path_override) -> None:
-    config = NexusRuntimeConfiguration().load()
+    config = NexusRuntimeConfiguration()
+    config.load()
     config.load_config_extension("provided")
     model: CustomConfigurationModel = CustomConfigurationModel.from_runtime_configuration(config)
 

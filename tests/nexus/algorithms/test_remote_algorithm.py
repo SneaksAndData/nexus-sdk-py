@@ -94,6 +94,7 @@ def test_remote_algorithm__compress_remote_payload(inputs: TestInput):
 
     # Arrange
     remote_algorithm = TestRemoteAlgorithm(
+        configuration=MagicMock(),
         metrics_provider=MagicMock(),
         logger_factory=MagicMock(),
         remote_client=MagicMock(),
