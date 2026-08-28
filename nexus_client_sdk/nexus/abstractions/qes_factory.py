@@ -8,7 +8,7 @@ from adapta.storage.query_enabled_store._functions import suggest_store
 @final
 class QueryEnabledStoreCollection:
     """
-    A container for all QES instances defined in NEXUS_FRAMEWORK_CONFIGURATION via respective connection strings.
+    A container for all QES instances defined in framework configuration via respective connection strings.
     """
 
     def __init__(self):

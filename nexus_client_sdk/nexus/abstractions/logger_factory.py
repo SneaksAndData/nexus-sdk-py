@@ -27,7 +27,7 @@ from adapta.logs.handlers.datadog_api_handler import DataDogApiHandler
 from adapta.logs.handlers.safe_stream_handler import SafeStreamHandler
 from adapta.logs.models import LogLevel
 
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
 
 TLogger = TypeVar("TLogger")
 
@@ -46,23 +46,20 @@ class BootstrapLoggerFactory:
     Bootstrap loggers do not use enriched properties since they are initialized before payload is deserialized.
     """
 
-    def __init__(self):
+    def __init__(self, config: NexusRuntimeConfiguration):
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
-        if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.enabled == "1":
+        self._default_log_level = config.default.logging.log_level
+        if config.default.logging.datadog.enabled == "1":
             self._log_handlers.append(
                 DataDogApiHandler(
-                    buffer_size=int(NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.buffer_size),
-                    debug=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.debug == "True",
-                    max_flush_retry_time=int(
-                        NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.max_flush_retry_time
-                    ),
-                    ignore_flush_failure=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.ignore_flush_failure
-                    == "True",
-                    fixed_tags=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.fixed_tags,
-                    attach_interrupt_handlers=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.attach_interrupt_handlers
-                    == "True",
+                    buffer_size=int(config.default.logging.datadog.buffer_size),
+                    debug=config.default.logging.datadog.debug == "True",
+                    max_flush_retry_time=int(config.default.logging.datadog.max_flush_retry_time),
+                    ignore_flush_failure=config.default.logging.datadog.ignore_flush_failure == "True",
+                    fixed_tags=config.default.logging.datadog.fixed_tags,
+                    attach_interrupt_handlers=config.default.logging.datadog.attach_interrupt_handlers == "True",
                 )
             )
 
@@ -73,7 +70,7 @@ class BootstrapLoggerFactory:
         return create_async_logger(
             logger_type=BootstrapLogger.__class__,
             log_handlers=self._log_handlers,
-            min_log_level=LogLevel(NEXUS_FRAMEWORK_CONFIGURATION.default.logging.log_level),
+            min_log_level=LogLevel(self._default_log_level),
             global_tags={
                 "request_id": request_id,
                 "algorithm": algorithm_name,
@@ -89,6 +86,7 @@ class LoggerFactory:
 
     def __init__(
         self,
+        config: NexusRuntimeConfiguration,
         fixed_template: dict[str, dict[str, str]] | None = None,
         fixed_template_delimiter: str = None,
         global_tags: dict[str, str] | None = None,
@@ -99,28 +97,25 @@ class LoggerFactory:
         self._log_handlers: list[logging.Handler] = [
             SafeStreamHandler(stream=sys.stdout),
         ]
+        self._default_log_level = config.default.logging.log_level
 
-        if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.enabled == "1":
+        if config.default.logging.datadog.enabled == "1":
             self._log_handlers.append(
                 DataDogApiHandler(
-                    buffer_size=int(NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.buffer_size),
-                    debug=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.debug == "True",
-                    max_flush_retry_time=int(
-                        NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.max_flush_retry_time
-                    ),
-                    ignore_flush_failure=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.ignore_flush_failure
-                    == "True",
-                    fixed_tags=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.fixed_tags,
-                    attach_interrupt_handlers=NEXUS_FRAMEWORK_CONFIGURATION.default.logging.datadog.attach_interrupt_handlers
-                    == "True",
+                    buffer_size=int(config.default.logging.datadog.buffer_size),
+                    debug=config.default.logging.datadog.debug == "True",
+                    max_flush_retry_time=int(config.default.logging.datadog.max_flush_retry_time),
+                    ignore_flush_failure=config.default.logging.datadog.ignore_flush_failure == "True",
+                    fixed_tags=config.default.logging.datadog.fixed_tags,
+                    attach_interrupt_handlers=config.default.logging.datadog.attach_interrupt_handlers == "True",
                 )
             )
 
-        if NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template != "":
-            self._fixed_template = self._fixed_template | NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template
+        if config.default.logging.fixed_template != "":
+            self._fixed_template = self._fixed_template | config.default.logging.fixed_template
 
         self._fixed_template_delimiter = (
-            self._fixed_template_delimiter or NEXUS_FRAMEWORK_CONFIGURATION.default.logging.fixed_template_delimiter
+            self._fixed_template_delimiter or config.default.logging.fixed_template_delimiter
         )
 
     def create_logger(
@@ -133,7 +128,7 @@ class LoggerFactory:
         return create_async_logger(
             logger_type=logger_type,
             log_handlers=self._log_handlers,
-            min_log_level=LogLevel(NEXUS_FRAMEWORK_CONFIGURATION.default.logging.log_level),
+            min_log_level=LogLevel(self._default_log_level),
             fixed_template=self._fixed_template,
             fixed_template_delimiter=self._fixed_template_delimiter,
             global_tags=self._global_tags,

@@ -28,12 +28,13 @@ from nexus_client_sdk.nexus.abstractions.input_object import InputObject
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
     TResult,
+    TConfiguration,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.input.input_reader import InputReader
 
 
-class InputProcessor(InputObject[TPayload, TResult]):
+class InputProcessor(InputObject[TPayload, TResult, TConfiguration]):
     """
     Base class for raw data processing into algorithm input.
     """
@@ -44,13 +45,15 @@ class InputProcessor(InputObject[TPayload, TResult]):
         payload: TPayload,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        cache: InputCache
+        cache: InputCache,
+        configuration: TConfiguration,
     ):
         super().__init__(metrics_provider, logger_factory)
         self._readers = readers
         self._payload = payload
         self._result: TResult | None = None
         self._cache = cache
+        self._configuration = configuration
 
     @property
     def data(self) -> TResult | None:

@@ -77,7 +77,7 @@ class ScopedExceptionSettings:
 class RuntimePayloadSettings:
     """Runtime payload configuration settings."""
 
-    types: list[str]
+    type_name: str
     serialization_mode: str
 
 
@@ -105,26 +105,17 @@ class AdditionalServicesSettings:
 
 
 @dataclass
-class AstraClientSettings:
-    """Astra client configuration settings."""
-
-    enabled: str
-
-
-@dataclass
-class TrinoClientSettings:
-    """Trino client configuration settings."""
-
-    enabled: str
-
-
-@dataclass
 class InputsSettings:
     """Inputs configuration settings."""
 
     sockets: list[dict[str, Any]]
-    astra_client: AstraClientSettings
-    trino_client: TrinoClientSettings
+
+
+@dataclass
+class OutputsSettings:
+    """Inputs configuration settings."""
+
+    sockets: list[dict[str, Any]]
 
 
 @dataclass
@@ -210,6 +201,7 @@ class NexusConfigurationModel:
     telemetry: TelemetrySettings
     services: AdditionalServicesSettings
     inputs: InputsSettings
+    outputs: OutputsSettings
     logging: LoggingSettings
     metrics: MetricsSettings
     threading: ThreadingSettings

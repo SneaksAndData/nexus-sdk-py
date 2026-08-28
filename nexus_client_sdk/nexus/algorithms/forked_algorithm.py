@@ -28,17 +28,17 @@ from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
     AlgorithmResult,
+    TConfiguration,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms._directed_graph_algorithm import DirectedGraphAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.input_processor import (
     InputProcessor,
 )
 
 
-class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
+class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
     """
     Forked algorithm is an algorithm that returns a result (main scenario run) and then fires off one or more forked runs
     with different configurations as specified in fork class implementation.
@@ -68,12 +68,10 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
         logger_factory: LoggerFactory,
         *input_processors: InputProcessor,
         cache: InputCache,
+        configuration: TConfiguration,
     ):
         super().__init__(
-            metrics_provider,
-            logger_factory,
-            *input_processors,
-            cache=cache,
+            metrics_provider, logger_factory, *input_processors, cache=cache, configuration_model=configuration
         )
 
     @abstractmethod
@@ -155,10 +153,8 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
 
         await self._spawn_remote_algorithms(
             remote_algorithms=forks,
-            async_spawn_enabled=NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.async_spawn_enabled == "1",
-            spawn_base_delay_seconds=int(
-                NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.spawn_base_delay_seconds
-            ),
+            async_spawn_enabled=self._configuration.forked_algorithm.async_spawn_enabled == "1",
+            spawn_base_delay_seconds=int(self._configuration.forked_algorithm.spawn_base_delay_seconds),
         )
 
         return run_result

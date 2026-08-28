@@ -28,6 +28,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
     NexusObject,
     TPayload,
     AlgorithmResult,
+    TConfiguration,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.input.input_processor import (
@@ -35,7 +36,7 @@ from nexus_client_sdk.nexus.input.input_processor import (
 )
 
 
-class BaselineAlgorithm(NexusObject[TPayload, AlgorithmResult]):
+class BaselineAlgorithm(NexusObject[TPayload, AlgorithmResult, TConfiguration]):
     """
     Base class for all algorithm implementations.
     """
@@ -46,11 +47,13 @@ class BaselineAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         logger_factory: LoggerFactory,
         *input_processors: InputProcessor,
         cache: InputCache,
+        configuration_model: TConfiguration,
     ):
         super().__init__(metrics_provider, logger_factory)
         self._input_processors = input_processors
         self._cache = cache
         self._inputs: dict = {}
+        self._configuration = configuration_model
 
     @property
     def inputs(self) -> dict:
