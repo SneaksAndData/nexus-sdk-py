@@ -27,7 +27,8 @@ from injector import inject
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
-    AlgorithmResult, TConfiguration,
+    AlgorithmResult,
+    TConfiguration,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
@@ -55,7 +56,6 @@ class FanOutAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
             logger_factory,
             *input_processors,
             cache=cache,
-
         )
 
     @abstractmethod

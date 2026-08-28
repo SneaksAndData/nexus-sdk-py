@@ -40,6 +40,7 @@ def _unset_env_variables() -> None:
     os.environ.pop("PROTEUS__AWS_SECRET_ACCESS_KEY", None)
     os.environ.pop("PROTEUS__AWS_ACCESS_KEY_ID", None)
 
+
 def _get_alg_name() -> str:
     config = NexusRuntimeConfiguration().load()
     return config.default.algorithm_name

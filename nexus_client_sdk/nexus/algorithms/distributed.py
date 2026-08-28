@@ -23,7 +23,8 @@ from abc import ABC, abstractmethod
 
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
-    AlgorithmResult, TConfiguration,
+    AlgorithmResult,
+    TConfiguration,
 )
 from nexus_client_sdk.nexus.algorithms._baseline_algorithm import (
     BaselineAlgorithm,

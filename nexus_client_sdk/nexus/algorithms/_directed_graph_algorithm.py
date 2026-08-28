@@ -22,7 +22,8 @@ import random
 from abc import ABC
 
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
-    TPayload, TConfiguration,
+    TPayload,
+    TConfiguration,
 )
 from nexus_client_sdk.nexus.algorithms._baseline_algorithm import BaselineAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm

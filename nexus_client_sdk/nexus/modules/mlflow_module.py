@@ -39,9 +39,7 @@ class MlflowModule(Module):
         DI factory method.
         """
 
-        if model.default.exists(
-            "mlflow.tracking.username"
-        ) and model.default.exists("mlflow.tracking.password"):
+        if model.default.exists("mlflow.tracking.username") and model.default.exists("mlflow.tracking.password"):
             return MlflowBasicClient.from_static_credentials(
                 tracking_server_uri=model.default.mlflow.tracking.uri,
                 username=model.default.mlflow.tracking.username,

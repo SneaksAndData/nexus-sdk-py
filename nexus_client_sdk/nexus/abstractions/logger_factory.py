@@ -56,14 +56,10 @@ class BootstrapLoggerFactory:
                 DataDogApiHandler(
                     buffer_size=int(config.default.logging.datadog.buffer_size),
                     debug=config.default.logging.datadog.debug == "True",
-                    max_flush_retry_time=int(
-                        config.default.logging.datadog.max_flush_retry_time
-                    ),
-                    ignore_flush_failure=config.default.logging.datadog.ignore_flush_failure
-                    == "True",
+                    max_flush_retry_time=int(config.default.logging.datadog.max_flush_retry_time),
+                    ignore_flush_failure=config.default.logging.datadog.ignore_flush_failure == "True",
                     fixed_tags=config.default.logging.datadog.fixed_tags,
-                    attach_interrupt_handlers=config.default.logging.datadog.attach_interrupt_handlers
-                    == "True",
+                    attach_interrupt_handlers=config.default.logging.datadog.attach_interrupt_handlers == "True",
                 )
             )
 
@@ -108,14 +104,10 @@ class LoggerFactory:
                 DataDogApiHandler(
                     buffer_size=int(config.default.logging.datadog.buffer_size),
                     debug=config.default.logging.datadog.debug == "True",
-                    max_flush_retry_time=int(
-                        config.default.logging.datadog.max_flush_retry_time
-                    ),
-                    ignore_flush_failure=config.default.logging.datadog.ignore_flush_failure
-                    == "True",
+                    max_flush_retry_time=int(config.default.logging.datadog.max_flush_retry_time),
+                    ignore_flush_failure=config.default.logging.datadog.ignore_flush_failure == "True",
                     fixed_tags=config.default.logging.datadog.fixed_tags,
-                    attach_interrupt_handlers=config.default.logging.datadog.attach_interrupt_handlers
-                    == "True",
+                    attach_interrupt_handlers=config.default.logging.datadog.attach_interrupt_handlers == "True",
                 )
             )
 

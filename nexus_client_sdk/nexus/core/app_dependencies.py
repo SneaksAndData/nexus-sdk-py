@@ -53,9 +53,7 @@ class QueryEnabledStoreCollectionModule(Module):
             return QueryEnabledStoreCollection()
 
         try:
-            return QueryEnabledStoreCollection().load_stores(
-                model.services.query_enabled_store.store_connections
-            )
+            return QueryEnabledStoreCollection().load_stores(model.services.query_enabled_store.store_connections)
         except Exception as e:
             raise FatalStartupConfigurationError(
                 "Unable to initialize QES collection. Please ensure query_enabled_store.store_connections list property is defined in TOML configuration."
@@ -74,9 +72,7 @@ class StorageClientModule(Module):
         """
         DI factory method.
         """
-        storage_client_class: type[StorageClient] = locate(
-            model.result.storage_client_class
-        )
+        storage_client_class: type[StorageClient] = locate(model.result.storage_client_class)
 
         try:
             return storage_client_class.for_storage_path(path=model.result.output_path)
@@ -143,9 +139,7 @@ class CacheModule(Module):
             else:
                 loaded_error_map[error_map_config["class_name"]].append(NexusErrorMap.from_config(error_map_config))
 
-        default_error: type[BaseException] = locate(
-            model.runtime.exceptions.defaults.global_default
-        )
+        default_error: type[BaseException] = locate(model.runtime.exceptions.defaults.global_default)
         if default_error is None:
             raise FatalStartupConfigurationError(
                 f"Unable to locate default error map class: {model.runtime.exceptions.defaults.global_default}"

@@ -110,11 +110,13 @@ class InputsSettings:
 
     sockets: list[dict[str, Any]]
 
+
 @dataclass
 class OutputsSettings:
     """Inputs configuration settings."""
 
     sockets: list[dict[str, Any]]
+
 
 @dataclass
 class DatadogLoggingSettings:

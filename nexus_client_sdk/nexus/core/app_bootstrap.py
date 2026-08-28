@@ -140,7 +140,9 @@ class NexusBootstrapper:
 
         payload_class: type[AlgorithmPayload] = locate(config_model.runtime.payload.type_name)
         if payload_class is None:
-            raise FatalStartupConfigurationError(f"Failed to locate required payload type: {config_model.runtime.payload.type_name}")
+            raise FatalStartupConfigurationError(
+                f"Failed to locate required payload type: {config_model.runtime.payload.type_name}"
+            )
         self._payload_type = payload_class
 
     def _load_log_enricher(self, config_model: NexusConfigurationModel):
@@ -181,12 +183,11 @@ class NexusBootstrapper:
         for algorithm in config_model.runtime.algorithms:
             self._load_algorithm(algorithm)
 
-    def _get_bootstrap_recorder(self, logger_factory: LoggerFactory, model: NexusConfigurationModel) -> TelemetryRecorder | None:
+    def _get_bootstrap_recorder(
+        self, logger_factory: LoggerFactory, model: NexusConfigurationModel
+    ) -> TelemetryRecorder | None:
         tmp_injector = Injector(self._injection_binds)
-        if (
-            model.runtime.payload.serialization_mode
-            == _PayloadSerializationMode.OFF.value
-        ):
+        if model.runtime.payload.serialization_mode == _PayloadSerializationMode.OFF.value:
             return None
         if model.runtime.payload.serialization_mode in [
             _PayloadSerializationMode.ON_FAILURE.value,
@@ -266,8 +267,7 @@ class NexusBootstrapper:
 
         payload, payload_reader = await self._get_payload(
             payload_type=self._payload_type,
-            save_content=bootstrap_model.runtime.payload.serialization_mode
-            != _PayloadSerializationMode.OFF.value,
+            save_content=bootstrap_model.runtime.payload.serialization_mode != _PayloadSerializationMode.OFF.value,
         )
 
         # always report payload parsing failures
@@ -326,8 +326,7 @@ class NexusBootstrapper:
         if bootstrap_recorder is not None:
             if (
                 payload_reader.read_exception is None
-                and bootstrap_model.runtime.payload.serialization_mode
-                == _PayloadSerializationMode.ALWAYS.value
+                and bootstrap_model.runtime.payload.serialization_mode == _PayloadSerializationMode.ALWAYS.value
             ):
                 bootstrap_recorder.record_user_telemetry(
                     user_recorder=app_injector.get(PayloadTelemetry),
@@ -336,8 +335,7 @@ class NexusBootstrapper:
                 )
             if (
                 payload_reader.read_exception is not None
-                and bootstrap_model.runtime.payload.serialization_mode
-                == _PayloadSerializationMode.ON_FAILURE.value
+                and bootstrap_model.runtime.payload.serialization_mode == _PayloadSerializationMode.ON_FAILURE.value
             ):
                 bootstrap_recorder.record_user_telemetry(
                     user_recorder=app_injector.get(FailedPayloadRecorder),

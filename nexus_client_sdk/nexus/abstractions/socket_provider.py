@@ -106,14 +106,10 @@ class SocketCollection:
         """
         Creates a SocketCollection from a bootstrap configuration
         """
-        return cls.empty().with_inputs(
-            [InputSocket.from_dict(socket_dict) for socket_dict in
-             model.inputs.sockets]
-        ).with_outputs(
-            [
-                OutputSocket.from_dict(socket_dict)
-                for socket_dict in model.outputs.sockets
-            ]
+        return (
+            cls.empty()
+            .with_inputs([InputSocket.from_dict(socket_dict) for socket_dict in model.inputs.sockets])
+            .with_outputs([OutputSocket.from_dict(socket_dict) for socket_dict in model.outputs.sockets])
         )
 
 
