@@ -13,7 +13,7 @@ from nexus_client_sdk.nexus.configurations.configuration_model import (
     MetricsSettings,
     RuntimeSettings,
 )
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
 
 
 @dataclass
@@ -60,14 +60,14 @@ def _check_base_model(model_instance: NexusConfigurationModel) -> None:
 
 
 def test_runtime_configuration() -> None:
-    NEXUS_FRAMEWORK_CONFIGURATION.load()
-    model = NexusConfigurationModel.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION)
+    config = NexusRuntimeConfiguration().load()
+    model = NexusConfigurationModel.from_runtime_configuration(config)
     _check_base_model(model)
 
 
 def test_runtime_configuration_nested_models() -> None:
-    NEXUS_FRAMEWORK_CONFIGURATION.load()
-    model: NexusConfigurationModel = NexusConfigurationModel.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION)
+    config = NexusRuntimeConfiguration().load()
+    model: NexusConfigurationModel = NexusConfigurationModel.from_runtime_configuration(config)
 
     assert model.remote_algorithm.dry_run is False
     assert model.services.query_enabled_store.enabled is False
@@ -83,9 +83,9 @@ def set_config_extension_path_override(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_custom_runtime_configuration(set_config_extension_path_override) -> None:
-    NEXUS_FRAMEWORK_CONFIGURATION.load()
-    NEXUS_FRAMEWORK_CONFIGURATION.load_config_extension("provided")
-    model: CustomConfigurationModel = CustomConfigurationModel.from_runtime_configuration(NEXUS_FRAMEWORK_CONFIGURATION)
+    config = NexusRuntimeConfiguration().load()
+    config.load_config_extension("provided")
+    model: CustomConfigurationModel = CustomConfigurationModel.from_runtime_configuration(config)
 
     # check custom fields
     assert model.field_d == 1.2323
