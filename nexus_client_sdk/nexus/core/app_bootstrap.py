@@ -12,15 +12,13 @@ from injector import Injector, Module, singleton
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.nexus.abstractions.logger_factory import BootstrapLoggerFactory, LoggerFactory
 from nexus_client_sdk.nexus.abstractions.metrics_provider_factory import MetricsProviderFactory
-from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection, InputSocket, OutputSocket
+from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection
 from nexus_client_sdk.nexus.algorithms import BaselineAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
-from nexus_client_sdk.nexus.core.app_bootstrap_extensions import config_validation_extension
 from nexus_client_sdk.nexus.core.app_dependencies import (
-    BootstrapLoggerFactoryModule,
     StorageClientModule,
     TelemetrySerializerModule,
     ResultSerializerModule,
@@ -59,7 +57,6 @@ class NexusBootstrapper:
         self._logger_factory: BootstrapLoggerFactory | None = None
         self._logger: LoggerInterface | None = None
         self._injection_binds = [
-            BootstrapLoggerFactoryModule(),
             StorageClientModule(),
             TelemetrySerializerModule(),
             ResultSerializerModule(),
@@ -194,6 +191,7 @@ class NexusBootstrapper:
             _PayloadSerializationMode.ALWAYS.value,
         ]:
             return TelemetryRecorder(
+                configuration=model,
                 storage_client=tmp_injector.get(StorageClient),
                 serializer=tmp_injector.get(TelemetrySerializer),
                 metrics_provider=VoidMetricsProvider(),
@@ -311,6 +309,7 @@ class NexusBootstrapper:
 
         # bind app-level MetricsProvider now
         metrics_provider = MetricsProviderFactory(
+            config=self._bootstrap_config,
             global_tags=metric_tags,
         ).create_provider()
 

@@ -68,12 +68,10 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
         logger_factory: LoggerFactory,
         *input_processors: InputProcessor,
         cache: InputCache,
+        configuration: TConfiguration,
     ):
         super().__init__(
-            metrics_provider,
-            logger_factory,
-            *input_processors,
-            cache=cache,
+            metrics_provider, logger_factory, *input_processors, cache=cache, configuration_model=configuration
         )
 
     @abstractmethod
