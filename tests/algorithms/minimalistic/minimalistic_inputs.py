@@ -9,7 +9,7 @@ from pydantic import TypeAdapter
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
-from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection, ExternalSocketProvider
+from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.payload_reader import SocketOverridePayload
@@ -36,7 +36,7 @@ class NegativeZError(FatalNexusError):
 
 
 @singleton
-class XYSampleReader(InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFrame]):
+class XYSampleReader(InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFrame, TestAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
@@ -46,7 +46,8 @@ class XYSampleReader(InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFr
         payload: TestMinimalisticAlgorithmPayload,
         socket_collection: SocketCollection,
         *readers: "InputReader",
-        cache: InputCache
+        cache: InputCache,
+        configuration: TestAlgorithmConfiguration,
     ):
         super().__init__(
             socket=None,
@@ -55,6 +56,7 @@ class XYSampleReader(InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFr
             logger_factory=logger_factory,
             payload=payload,
             cache=cache,
+            configuration=configuration,
             *readers,
         )
         self._socket_collection = socket_collection
@@ -71,7 +73,7 @@ class XYSampleReader(InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFr
 
 
 @singleton
-class ZSampleReader(InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFrame]):
+class ZSampleReader(InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFrame, TestAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
@@ -79,9 +81,9 @@ class ZSampleReader(InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFra
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         payload: TestMinimalisticAlgorithmPayload,
-        _: ExternalSocketProvider,
         *readers: "InputReader",
-        cache: InputCache
+        cache: InputCache,
+        configuration: TestAlgorithmConfiguration,
     ):
         super().__init__(
             socket=None,
@@ -90,6 +92,7 @@ class ZSampleReader(InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFra
             logger_factory=logger_factory,
             payload=payload,
             cache=cache,
+            configuration=configuration,
             *readers,
         )
         assert stores.is_empty(), "QES Collection should be empty for this run"
@@ -102,7 +105,7 @@ class ZSampleReader(InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFra
 
 
 @singleton
-class XYProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFrame]):
+class XYProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFrame, TestAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
@@ -118,21 +121,22 @@ class XYProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFr
             logger_factory=logger_factory,
             payload=None,
             cache=cache,
+            configuration=conf,
         )
-        self.conf = conf
 
     async def _process_input(self, xysample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
         self._logger.info(
-            "Config: {config}", config=TypeAdapter(TestAlgorithmConfiguration).dump_json(self.conf).decode("utf-8")
+            "Config: {config}",
+            config=TypeAdapter(TestAlgorithmConfiguration).dump_json(self._configuration).decode("utf-8"),
         )
-        if self.conf.c1 == "sum":
+        if self._configuration.c1 == "sum":
             return pandas.DataFrame({"s": [int(xysample["x"].sum()) + int(xysample["y"].sum())]})
 
         return pandas.DataFrame({"s": [int(xysample["x"].sum()) / int(xysample["y"].sum())]})
 
 
 @singleton
-class ZProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFrame]):
+class ZProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFrame, TestAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
@@ -148,18 +152,18 @@ class ZProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFra
             logger_factory=logger_factory,
             payload=None,
             cache=cache,
+            configuration=conf,
         )
-        self.conf = conf
 
     async def _process_input(self, zsample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
-        if self.conf.c2 == "mean":
+        if self._configuration.c2 == "mean":
             return pandas.DataFrame({"v": [float(zsample.mean())]})
 
         return pandas.DataFrame({"v": [float(zsample.sum() / zsample.size)]})
 
 
 @singleton
-class ZZProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFrame]):
+class ZZProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFrame, TestAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
@@ -167,6 +171,7 @@ class ZZProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFr
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         cache: InputCache,
+        configuration: TestAlgorithmConfiguration,
     ):
         super().__init__(
             *[z],
@@ -174,6 +179,7 @@ class ZZProcessor(InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFr
             logger_factory=logger_factory,
             payload=None,
             cache=cache,
+            configuration=configuration,
         )
 
     async def _process_input(self, request_id: str, z: pandas.DataFrame, **_) -> pandas.DataFrame:

@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.ref != 'refs/heads/main' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: actions/setup-python@v4
@@ -50,7 +50,7 @@ jobs:
           ROOT_PATH_FOR_DYNACONF: ${{ github.workspace }}/tests
           CONFIG_EXTENSION_PATH_OVERRIDE: ${{ github.workspace }}/tests/config_extensions
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           
           poetry run pytest -n auto --dist loadgroup --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=term-missing:skip-covered | tee pytest-coverage.txt
 

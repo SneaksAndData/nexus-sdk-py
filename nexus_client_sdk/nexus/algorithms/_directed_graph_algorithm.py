@@ -23,12 +23,13 @@ from abc import ABC
 
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
+    TConfiguration,
 )
 from nexus_client_sdk.nexus.algorithms._baseline_algorithm import BaselineAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
 
 
-class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload], ABC):
+class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
     """
     Base class for all algorithm implementations which spawns remote algorithms.
     """

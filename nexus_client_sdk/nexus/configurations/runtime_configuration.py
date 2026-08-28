@@ -185,6 +185,3 @@ class NexusRuntimeConfiguration:
             settings_loader(self._configuration, filename=matching_config)
 
         return
-
-
-NEXUS_FRAMEWORK_CONFIGURATION = NexusRuntimeConfiguration()

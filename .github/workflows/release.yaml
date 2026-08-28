@@ -10,7 +10,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags')
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -66,7 +66,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags')
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -83,7 +83,7 @@ jobs:
         env:
           VERSION: ${{steps.version.outputs.version}}
         run: |
-          set -euxo pipefail
+          set -euo pipefail
 
           curl -sSL https://install.python-poetry.org | python3 -
           
@@ -120,7 +120,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags')
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -138,7 +138,7 @@ jobs:
         env:
           VERSION: ${{steps.version.outputs.version}}
         run: |
-          set -euxo pipefail
+          set -euo pipefail
 
           curl -sSL https://install.python-poetry.org | python3 -
           

@@ -47,7 +47,7 @@ from nexus_client_sdk.nexus.algorithms import (
 )
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
 from nexus_client_sdk.nexus.core.app_bootstrap import NexusBootstrapper
 from nexus_client_sdk.nexus.core.serializers import (
     ResultSerializer,
@@ -108,7 +108,8 @@ class Nexus:
         self._run_args = args
         self._algorithm_run_task: asyncio.Task | None = None
         self._on_complete_tasks: list[type[UserTelemetryRecorder]] = []
-        self._bootstrapper = NexusBootstrapper(args)
+        self._base_configuration = NexusRuntimeConfiguration()
+        self._bootstrapper = NexusBootstrapper(args, self._base_configuration)
 
         attach_signal_handlers()
 
@@ -142,7 +143,7 @@ class Nexus:
         :param validators: Dynaconf Validator instances.
         :return:
         """
-        NEXUS_FRAMEWORK_CONFIGURATION.add_bootstrap_validators(*validators)
+        self._base_configuration.add_bootstrap_validators(*validators)
         return self
 
     async def _submit_result(
@@ -174,7 +175,7 @@ class Nexus:
                 formats=serializer.serialization_formats_str,
             )
             storage_client = self._injector.get(StorageClient)
-            output_path = f"{NEXUS_FRAMEWORK_CONFIGURATION.default.result.output_path}/{self._run_args.request_id}.json"
+            output_path = f"{self._base_configuration.default.result.output_path}/{self._run_args.request_id}.json"
             blob_path = DataSocket(data_path=output_path, alias="output", data_format="null").parse_data_path()
             storage_client.save_data_as_blob(
                 data=result_,
@@ -194,20 +195,20 @@ class Nexus:
                         result_uri=save_result(result),
                         error=None,
                     ),
-                    algorithm=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
+                    algorithm=self._base_configuration.default.algorithm_name,
                     request_id=self._run_args.request_id,
                 )
                 metrics_provider.increment("successful_runs")
                 root_logger.info(
                     "Algorithm {algorithm} run completed on Nexus version {version}",
-                    algorithm=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
+                    algorithm=self._base_configuration.default.algorithm_name,
                     version=__version__,
                 )
             case True:
                 root_logger.warning(
                     "Algorithm {algorithm} run transiently failed on Nexus version {version}",
                     ex,
-                    algorithm=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
+                    algorithm=self._base_configuration.default.algorithm_name,
                     version=__version__,
                 )
                 sys.exit(1)
@@ -217,13 +218,13 @@ class Nexus:
                         result_uri=None,
                         error=ex,
                     ),
-                    algorithm=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
+                    algorithm=self._base_configuration.default.algorithm_name,
                     request_id=self._run_args.request_id,
                 )
                 root_logger.error(
                     "Algorithm {algorithm} run failed on Nexus version {version}",
                     ex,
-                    algorithm=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
+                    algorithm=self._base_configuration.default.algorithm_name,
                     version=__version__,
                 )
                 metrics_provider.increment("failed_runs")
@@ -234,13 +235,13 @@ class Nexus:
         logger.error("Encountered a fatal error, completing the run", error)
 
         await NexusReceiverAsyncClient(
-            url=NEXUS_FRAMEWORK_CONFIGURATION.default.client.receiver, token_provider=None, logger=logger
+            url=self._base_configuration.default.client.receiver, token_provider=None, logger=logger
         ).complete_run(
             result=SdkCompletedRunResult.create(
                 result_uri=None,
                 error=error,
             ),
-            algorithm=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name,
+            algorithm=self._base_configuration.default.algorithm_name,
             request_id=self._run_args.request_id,
         )
 
@@ -248,12 +249,12 @@ class Nexus:
         """
         Activates the run sequence.
         """
-        NEXUS_FRAMEWORK_CONFIGURATION.load()
+        self._base_configuration.load()
 
         # configure blocking pool
         loop = asyncio.get_event_loop()
         loop.set_default_executor(
-            ThreadPoolExecutor(max_workers=int(NEXUS_FRAMEWORK_CONFIGURATION.default.threading.blocking_pool_max_size))
+            ThreadPoolExecutor(max_workers=int(self._base_configuration.default.threading.blocking_pool_max_size))
         )
 
         async with self._bootstrapper:
@@ -325,11 +326,11 @@ class Nexus:
             metrics_provider = self._injector.get(MetricsProvider)
 
             async with telemetry_recorder as recorder:
-                if NEXUS_FRAMEWORK_CONFIGURATION.default.telemetry.input.enabled == "1":
+                if self._base_configuration.default.telemetry.input.enabled == "1":
                     await recorder.record(run_id=self._run_args.request_id, **algorithm.inputs)
 
                 # only execute user telemetry if this run has succeeded
-                if ex is None and NEXUS_FRAMEWORK_CONFIGURATION.default.telemetry.user.enabled == "1":
+                if ex is None and self._base_configuration.default.telemetry.user.enabled == "1":
                     on_complete_tasks = [
                         recorder.record_user_telemetry(
                             user_recorder=self._injector.get(on_complete_task_class),
@@ -363,7 +364,7 @@ class Nexus:
                     self._log_warning_when_skipping_telemetry(
                         logger=root_logger,
                         skipped_due_to_failed_run=ex is not None,
-                        skipped_due_to_config=NEXUS_FRAMEWORK_CONFIGURATION.default.telemetry.user.enabled != "1",
+                        skipped_due_to_config=self._base_configuration.default.telemetry.user.enabled != "1",
                     )
             # dispose of QES instance gracefully as it might hold open connections
             qes = self._injector.get(QueryEnabledStoreCollection)

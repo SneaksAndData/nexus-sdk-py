@@ -29,12 +29,13 @@ from nexus_client_sdk.nexus.abstractions.input_object import InputObject
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
     TResult,
+    TConfiguration,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
 
 
-class InputReader(InputObject[TPayload, TResult]):
+class InputReader(InputObject[TPayload, TResult, TConfiguration]):
     """
     Base class for a raw data reader.
     """
@@ -47,7 +48,8 @@ class InputReader(InputObject[TPayload, TResult]):
         payload: TPayload,
         *readers: "InputReader",
         socket: DataSocket | None = None,
-        cache: InputCache
+        cache: InputCache,
+        configuration: TConfiguration,
     ):
         super().__init__(metrics_provider, logger_factory)
         self.socket = socket
@@ -56,6 +58,7 @@ class InputReader(InputObject[TPayload, TResult]):
         self._readers = readers
         self._payload = payload
         self._cache = cache
+        self._configuration = configuration
 
     @property
     def data(self) -> TResult | None:

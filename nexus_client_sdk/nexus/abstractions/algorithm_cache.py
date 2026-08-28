@@ -22,7 +22,7 @@ from functools import reduce
 from typing import final, Any
 
 from nexus_client_sdk.nexus.abstractions.input_object import InputObject
-from nexus_client_sdk.nexus.abstractions.nexus_object import TResult, TPayload
+from nexus_client_sdk.nexus.abstractions.nexus_object import TResult, TPayload, TConfiguration
 from nexus_client_sdk.nexus.exceptions.cache_errors import (
     FatalCachingError,
     TransientCachingError,
@@ -72,7 +72,7 @@ class InputCache:
 
     async def resolve(
         self,
-        *readers_or_processors: InputObject[TPayload, TResult],
+        *readers_or_processors: InputObject[TPayload, TResult, TConfiguration],
         **kwargs,
     ) -> dict[str, TResult | None]:
         """
@@ -99,7 +99,7 @@ class InputCache:
                 self._scheduled[to_schedule_object.cache_key()] = asyncio.create_task(_execute(to_schedule_object))
 
         async def _wait_for_cache(
-            *inputs: InputObject[TPayload, TResult],
+            *inputs: InputObject[TPayload, TResult, TConfiguration],
         ) -> dict[str, TResult | None]:
             num_cached = 0
             while num_cached != len(inputs):

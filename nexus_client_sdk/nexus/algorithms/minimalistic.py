@@ -24,14 +24,14 @@ from injector import inject
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
-from nexus_client_sdk.nexus.abstractions.nexus_object import TPayload
+from nexus_client_sdk.nexus.abstractions.nexus_object import TPayload, TConfiguration
 from nexus_client_sdk.nexus.algorithms._baseline_algorithm import (
     BaselineAlgorithm,
 )
 from nexus_client_sdk.nexus.input import InputProcessor
 
 
-class MinimalisticAlgorithm(BaselineAlgorithm[TPayload], ABC):
+class MinimalisticAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
     """
     Simple algorithm base class.
     """
@@ -43,10 +43,8 @@ class MinimalisticAlgorithm(BaselineAlgorithm[TPayload], ABC):
         logger_factory: LoggerFactory,
         *input_processors: InputProcessor,
         cache: InputCache,
+        configuration_model: TConfiguration,
     ):
         super().__init__(
-            metrics_provider,
-            logger_factory,
-            *input_processors,
-            cache=cache,
+            metrics_provider, logger_factory, *input_processors, cache=cache, configuration_model=configuration_model
         )
