@@ -10,7 +10,8 @@ class TestExtraParameters:
 
 
 @dataclass
-class TestMinimalisticAlgorithmConfiguration(NexusConfigurationModel):
+class TestFanOutAlgorithmConfiguration(NexusConfigurationModel):
     c1: str
     c2: str
     extra_parameters: TestExtraParameters
+    child_algorithm_name: str

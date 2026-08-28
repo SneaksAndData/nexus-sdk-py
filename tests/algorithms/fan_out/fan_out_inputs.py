@@ -13,12 +13,18 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.payload_reader import SocketOverridePayload
-from tests.algorithms.minimalistic.minimalistic_configuration import TestMinimalisticAlgorithmConfiguration
+from tests.algorithms.fan_out.fan_out_configuration import TestFanOutAlgorithmConfiguration
 from tests.algorithms.shared import TestEnum
 
 
 @dataclass
-class TestMinimalisticAlgorithmPayload(SocketOverridePayload):
+class TestFanOutChilPayload(SocketOverridePayload):
+    x: int
+    y: int
+
+
+@dataclass
+class TestFanOutAlgorithmPayload(SocketOverridePayload):
     x: list[int]
     y: list[int]
     z: list[int]
@@ -26,30 +32,19 @@ class TestMinimalisticAlgorithmPayload(SocketOverridePayload):
     alg_class: str
 
 
-@final
-class NegativeZError(FatalNexusError):
-    def __init__(self):
-        super().__init__()
-
-    def __str__(self) -> str:
-        return "Z-axis contains a negative value"
-
-
 @singleton
-class XYSampleReader(
-    InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFrame, TestMinimalisticAlgorithmConfiguration]
-):
+class XYSampleReader(InputReader[TestFanOutAlgorithmPayload, pandas.DataFrame, TestFanOutAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
         stores: QueryEnabledStoreCollection,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        payload: TestMinimalisticAlgorithmPayload,
+        payload: TestFanOutAlgorithmPayload,
         socket_collection: SocketCollection,
         *readers: "InputReader",
         cache: InputCache,
-        configuration: TestMinimalisticAlgorithmConfiguration,
+        configuration: TestFanOutAlgorithmConfiguration
     ):
         super().__init__(
             socket=None,
@@ -75,19 +70,17 @@ class XYSampleReader(
 
 
 @singleton
-class ZSampleReader(
-    InputReader[TestMinimalisticAlgorithmPayload, pandas.DataFrame, TestMinimalisticAlgorithmConfiguration]
-):
+class ZSampleReader(InputReader[TestFanOutAlgorithmPayload, pandas.DataFrame, TestFanOutAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
         stores: QueryEnabledStoreCollection,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        payload: TestMinimalisticAlgorithmPayload,
+        payload: TestFanOutAlgorithmPayload,
         *readers: "InputReader",
         cache: InputCache,
-        configuration: TestMinimalisticAlgorithmConfiguration,
+        configuration: TestFanOutAlgorithmConfiguration
     ):
         super().__init__(
             socket=None,
@@ -109,17 +102,15 @@ class ZSampleReader(
 
 
 @singleton
-class XYProcessor(
-    InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFrame, TestMinimalisticAlgorithmConfiguration]
-):
+class XYProcessor(InputProcessor[TestFanOutAlgorithmPayload, pandas.DataFrame, TestFanOutAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
         xysample: XYSampleReader,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        conf: TestMinimalisticAlgorithmConfiguration,
         cache: InputCache,
+        configuration: TestFanOutAlgorithmConfiguration,
     ):
         super().__init__(
             xysample,
@@ -127,13 +118,13 @@ class XYProcessor(
             logger_factory=logger_factory,
             payload=None,
             cache=cache,
-            configuration=conf,
+            configuration=configuration,
         )
 
     async def _process_input(self, xysample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
         self._logger.info(
             "Config: {config}",
-            config=TypeAdapter(TestMinimalisticAlgorithmConfiguration).dump_json(self._configuration).decode("utf-8"),
+            config=TypeAdapter(TestFanOutAlgorithmConfiguration).dump_json(self._configuration).decode("utf-8"),
         )
         if self._configuration.c1 == "sum":
             return pandas.DataFrame({"s": [int(xysample["x"].sum()) + int(xysample["y"].sum())]})
@@ -142,16 +133,14 @@ class XYProcessor(
 
 
 @singleton
-class ZProcessor(
-    InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFrame, TestMinimalisticAlgorithmConfiguration]
-):
+class ZProcessor(InputProcessor[TestFanOutAlgorithmPayload, pandas.DataFrame, TestFanOutAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
         zsample: ZSampleReader,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
-        conf: TestMinimalisticAlgorithmConfiguration,
+        configuration: TestFanOutAlgorithmConfiguration,
         cache: InputCache,
     ):
         super().__init__(
@@ -160,7 +149,7 @@ class ZProcessor(
             logger_factory=logger_factory,
             payload=None,
             cache=cache,
-            configuration=conf,
+            configuration=configuration,
         )
 
     async def _process_input(self, zsample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
@@ -171,9 +160,7 @@ class ZProcessor(
 
 
 @singleton
-class ZZProcessor(
-    InputProcessor[TestMinimalisticAlgorithmPayload, pandas.DataFrame, TestMinimalisticAlgorithmConfiguration]
-):
+class ZZProcessor(InputProcessor[TestFanOutAlgorithmPayload, pandas.DataFrame, TestFanOutAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
@@ -181,7 +168,7 @@ class ZZProcessor(
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         cache: InputCache,
-        configuration: TestMinimalisticAlgorithmConfiguration,
+        configuration: TestFanOutAlgorithmConfiguration,
     ):
         super().__init__(
             *[z],

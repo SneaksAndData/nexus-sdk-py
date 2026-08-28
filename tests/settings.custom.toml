@@ -28,9 +28,6 @@ metric_tagging_function = "tests.algorithms.minimalistic.minimalistic_telemetry.
 
 [runtime.payload]
 
-# payload type supported by this Nexus application.
-type_name = "tests.algorithms.minimalistic.minimalistic_inputs.TestAlgorithmPayload"
-
 # optional raw payload serialization for later analysis
 # you can serialize payload via user telemetry, however that won't catch failed payloads
 # for production scenarios recommended setup is to pair this setting with `on_failure` and

@@ -12,7 +12,7 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     TTelemetry,
     UserTelemetryPathSegment,
 )
-from tests.algorithms.minimalistic.minimalistic_inputs import TestMinimalisticAlgorithmPayload
+from tests.algorithms.fan_out.fan_out_inputs import TestFanOutAlgorithmPayload
 from tests.algorithms.shared import TestResult
 
 
@@ -21,7 +21,7 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
     @inject
     def __init__(
         self,
-        algorithm_payload: TestMinimalisticAlgorithmPayload,
+        algorithm_payload: TestFanOutAlgorithmPayload,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         storage_client: StorageClient,
@@ -31,7 +31,7 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
 
     async def _compute(
         self,
-        algorithm_payload: TestMinimalisticAlgorithmPayload,
+        algorithm_payload: TestFanOutAlgorithmPayload,
         algorithm_result: TestResult,
         run_id: str,
         **inputs: TTelemetry
@@ -42,12 +42,12 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
         )
 
 
-def tags_from_payload(payload: TestMinimalisticAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
+def tags_from_payload(payload: TestFanOutAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
     return {"x_tag": str(sum(payload.x))}
 
 
 def enrich_from_payload(
-    payload: TestMinimalisticAlgorithmPayload, run_args: NexusDefaultArguments
+    payload: TestFanOutAlgorithmPayload, run_args: NexusDefaultArguments
 ) -> dict[str, dict[str, str]]:
     return {
         "(mean of z:{z})": {"z": payload.z[: int(len(payload.z) / 2)]},
@@ -55,7 +55,7 @@ def enrich_from_payload(
     }
 
 
-def tag_metrics(payload: TestMinimalisticAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
+def tag_metrics(payload: TestFanOutAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
     return {
         "y_tag": str(sum(payload.y)),
     }

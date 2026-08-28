@@ -116,6 +116,12 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
         Sets inputs for the forked run - if this node is **NOT** the root node
         """
 
+    async def _run(self, **kwargs) -> AlgorithmResult:
+        if await self._is_forked(**kwargs):
+            return await self._fork_run(**kwargs)
+
+        return await self._main_run(**kwargs)
+
     async def run(self, **kwargs) -> AlgorithmResult:
         """
         Coroutine that executes the algorithm logic.
@@ -129,10 +135,7 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
             },
         )
         async def _measured_run(**run_args) -> AlgorithmResult:
-            if await self._is_forked(**run_args):
-                return await self._fork_run(**run_args)
-
-            return await self._main_run(**run_args)
+            return await self._run(**run_args)
 
         if await self._is_forked(**kwargs):
             self._inputs = await self._fork_inputs(**kwargs)
@@ -155,6 +158,7 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
             remote_algorithms=forks,
             async_spawn_enabled=self._configuration.forked_algorithm.async_spawn_enabled == "1",
             spawn_base_delay_seconds=int(self._configuration.forked_algorithm.spawn_base_delay_seconds),
+            **kwargs,
         )
 
         return run_result

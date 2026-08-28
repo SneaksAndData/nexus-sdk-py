@@ -13,7 +13,14 @@ from adapta.storage.models import S3Path
 
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
 from nexus_client_sdk.testing import generate_payload_url
+
+
+def get_alg_name() -> str:
+    config = NexusRuntimeConfiguration()
+    config.load()
+    return config.default.algorithm_name
 
 
 def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
