@@ -32,7 +32,6 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms._directed_graph_algorithm import DirectedGraphAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.input_processor import (
     InputProcessor,
 )
@@ -155,9 +154,9 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload], ABC):
 
         await self._spawn_remote_algorithms(
             remote_algorithms=forks,
-            async_spawn_enabled=NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.async_spawn_enabled == "1",
+            async_spawn_enabled=self._configuration.forked_algorithm.async_spawn_enabled == "1",
             spawn_base_delay_seconds=int(
-                NEXUS_FRAMEWORK_CONFIGURATION.default.forked_algorithm.spawn_base_delay_seconds
+                self._configuration.forked_algorithm.spawn_base_delay_seconds
             ),
         )
 

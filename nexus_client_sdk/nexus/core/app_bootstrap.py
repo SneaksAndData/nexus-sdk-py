@@ -378,6 +378,12 @@ class NexusBootstrapper:
             scope=singleton,
         )
 
+        app_injector.binder.bind(
+            NexusRuntimeConfiguration,
+            to=self._bootstrap_config,
+            scope=singleton,
+        )
+
         if self._configuration_model is None:
             app_injector.binder.bind(
                 NexusConfigurationModel,

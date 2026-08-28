@@ -26,6 +26,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
 )
 from nexus_client_sdk.nexus.algorithms._baseline_algorithm import BaselineAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 
 
 class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload], ABC):

@@ -21,7 +21,8 @@ import os
 from typing import final
 from injector import Module, singleton, provider
 from adapta.ml.mlflow import MlflowBasicClient
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 
 
@@ -33,18 +34,18 @@ class MlflowModule(Module):
 
     @singleton
     @provider
-    def provide(self) -> MlflowBasicClient:
+    def provide(self, model: NexusRuntimeConfiguration) -> MlflowBasicClient:
         """
         DI factory method.
         """
 
-        if NEXUS_FRAMEWORK_CONFIGURATION.default.exists(
+        if model.default.exists(
             "mlflow.tracking.username"
-        ) and NEXUS_FRAMEWORK_CONFIGURATION.default.exists("mlflow.tracking.password"):
+        ) and model.default.exists("mlflow.tracking.password"):
             return MlflowBasicClient.from_static_credentials(
-                tracking_server_uri=NEXUS_FRAMEWORK_CONFIGURATION.default.mlflow.tracking.uri,
-                username=NEXUS_FRAMEWORK_CONFIGURATION.default.mlflow.tracking.username,
-                password=NEXUS_FRAMEWORK_CONFIGURATION.default.mlflow.tracking.password,
+                tracking_server_uri=model.default.mlflow.tracking.uri,
+                username=model.default.mlflow.tracking.username,
+                password=model.default.mlflow.tracking.password,
             )
 
         if "NEXUS__MLFLOW_TRACKING_URI" not in os.environ:

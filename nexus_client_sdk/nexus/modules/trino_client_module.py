@@ -21,7 +21,7 @@ from typing import final
 from adapta.storage.database.v3.trino_sql import TrinoClient
 from injector import Module, singleton, provider
 
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
 
 
 @final
@@ -32,16 +32,16 @@ class TrinoClientModule(Module):
 
     @singleton
     @provider
-    def provide(self) -> TrinoClient:
+    def provide(self, model: NexusRuntimeConfiguration) -> TrinoClient:
         """
         DI factory method.
         """
 
-        if NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.enabled == "1":
+        if model.default.inputs.trino_client.enabled == "1":
             return TrinoClient(
-                host=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.host,
-                username=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.username,
-                password=NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.trino_client.password,
+                host=model.default.inputs.trino_client.host,
+                username=model.default.inputs.trino_client.username,
+                password=model.default.inputs.trino_client.password,
             )
 
         return None
