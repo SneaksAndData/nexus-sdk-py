@@ -25,6 +25,7 @@ from typing_extensions import deprecated
 
 from adapta.process_communication import DataSocket
 
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.exceptions.startup_error import (
     FatalStartupConfigurationError,
 )
@@ -101,13 +102,18 @@ class SocketCollection:
         return cls(input_sockets=[], output_sockets=[])
 
     @classmethod
-    def from_dynaconf(cls, input_sockets: list[DataDict], output_sockets: list[DataDict]) -> Self:
+    def from_config(cls, model: NexusConfigurationModel) -> Self:
         """
-        Creates a SocketCollection from a Dynaconf entry list
+        Creates a SocketCollection from a bootstrap configuration
         """
-        return cls(
-            input_sockets=[InputSocket.from_dict(socket_dict) for socket_dict in input_sockets],
-            output_sockets=[OutputSocket.from_dict(socket_dict) for socket_dict in output_sockets],
+        return cls.empty().with_inputs(
+            [InputSocket.from_dict(socket_dict) for socket_dict in
+             model.inputs.sockets]
+        ).with_outputs(
+            [
+                OutputSocket.from_dict(socket_dict)
+                for socket_dict in model.outputs.sockets
+            ]
         )
 
 

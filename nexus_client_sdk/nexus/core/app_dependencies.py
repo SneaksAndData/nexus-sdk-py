@@ -25,14 +25,8 @@ from adapta.storage.blob.base import StorageClient
 from injector import Module, singleton, provider
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
-from nexus_client_sdk.nexus.abstractions.logger_factory import (
-    BootstrapLoggerFactory,
-)
 from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
-from nexus_client_sdk.nexus.abstractions.socket_provider import (
-    ExternalSocketProvider,
-)
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.core.serializers import (
     TelemetrySerializer,
     ResultSerializer,
@@ -44,21 +38,6 @@ from nexus_client_sdk.nexus.exceptions.startup_error import (
 
 
 @final
-class BootstrapLoggerFactoryModule(Module):
-    """
-    Logger factory module.
-    """
-
-    @singleton
-    @provider
-    def provide(self) -> BootstrapLoggerFactory:
-        """
-        DI factory method.
-        """
-        return BootstrapLoggerFactory()
-
-
-@final
 class QueryEnabledStoreCollectionModule(Module):
     """
     QES module.
@@ -66,16 +45,16 @@ class QueryEnabledStoreCollectionModule(Module):
 
     @singleton
     @provider
-    def provide(self) -> QueryEnabledStoreCollection:
+    def provide(self, model: NexusConfigurationModel) -> QueryEnabledStoreCollection:
         """
         DI factory method.
         """
-        if NEXUS_FRAMEWORK_CONFIGURATION.default.services.query_enabled_store.enabled != "1":
+        if model.services.query_enabled_store:
             return QueryEnabledStoreCollection()
 
         try:
             return QueryEnabledStoreCollection().load_stores(
-                NEXUS_FRAMEWORK_CONFIGURATION.default.services.query_enabled_store.store_connections
+                model.services.query_enabled_store.store_connections
             )
         except Exception as e:
             raise FatalStartupConfigurationError(
@@ -91,41 +70,20 @@ class StorageClientModule(Module):
 
     @singleton
     @provider
-    def provide(self) -> StorageClient:
+    def provide(self, model: NexusConfigurationModel) -> StorageClient:
         """
         DI factory method.
         """
         storage_client_class: type[StorageClient] = locate(
-            NEXUS_FRAMEWORK_CONFIGURATION.default.result.storage_client_class
+            model.result.storage_client_class
         )
 
         try:
-            return storage_client_class.for_storage_path(path=NEXUS_FRAMEWORK_CONFIGURATION.default.result.output_path)
+            return storage_client_class.for_storage_path(path=model.result.output_path)
         except Exception as e:
             raise FatalStartupConfigurationError(
                 "StorageClient cannot be created, configuration missing or invalid. Review the underlying exception."
             ) from e
-
-
-@final
-class ExternalSocketsModule(Module):
-    """
-    Storage client module.
-    """
-
-    @singleton
-    @provider
-    def provide(self) -> ExternalSocketProvider:
-        """
-        Dependency provider.
-        """
-        if (
-            NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets
-            and len(NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets) > 0
-        ):
-            return ExternalSocketProvider.from_dynaconf(NEXUS_FRAMEWORK_CONFIGURATION.default.inputs.sockets)
-
-        return ExternalSocketProvider.empty()
 
 
 @final
@@ -136,12 +94,12 @@ class ResultSerializerModule(Module):
 
     @singleton
     @provider
-    def provide(self) -> ResultSerializer:
+    def provide(self, model: NexusConfigurationModel) -> ResultSerializer:
         """
         DI factory method.
         """
         serializer = ResultSerializer()
-        for serializer_class in NEXUS_FRAMEWORK_CONFIGURATION.default.result.serializers:
+        for serializer_class in model.result.serializers:
             serializer = serializer.with_format(locate(serializer_class))
 
         return serializer
@@ -155,12 +113,12 @@ class TelemetrySerializerModule(Module):
 
     @singleton
     @provider
-    def provide(self) -> TelemetrySerializer:
+    def provide(self, model: NexusConfigurationModel) -> TelemetrySerializer:
         """
         DI factory method.
         """
         serializer = TelemetrySerializer()
-        for serializer_class in NEXUS_FRAMEWORK_CONFIGURATION.default.telemetry.serializers:
+        for serializer_class in model.telemetry.serializers:
             serializer = serializer.with_format(locate(serializer_class))
 
         return serializer
@@ -174,23 +132,23 @@ class CacheModule(Module):
 
     @singleton
     @provider
-    def provide(self) -> InputCache:
+    def provide(self, model: NexusConfigurationModel) -> InputCache:
         """
         Dependency provider.
         """
         loaded_error_map: dict[str, list[NexusErrorMap]] = {}
-        for error_map_config in NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.exceptions.scoped:
+        for error_map_config in model.runtime.exceptions.scoped:
             if error_map_config["class_name"] not in loaded_error_map:
                 loaded_error_map[error_map_config["class_name"]] = [NexusErrorMap.from_config(error_map_config)]
             else:
                 loaded_error_map[error_map_config["class_name"]].append(NexusErrorMap.from_config(error_map_config))
 
         default_error: type[BaseException] = locate(
-            NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.exceptions.defaults.global_default
+            model.runtime.exceptions.defaults.global_default
         )
         if default_error is None:
             raise FatalStartupConfigurationError(
-                f"Unable to locate default error map class: {NEXUS_FRAMEWORK_CONFIGURATION.default.runtime.exceptions.defaults.global_default}"
+                f"Unable to locate default error map class: {model.runtime.exceptions.defaults.global_default}"
             )
 
         map_instance = NexusErrorMapCollection(
@@ -276,12 +234,12 @@ class CompressorModule(Module):
 
     @singleton
     @provider
-    def provide(self) -> Compressor:
+    def provide(self, model: NexusConfigurationModel) -> Compressor:
         """
         Returns a compressor if configured, else None.
         """
-        compress_path = NEXUS_FRAMEWORK_CONFIGURATION.default.remote_algorithm.compression_import_path
-        decompress_path = NEXUS_FRAMEWORK_CONFIGURATION.default.remote_algorithm.decompression_import_path
+        compress_path = model.remote_algorithm.compression_import_path
+        decompress_path = model.remote_algorithm.decompression_import_path
 
         if not compress_path and not decompress_path:
             return None
