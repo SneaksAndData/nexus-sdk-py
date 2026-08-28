@@ -29,8 +29,17 @@ class TestMinimalisticAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload, Test
         z_processor: ZProcessor,
         zz_processor: ZZProcessor,
         cache: InputCache,
+        configuration_model: TestAlgorithmConfiguration,
     ):
-        super().__init__(metrics_provider, logger_factory, xy_processor, z_processor, zz_processor, cache=cache)
+        super().__init__(
+            metrics_provider,
+            logger_factory,
+            xy_processor,
+            z_processor,
+            zz_processor,
+            cache=cache,
+            configuration_model=configuration_model,
+        )
 
     async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
         assert (
