@@ -12,7 +12,6 @@ algorithms = []
 # use these to provide custom services
 additional_modules = [
     "nexus_client_sdk.nexus.core.app_dependencies.QueryEnabledStoreCollectionModule",
-    "nexus_client_sdk.nexus.core.app_dependencies.ExternalSocketsModule",
     "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
 ]
 

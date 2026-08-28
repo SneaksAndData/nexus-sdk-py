@@ -9,7 +9,7 @@ from pydantic import TypeAdapter
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
-from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection, ExternalSocketProvider
+from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.payload_reader import SocketOverridePayload
@@ -79,7 +79,6 @@ class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         payload: TestAlgorithmPayload,
-        _: ExternalSocketProvider,
         *readers: "InputReader",
         cache: InputCache
     ):

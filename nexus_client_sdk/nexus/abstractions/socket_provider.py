@@ -17,11 +17,7 @@
 #  limitations under the License.
 #
 
-import json
 from typing import final, Self, TypeVar
-
-from dynaconf import DataDict
-from typing_extensions import deprecated
 
 from adapta.process_communication import DataSocket
 
@@ -111,52 +107,3 @@ class SocketCollection:
             .with_inputs([InputSocket.from_dict(socket_dict) for socket_dict in model.inputs.sockets])
             .with_outputs([OutputSocket.from_dict(socket_dict) for socket_dict in model.outputs.sockets])
         )
-
-
-@final
-@deprecated("This module is deprecated and will be removed in 1.7. Use SocketCollection instead.")
-class ExternalSocketProvider:
-    """
-    Wraps a socket collection
-    """
-
-    def __init__(self, *sockets: DataSocket):
-        self._sockets = {socket.alias: socket for socket in sockets}
-
-    def socket(self, name: str) -> DataSocket:
-        """
-        Retrieve a socket if it exists.
-        """
-        if name in self._sockets:
-            return self._sockets[name]
-
-        raise FatalStartupConfigurationError(missing_entry=f"socket with alias `{name}`")
-
-    @classmethod
-    def from_serialized(cls, socket_list_ser: str) -> Self:
-        """
-        Creates a SocketProvider from a list of serialized sockets
-        """
-        return cls(*[DataSocket.from_dict(socket_dict) for socket_dict in json.loads(socket_list_ser)])
-
-    @classmethod
-    def from_dynaconf(cls, sockets_list: list[DataDict] | str) -> Self:
-        """
-        Creates a SocketProvider from a Dynaconf entry list
-        :param sockets_list:
-        :return:
-        """
-        if isinstance(sockets_list, str):
-            return cls.from_serialized(sockets_list)
-        if isinstance(sockets_list, list):
-            return cls(*[DataSocket.from_dict(socket_dict) for socket_dict in sockets_list])
-
-        raise FatalStartupConfigurationError(f"Unknown type for input sockets: {type(sockets_list)}")
-
-    @classmethod
-    def empty(cls) -> Self:
-        """
-        Returns an empty SocketProvider with no sockets
-        :return:
-        """
-        return cls(*[])
