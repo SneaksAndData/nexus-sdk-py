@@ -25,10 +25,11 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
     TResult,
     NexusObject,
+    TConfiguration,
 )
 
 
-class InputObject(NexusObject[TPayload, TResult], ABC):
+class InputObject(NexusObject[TPayload, TResult, TConfiguration], ABC):
     """
     Base class for input processing and reader objects.
     """

@@ -36,7 +36,7 @@ class NegativeZError(FatalNexusError):
 
 
 @singleton
-class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
+class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame, TestAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
@@ -46,7 +46,8 @@ class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
         payload: TestAlgorithmPayload,
         socket_collection: SocketCollection,
         *readers: "InputReader",
-        cache: InputCache
+        cache: InputCache,
+        configuration: TestAlgorithmConfiguration,
     ):
         super().__init__(
             socket=None,
@@ -55,6 +56,7 @@ class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
             logger_factory=logger_factory,
             payload=payload,
             cache=cache,
+            configuration=configuration,
             *readers,
         )
         self._socket_collection = socket_collection
@@ -71,7 +73,7 @@ class XYSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
 
 
 @singleton
-class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
+class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame, TestAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
@@ -80,7 +82,8 @@ class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
         logger_factory: LoggerFactory,
         payload: TestAlgorithmPayload,
         *readers: "InputReader",
-        cache: InputCache
+        cache: InputCache,
+        configuration: TestAlgorithmConfiguration,
     ):
         super().__init__(
             socket=None,
@@ -89,6 +92,7 @@ class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
             logger_factory=logger_factory,
             payload=payload,
             cache=cache,
+            configuration=configuration,
             *readers,
         )
         assert stores.is_empty(), "QES Collection should be empty for this run"
@@ -101,7 +105,7 @@ class ZSampleReader(InputReader[TestAlgorithmPayload, pandas.DataFrame]):
 
 
 @singleton
-class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame, TestAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
@@ -117,12 +121,13 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
             logger_factory=logger_factory,
             payload=None,
             cache=cache,
+            configuration=conf,
         )
-        self.conf = conf
 
     async def _process_input(self, xysample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
         self._logger.info(
-            "Config: {config}", config=TypeAdapter(TestAlgorithmConfiguration).dump_json(self.conf).decode("utf-8")
+            "Config: {config}",
+            config=TypeAdapter(TestAlgorithmConfiguration).dump_json(self._configuration).decode("utf-8"),
         )
         if self.conf.c1 == "sum":
             return pandas.DataFrame({"s": [int(xysample["x"].sum()) + int(xysample["y"].sum())]})
@@ -131,7 +136,7 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
 
 
 @singleton
-class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame, TestAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
@@ -147,18 +152,18 @@ class ZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
             logger_factory=logger_factory,
             payload=None,
             cache=cache,
+            configuration=conf,
         )
-        self.conf = conf
 
     async def _process_input(self, zsample: pandas.DataFrame, request_id: str, **_) -> pandas.DataFrame:
-        if self.conf.c2 == "mean":
+        if self._configuration.c2 == "mean":
             return pandas.DataFrame({"v": [float(zsample.mean())]})
 
         return pandas.DataFrame({"v": [float(zsample.sum() / zsample.size)]})
 
 
 @singleton
-class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
+class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame, TestAlgorithmConfiguration]):
     @inject
     def __init__(
         self,
@@ -166,6 +171,7 @@ class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         cache: InputCache,
+        configuration: TestAlgorithmConfiguration,
     ):
         super().__init__(
             *[z],
@@ -173,6 +179,7 @@ class ZZProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame]):
             logger_factory=logger_factory,
             payload=None,
             cache=cache,
+            configuration=configuration,
         )
 
     async def _process_input(self, request_id: str, z: pandas.DataFrame, **_) -> pandas.DataFrame:

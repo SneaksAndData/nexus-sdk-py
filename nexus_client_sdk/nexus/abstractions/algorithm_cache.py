@@ -22,7 +22,7 @@ from functools import reduce
 from typing import final, Any
 
 from nexus_client_sdk.nexus.abstractions.input_object import InputObject
-from nexus_client_sdk.nexus.abstractions.nexus_object import TResult, TPayload
+from nexus_client_sdk.nexus.abstractions.nexus_object import TResult, TPayload, TConfiguration
 from nexus_client_sdk.nexus.exceptions.cache_errors import (
     FatalCachingError,
     TransientCachingError,
@@ -72,7 +72,7 @@ class InputCache:
 
     async def resolve(
         self,
-        *readers_or_processors: InputObject[TPayload, TResult],
+        *readers_or_processors: InputObject[TPayload, TResult, TConfiguration],
         **kwargs,
     ) -> dict[str, TResult | None]:
         """
