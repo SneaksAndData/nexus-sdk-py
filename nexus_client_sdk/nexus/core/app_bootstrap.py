@@ -10,8 +10,10 @@ from adapta.storage.blob.base import StorageClient
 from injector import Injector, Module, singleton
 
 from nexus_client_sdk.models.access_token import AccessToken
+from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import BootstrapLoggerFactory, LoggerFactory
 from nexus_client_sdk.nexus.abstractions.metrics_provider_factory import MetricsProviderFactory
+from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
 from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection
 from nexus_client_sdk.nexus.algorithms import BaselineAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
@@ -19,12 +21,13 @@ from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
 from nexus_client_sdk.nexus.core.app_dependencies import (
-    StorageClientModule,
-    TelemetrySerializerModule,
-    ResultSerializerModule,
-    CacheModule,
+    TelemetrySerializerFactory,
+    ResultSerializerFactory,
+    StorageClientFactory,
+    QueryEnabledStoreCollectionFactory,
+    CacheFactory,
 )
-from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
+from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer, ResultSerializer
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader, SocketOverridePayload
@@ -57,10 +60,6 @@ class NexusBootstrapper:
         self._logger_factory: BootstrapLoggerFactory | None = None
         self._logger: LoggerInterface | None = None
         self._injection_binds = [
-            StorageClientModule(),
-            TelemetrySerializerModule(),
-            ResultSerializerModule(),
-            CacheModule(),
             type(f"{TelemetryRecorder.__name__}Module", (Module,), {})(),
         ]
         self._run_args = run_args
@@ -181,9 +180,8 @@ class NexusBootstrapper:
             self._load_algorithm(algorithm)
 
     def _get_bootstrap_recorder(
-        self, logger_factory: LoggerFactory, model: NexusConfigurationModel
+        self, logger_factory: LoggerFactory, model: NexusConfigurationModel, injector: Injector
     ) -> TelemetryRecorder | None:
-        tmp_injector = Injector(self._injection_binds)
         if model.runtime.payload.serialization_mode == _PayloadSerializationMode.OFF.value:
             return None
         if model.runtime.payload.serialization_mode in [
@@ -192,8 +190,8 @@ class NexusBootstrapper:
         ]:
             return TelemetryRecorder(
                 configuration=model,
-                storage_client=tmp_injector.get(StorageClient),
-                serializer=tmp_injector.get(TelemetrySerializer),
+                storage_client=injector.get(StorageClient),
+                serializer=injector.get(TelemetrySerializer),
                 metrics_provider=VoidMetricsProvider(),
                 logger_factory=logger_factory,
             )
@@ -238,6 +236,33 @@ class NexusBootstrapper:
         # load always available services
         for bound_module in self._injection_binds:
             app_injector.binder.install(bound_module)
+
+        # bind services provided via factories
+        app_injector.binder.bind(
+            StorageClient,
+            to=StorageClientFactory.get_client(bootstrap_model),
+            scope=singleton,
+        )
+        app_injector.binder.bind(
+            QueryEnabledStoreCollection,
+            to=QueryEnabledStoreCollectionFactory.get_collection(bootstrap_model),
+            scope=singleton,
+        )
+        app_injector.binder.bind(
+            ResultSerializer,
+            to=ResultSerializerFactory.get_serializer(bootstrap_model),
+            scope=singleton,
+        )
+        app_injector.binder.bind(
+            TelemetrySerializer,
+            to=TelemetrySerializerFactory.get_serializer(bootstrap_model),
+            scope=singleton,
+        )
+        app_injector.binder.bind(
+            InputCache,
+            to=CacheFactory.get_cache(bootstrap_model),
+            scope=singleton,
+        )
 
         # load additional services
         for additional_module in bootstrap_model.runtime.additional_modules:
@@ -320,7 +345,7 @@ class NexusBootstrapper:
         )
 
         # get temporary telemetry recorder
-        bootstrap_recorder = self._get_bootstrap_recorder(logger_factory, bootstrap_model)
+        bootstrap_recorder = self._get_bootstrap_recorder(logger_factory, bootstrap_model, app_injector)
 
         if bootstrap_recorder is not None:
             if (

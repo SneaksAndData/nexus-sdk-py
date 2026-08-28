@@ -38,14 +38,13 @@ from nexus_client_sdk.nexus.exceptions.startup_error import (
 
 
 @final
-class QueryEnabledStoreCollectionModule(Module):
+class QueryEnabledStoreCollectionFactory:
     """
-    QES module.
+    QES factory.
     """
 
-    @singleton
-    @provider
-    def provide(self, model: NexusConfigurationModel) -> QueryEnabledStoreCollection:
+    @classmethod
+    def get_collection(cls, model: NexusConfigurationModel) -> QueryEnabledStoreCollection:
         """
         DI factory method.
         """
@@ -61,14 +60,13 @@ class QueryEnabledStoreCollectionModule(Module):
 
 
 @final
-class StorageClientModule(Module):
+class StorageClientFactory:
     """
-    Storage client module.
+    Storage client factory
     """
 
-    @singleton
-    @provider
-    def provide(self, model: NexusConfigurationModel) -> StorageClient:
+    @classmethod
+    def get_client(cls, model: NexusConfigurationModel) -> StorageClient:
         """
         DI factory method.
         """
@@ -83,14 +81,13 @@ class StorageClientModule(Module):
 
 
 @final
-class ResultSerializerModule(Module):
+class ResultSerializerFactory:
     """
-    Serialization format module for results.
+    Serialization format factory.
     """
 
-    @singleton
-    @provider
-    def provide(self, model: NexusConfigurationModel) -> ResultSerializer:
+    @classmethod
+    def get_serializer(cls, model: NexusConfigurationModel) -> ResultSerializer:
         """
         DI factory method.
         """
@@ -102,14 +99,13 @@ class ResultSerializerModule(Module):
 
 
 @final
-class TelemetrySerializerModule(Module):
+class TelemetrySerializerFactory:
     """
     Serialization format module for telemetry.
     """
 
-    @singleton
-    @provider
-    def provide(self, model: NexusConfigurationModel) -> TelemetrySerializer:
+    @classmethod
+    def get_serializer(cls, model: NexusConfigurationModel) -> TelemetrySerializer:
         """
         DI factory method.
         """
@@ -121,23 +117,22 @@ class TelemetrySerializerModule(Module):
 
 
 @final
-class CacheModule(Module):
+class CacheFactory:
     """
-    Storage client module.
+    Cache provider
     """
 
-    @singleton
-    @provider
-    def provide(self, model: NexusConfigurationModel) -> InputCache:
+    @classmethod
+    def get_cache(cls, model: NexusConfigurationModel) -> InputCache:
         """
         Dependency provider.
         """
         loaded_error_map: dict[str, list[NexusErrorMap]] = {}
         for error_map_config in model.runtime.exceptions.scoped:
-            if error_map_config["class_name"] not in loaded_error_map:
-                loaded_error_map[error_map_config["class_name"]] = [NexusErrorMap.from_config(error_map_config)]
+            if error_map_config.class_name not in loaded_error_map:
+                loaded_error_map[error_map_config.class_name] = [NexusErrorMap.from_config(error_map_config)]
             else:
-                loaded_error_map[error_map_config["class_name"]].append(NexusErrorMap.from_config(error_map_config))
+                loaded_error_map[error_map_config.class_name].append(NexusErrorMap.from_config(error_map_config))
 
         default_error: type[BaseException] = locate(model.runtime.exceptions.defaults.global_default)
         if default_error is None:

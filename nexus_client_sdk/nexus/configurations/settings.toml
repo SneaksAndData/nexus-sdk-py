@@ -15,7 +15,6 @@ algorithms = []
 # additional modules for the DI container
 # use these to provide custom services
 additional_modules = [
-    "nexus_client_sdk.nexus.core.app_dependencies.QueryEnabledStoreCollectionModule",
     "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
 ]
 
@@ -33,8 +32,8 @@ metric_tagging_function = ""
 
 [runtime.payload]
 
-# payload types supported by this Nexus application. At least one must be provided
-types = []
+# payload type supported by this Nexus application.
+type_name = ""
 
 # optional raw payload serialization for later analysis
 # you can serialize payload via user telemetry, however that won't catch failed payloads
@@ -168,7 +167,7 @@ serializers = [
 # INPUTS - configuration for data read interfaces
 [inputs]
 
-# External data sockets to be injected into InputReader instances
+# External data sockets to be used as data inputs
 #[[inputs.sockets]]
 #alias = "localfile1"
 #data_path = "local+file:///tmp/file1.json"
@@ -182,35 +181,21 @@ serializers = [
 # default is empty list
 sockets = []
 
-    # Settings for AstraClientModule
-    [inputs.astra_client]
+[outputs]
 
-    # Enabled injection of AstraClientModule
-    enabled = "0"
+# External data sockets to be used as data outputs
+#[[outputs.sockets]]
+#alias = "localfile1"
+#data_path = "local+file:///tmp/file1.json"
+#data_format = "text"
+#
+#[[inputs.sockets]]
+#alias = "localfile2"
+#data_path = "local+file:///tmp/file2.json"
+#data_format = "text"
 
-    # Astra Keyspace
-    # keyspace = ""
-
-    # Secure Connection Bundle, base64-encoded
-    # bundle = ""
-
-    # Astra Client ID
-    # client_id = ""
-
-    # Astra Client Secret
-    # client_secret = ""
-
-    # Settings for TrinoClientModule
-    [inputs.trino_client]
-
-    # Enabled injection of TrinoClientModule
-    enabled = "0"
-
-    # Trino username
-    # username = ""
-
-    # Trino password
-    # password = ""
+# default is empty list
+sockets = []
 
 # Framework-powered logging
 [logging]

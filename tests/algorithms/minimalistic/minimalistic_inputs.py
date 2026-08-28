@@ -129,7 +129,7 @@ class XYProcessor(InputProcessor[TestAlgorithmPayload, pandas.DataFrame, TestAlg
             "Config: {config}",
             config=TypeAdapter(TestAlgorithmConfiguration).dump_json(self._configuration).decode("utf-8"),
         )
-        if self.conf.c1 == "sum":
+        if self._configuration.c1 == "sum":
             return pandas.DataFrame({"s": [int(xysample["x"].sum()) + int(xysample["y"].sum())]})
 
         return pandas.DataFrame({"s": [int(xysample["x"].sum()) / int(xysample["y"].sum())]})

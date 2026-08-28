@@ -99,7 +99,7 @@ class InputCache:
                 self._scheduled[to_schedule_object.cache_key()] = asyncio.create_task(_execute(to_schedule_object))
 
         async def _wait_for_cache(
-            *inputs: InputObject[TPayload, TResult],
+            *inputs: InputObject[TPayload, TResult, TConfiguration],
         ) -> dict[str, TResult | None]:
             num_cached = 0
             while num_cached != len(inputs):

@@ -11,7 +11,6 @@ algorithms = []
 # additional modules for the DI container
 # use these to provide custom services
 additional_modules = [
-    "nexus_client_sdk.nexus.core.app_dependencies.QueryEnabledStoreCollectionModule",
     "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
 ]
 
@@ -29,8 +28,8 @@ metric_tagging_function = "tests.algorithms.minimalistic.minimalistic_telemetry.
 
 [runtime.payload]
 
-# payload types supported by this Nexus application. At least one must be provided
-types = ["tests.algorithms.minimalistic.minimalistic_inputs.TestAlgorithmPayload"]
+# payload type supported by this Nexus application.
+type_name = "tests.algorithms.minimalistic.minimalistic_inputs.TestAlgorithmPayload"
 
 # optional raw payload serialization for later analysis
 # you can serialize payload via user telemetry, however that won't catch failed payloads

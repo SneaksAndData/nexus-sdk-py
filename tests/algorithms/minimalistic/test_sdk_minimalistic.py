@@ -42,7 +42,8 @@ def _unset_env_variables() -> None:
 
 
 def _get_alg_name() -> str:
-    config = NexusRuntimeConfiguration().load()
+    config = NexusRuntimeConfiguration()
+    config.load()
     return config.default.algorithm_name
 
 

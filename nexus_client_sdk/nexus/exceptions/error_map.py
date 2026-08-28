@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from pydoc import locate
 from typing import final, Self
 
+from nexus_client_sdk.nexus.configurations.configuration_model import ScopedExceptionSettings
+
 
 @final
 @dataclass
@@ -28,14 +30,14 @@ class NexusErrorMap:
         return None
 
     @classmethod
-    def from_config(cls, value: dict) -> Self:
+    def from_config(cls, value: ScopedExceptionSettings) -> Self:
         """
          Creates an instance of NexusErrorMap from the provided dictionary.
         :param value:
         :return:
         """
-        target: type[BaseException] = locate(value["target"])
-        errors: list[type[BaseException]] = list(map(locate, value["errors"]))
+        target: type[BaseException] = locate(value.target)
+        errors: list[type[BaseException]] = list(map(locate, value.errors))
 
         return cls(target, errors)
 
