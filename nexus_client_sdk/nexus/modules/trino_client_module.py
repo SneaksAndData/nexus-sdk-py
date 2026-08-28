@@ -14,7 +14,7 @@
 #
 
 """
-Trino Client module that provides the trino client to the Nexus framework.
+ Trino Client module that provides the trino client to the Nexus framework.
 """
 from typing import final
 
