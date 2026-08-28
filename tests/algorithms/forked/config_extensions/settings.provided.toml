@@ -1,0 +1,18 @@
+dynaconf_merge = true
+
+c1 = "abc"
+c2 = "def"
+child_algorithm_name = "hello-world"
+
+[runtime.payload]
+
+# payload type supported by this Nexus application.
+type_name = "tests.algorithms.forked.forked_inputs.TestForkedAlgorithmPayload"
+
+
+# ADDITIONAL SERVICES
+[services]
+    # Query Enabled Stores
+    [query_enabled_store]
+
+    enabled = "0"

@@ -8,15 +8,15 @@ from dataclasses import dataclass
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
-from nexus_client_sdk.nexus.algorithms import FanOutAlgorithm, RemoteAlgorithm
+from nexus_client_sdk.nexus.algorithms import ForkedAlgorithm, RemoteAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
-from tests.algorithms.fan_out.fan_out_configuration import TestFanOutAlgorithmConfiguration
-from tests.algorithms.fan_out.fan_out_inputs import (
-    TestFanOutAlgorithmPayload,
+from tests.algorithms.forked.forked_configuration import TestForkedAlgorithmConfiguration
+from tests.algorithms.forked.forked_inputs import (
+    TestForkedAlgorithmPayload,
     ZProcessor,
     XYProcessor,
     ZZProcessor,
-    TestFanOutChilPayload,
+    TestForkedChilPayload,
 )
 from tests.algorithms.shared import (
     TestResult,
@@ -24,26 +24,26 @@ from tests.algorithms.shared import (
 
 
 @dataclass
-class TestFanOutChildAlgorithmResult(AlgorithmResult):
+class TestForkedChildAlgorithmResult(AlgorithmResult):
     """
     Result for a remote algorithm launch.
     """
 
-    fan_out_request_ids: list[str]
+    forked_request_ids: list[str]
     tag: str
 
     def result(self) -> dict[str, str]:
-        return {"fan_out_request_id": self.fan_out_request_ids, "tag": self.tag}
+        return {"forked_request_id": self.forked_request_ids, "tag": self.tag}
 
     def to_kwargs(self) -> dict[str, Any]:
         pass
 
 
 @singleton
-class TestFanOutChildAlgorithm(RemoteAlgorithm[TestFanOutAlgorithmPayload, TestFanOutAlgorithmConfiguration]):
-    async def _run(self, **kwargs) -> list[TestFanOutChilPayload]:
+class TestForkedChildAlgorithm(RemoteAlgorithm[TestForkedAlgorithmPayload, TestForkedAlgorithmConfiguration]):
+    async def _run(self, **kwargs) -> list[TestForkedChilPayload]:
         return [
-            TestFanOutChilPayload(
+            TestForkedChilPayload(
                 x=i,
                 y=i * 10,
                 input_sockets=None,
@@ -59,14 +59,14 @@ class TestFanOutChildAlgorithm(RemoteAlgorithm[TestFanOutAlgorithmPayload, TestF
         pass
 
     def _generate_tag(self, **kwargs) -> str:
-        return "fan_out_test"
+        return "forked_test"
 
-    def _transform_submission_result(self, request_ids: list[str], tag: str) -> TestFanOutChildAlgorithmResult:
-        return TestFanOutChildAlgorithmResult(fan_out_request_ids=request_ids, tag=tag)
+    def _transform_submission_result(self, request_ids: list[str], tag: str) -> TestForkedChildAlgorithmResult:
+        return TestForkedChildAlgorithmResult(forked_request_ids=request_ids, tag=tag)
 
 
 @singleton
-class TestFanOutAlgorithm(FanOutAlgorithm[TestFanOutAlgorithmPayload, TestFanOutAlgorithmConfiguration]):
+class TestForkedAlgorithm(ForkedAlgorithm[TestForkedAlgorithmPayload, TestForkedAlgorithmConfiguration]):
     async def _context_open(self):
         pass
 
@@ -83,7 +83,8 @@ class TestFanOutAlgorithm(FanOutAlgorithm[TestFanOutAlgorithmPayload, TestFanOut
         zz_processor: ZZProcessor,
         cache: InputCache,
         remote_client: NexusSchedulerAsyncClient,
-        configuration: TestFanOutAlgorithmConfiguration,
+        configuration: TestForkedAlgorithmConfiguration,
+        payload: TestForkedAlgorithmPayload,
     ):
         super().__init__(
             metrics_provider,
@@ -96,17 +97,33 @@ class TestFanOutAlgorithm(FanOutAlgorithm[TestFanOutAlgorithmPayload, TestFanOut
         )
         self._remote_client = remote_client
         self._logger_factory = logger_factory
+        self._payload = payload
 
-    async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
+    async def _main_run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
         assert (
             self._configuration.extra_parameters.parameter_y == "test"
         ), "Unexpected or missing value of extra_parameters.parameter_y"
 
         return TestResult(xy, z, self._cache.total_evaluated_inputs())
 
-    async def _get_branches(self, **kwargs) -> list[RemoteAlgorithm]:
+    async def _fork_run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
+        return await self._main_run(xy=xy, z=z, zz=zz, **kwargs)
+
+    async def _main_inputs(self, **kwargs) -> dict:
+        return await self._default_inputs(**kwargs)
+
+    async def _fork_inputs(self, **kwargs) -> dict:
+        return await self._default_inputs(**kwargs)
+
+    async def _is_forked(self, **kwargs) -> bool:
+        return self._payload.is_forked
+
+    async def _get_forks(self, **kwargs) -> list[RemoteAlgorithm]:
+        if await self._is_forked():
+            return []
+
         return [
-            TestFanOutChildAlgorithm(
+            TestForkedChildAlgorithm(
                 metrics_provider=self._metrics_provider,
                 logger_factory=self._logger_factory,
                 remote_client=self._remote_client,
