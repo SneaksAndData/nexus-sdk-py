@@ -1,5 +1,5 @@
 from nexus_client_sdk.nexus.core.app_core import Nexus
-from tests.algorithms.fan_out.fan_out_configuration import TestAlgorithmConfiguration
+from tests.algorithms.fan_out.fan_out_configuration import TestFanOutAlgorithmConfiguration
 from tests.algorithms.fan_out.fan_out_inputs import TestFanOutAlgorithmPayload
 from tests.algorithms.fan_out.fan_out_telemetry import TestUserAnalyticsTelemetry
 
@@ -16,7 +16,7 @@ async def main():
     nexus = (
         Nexus.create()
         .with_algorithm_resolvers(alg_from_payload)
-        .with_configuration_model(TestAlgorithmConfiguration)
+        .with_configuration_model(TestFanOutAlgorithmConfiguration)
         .on_complete(TestUserAnalyticsTelemetry)
     )
 

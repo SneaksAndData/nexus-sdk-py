@@ -10,14 +10,9 @@ from cassandra.cluster import Session
 
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
-from tests.algorithms.shared import (
-    generate_payloads,
-    rand_range,
-    TestEnum,
-)
+from tests.algorithms.shared import generate_payloads, rand_range, TestEnum, get_alg_name
 from tests.algorithms.fan_out.fan_out_inputs import TestFanOutAlgorithmPayload, TestFanOutChilPayload
 from tests.algorithms.fan_out.fan_out_main import main as sample_algorithm_main
 
@@ -75,8 +70,7 @@ async def test_sdk_run_fan_out(
     scheduler: NexusSchedulerClient,
     cql_session: Session,
 ) -> None:
-    NEXUS_FRAMEWORK_CONFIGURATION.load()
-    algorithm = NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name
+    algorithm = get_alg_name()
     # create initial fake record
     cql_session.execute(
         f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{fan_out_test_args.request_id}', 'RUNNING', '{fan_out_test_args.sas_uri}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"

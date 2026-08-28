@@ -10,7 +10,7 @@ class TestExtraParameters:
 
 
 @dataclass
-class TestAlgorithmConfiguration(NexusConfigurationModel):
+class TestMinimalisticAlgorithmConfiguration(NexusConfigurationModel):
     c1: str
     c2: str
     extra_parameters: TestExtraParameters

@@ -6,10 +6,8 @@ c2 = "def"
 
 [runtime.payload]
 
-# payload types supported by this Nexus application. At least one must be provided
-types = [
-    "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
-]
+# payload type supported by this Nexus application.
+type_name = "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
 
 # ADDITIONAL SERVICES
 [services]

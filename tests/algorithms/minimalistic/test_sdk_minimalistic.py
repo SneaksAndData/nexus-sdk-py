@@ -18,12 +18,7 @@ from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.testing import generate_payload_url
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
 from tests.algorithms.minimalistic.minimalistic_inputs import TestMinimalisticAlgorithmPayload, NegativeZError
-from tests.algorithms.shared import (
-    find_telemetry_objects,
-    generate_payloads,
-    TestEnum,
-    rand_range,
-)
+from tests.algorithms.shared import find_telemetry_objects, generate_payloads, TestEnum, rand_range, get_alg_name
 from tests.algorithms.minimalistic.minimalistic_main import main as sample_algorithm_main
 
 
@@ -39,12 +34,6 @@ def _unset_env_variables() -> None:
     os.environ.pop("PROTEUS__AWS_ENDPOINT", None)
     os.environ.pop("PROTEUS__AWS_SECRET_ACCESS_KEY", None)
     os.environ.pop("PROTEUS__AWS_ACCESS_KEY_ID", None)
-
-
-def _get_alg_name() -> str:
-    config = NexusRuntimeConfiguration()
-    config.load()
-    return config.default.algorithm_name
 
 
 @pytest.fixture(autouse=True)
@@ -116,7 +105,7 @@ async def test_sdk_run_minimalistic(
     scheduler: NexusSchedulerClient,
     cql_session: Session,
 ) -> None:
-    algorithm = _get_alg_name()
+    algorithm = get_alg_name()
     # create initial fake record
     cql_session.execute(
         f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{minimalistic_test_args.request_id}', 'RUNNING', '{minimalistic_test_args.sas_uri}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
@@ -141,7 +130,7 @@ async def test_sdk_run_minimalistic(
 async def test_sdk_run_compressed(
     compressed_test_args: NexusDefaultArguments, scheduler: NexusSchedulerClient, cql_session: Session
 ) -> None:
-    algorithm = _get_alg_name()
+    algorithm = get_alg_name()
     # create initial fake record
     cql_session.execute(
         f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{compressed_test_args.request_id}', 'RUNNING', '{compressed_test_args.sas_uri}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
@@ -163,7 +152,7 @@ async def test_sdk_run_compressed(
 
 @pytest.mark.asyncio(loop_scope="package")
 async def test_failing_reader(scheduler: NexusSchedulerClient, cql_session: Session) -> None:
-    algorithm = _get_alg_name()
+    algorithm = get_alg_name()
     payload_url, request_id = negative_z_payload()
     # create initial fake record
     cql_session.execute(

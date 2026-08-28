@@ -5,7 +5,7 @@ from injector import inject, singleton
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
-from tests.algorithms.minimalistic.minimalistic_configuration import TestAlgorithmConfiguration
+from tests.algorithms.minimalistic.minimalistic_configuration import TestMinimalisticAlgorithmConfiguration
 from tests.algorithms.minimalistic.minimalistic_inputs import (
     TestMinimalisticAlgorithmPayload,
     ZProcessor,
@@ -18,7 +18,9 @@ from tests.algorithms.shared import (
 
 
 @singleton
-class TestMinimalisticAlgorithm(MinimalisticAlgorithm[TestMinimalisticAlgorithmPayload, TestAlgorithmConfiguration]):
+class TestMinimalisticAlgorithm(
+    MinimalisticAlgorithm[TestMinimalisticAlgorithmPayload, TestMinimalisticAlgorithmConfiguration]
+):
     async def _context_open(self):
         pass
 
@@ -34,7 +36,7 @@ class TestMinimalisticAlgorithm(MinimalisticAlgorithm[TestMinimalisticAlgorithmP
         z_processor: ZProcessor,
         zz_processor: ZZProcessor,
         cache: InputCache,
-        configuration_model: TestAlgorithmConfiguration,
+        configuration_model: TestMinimalisticAlgorithmConfiguration,
     ):
         super().__init__(
             metrics_provider,

@@ -10,7 +10,7 @@ from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms import FanOutAlgorithm, RemoteAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
+from tests.algorithms.fan_out.fan_out_configuration import TestFanOutAlgorithmConfiguration
 from tests.algorithms.fan_out.fan_out_inputs import (
     TestFanOutAlgorithmPayload,
     ZProcessor,
@@ -40,7 +40,7 @@ class TestFanOutChildAlgorithmResult(AlgorithmResult):
 
 
 @singleton
-class TestFanOutChildAlgorithm(RemoteAlgorithm[TestFanOutAlgorithmPayload]):
+class TestFanOutChildAlgorithm(RemoteAlgorithm[TestFanOutAlgorithmPayload, TestFanOutAlgorithmConfiguration]):
     async def _run(self, **kwargs) -> list[TestFanOutChilPayload]:
         return [
             TestFanOutChilPayload(
@@ -66,7 +66,7 @@ class TestFanOutChildAlgorithm(RemoteAlgorithm[TestFanOutAlgorithmPayload]):
 
 
 @singleton
-class TestFanOutAlgorithm(FanOutAlgorithm[TestFanOutAlgorithmPayload]):
+class TestFanOutAlgorithm(FanOutAlgorithm[TestFanOutAlgorithmPayload, TestFanOutAlgorithmConfiguration]):
     async def _context_open(self):
         pass
 
@@ -83,17 +83,23 @@ class TestFanOutAlgorithm(FanOutAlgorithm[TestFanOutAlgorithmPayload]):
         zz_processor: ZZProcessor,
         cache: InputCache,
         remote_client: NexusSchedulerAsyncClient,
+        configuration_model: TestFanOutAlgorithmConfiguration,
     ):
-        super().__init__(metrics_provider, logger_factory, xy_processor, z_processor, zz_processor, cache=cache)
+        super().__init__(
+            metrics_provider,
+            logger_factory,
+            xy_processor,
+            z_processor,
+            zz_processor,
+            cache=cache,
+            configuration_model=configuration_model,
+        )
         self._remote_client = remote_client
         self._logger_factory = logger_factory
 
     async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
         assert (
-            "extra_parameters" in NEXUS_FRAMEWORK_CONFIGURATION.default
-        ), "Expected settings.test_algorithm.extra.toml to be merged into main config"
-        assert (
-            NEXUS_FRAMEWORK_CONFIGURATION.default.extra_parameters.parameter_y == "test"
+            self._configuration.extra_parameters.parameter_y == "test"
         ), "Unexpected or missing value of extra_parameters.parameter_y"
 
         return TestResult(xy, z, self._cache.total_evaluated_inputs())
@@ -104,8 +110,9 @@ class TestFanOutAlgorithm(FanOutAlgorithm[TestFanOutAlgorithmPayload]):
                 metrics_provider=self._metrics_provider,
                 logger_factory=self._logger_factory,
                 remote_client=self._remote_client,
-                remote_name=NEXUS_FRAMEWORK_CONFIGURATION.default.fan_out.remote_name,
+                remote_name=self._configuration.child_algorithm_name,
                 cache=self._cache,
+                configuration=self._configuration,
                 is_hard_dependency=True,  # in order to create record for parent
             )
         ]
