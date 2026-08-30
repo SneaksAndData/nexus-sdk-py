@@ -38,11 +38,24 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
 
     async def _spawn_remote_algorithms(
         self,
+        run_result: DirectedGraphResult,
         remote_algorithms: list[RemoteAlgorithm],
         async_spawn_enabled: bool,
         spawn_base_delay_seconds: int,
-        **kwargs
-    ) -> list[AlgorithmResult]:
+        **kwargs,
+    ) -> DirectedGraphResult:
+        """
+        :param run_result: Run result of run method
+        :param remote_algorithms: List of remote algorithms to spawn
+        :param async_spawn_enabled: Whether to spawn remote algorithms asynchronously
+        :param spawn_base_delay_seconds: Spawn remote algorithms delay seconds
+        :return: DirectedGraphResult with remote algorithm results added.
+        """
+        if not isinstance(run_result, DirectedGraphResult):
+            raise TypeError(
+                f"Expected run_result to be of type DirectedGraphResult, but got {type(run_result).__name__}"
+            )
+
         async def _spawn(remote_algorithm: RemoteAlgorithm, run_index: int, **remote_args) -> asyncio.Task:
             if spawn_base_delay_seconds > 0 and run_index > 0:
                 jitter = spawn_base_delay_seconds + random.random() * spawn_base_delay_seconds
@@ -51,7 +64,7 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
 
             return asyncio.create_task(remote_algorithm.run(**remote_args))
 
-        async def _spawn_remote_algorithm(
+        async def _spawn_all(
             algorithms: list[RemoteAlgorithm],
         ) -> list[AlgorithmResult]:
             self._logger.info(
@@ -92,26 +105,15 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
 
         if remote_algorithms:
             if async_spawn_enabled:
-                asyncio.create_task(_spawn_remote_algorithm(remote_algorithms))
+                asyncio.create_task(_spawn_all(remote_algorithms))
                 self._logger.warning(
                     "Async spawn enabled, so remote algorithm results will not be available in the DirectedGraphResult."
                 )
-                return []
+                return run_result
 
-            return await _spawn_remote_algorithm(remote_algorithms)
+            return run_result.set_remote_algorithm_metadata(
+                remote_algorithm_metadata=await _spawn_all(remote_algorithms)
+            )
 
         self._logger.info("No remote algorithms to dispatch")
-        return []
-
-    def _resolve_result(
-        self, run_result: AlgorithmResult, remote_algorithm_results: list[AlgorithmResult]
-    ) -> AlgorithmResult:
-        if isinstance(run_result, DirectedGraphResult):
-            run_result.set_remote_algorithm_results(remote_algorithm_results=remote_algorithm_results)
-            return run_result
-
-        self._logger.warning(
-            "Algorithm run result is not a DirectedGraphResult, so remote algorithm results will not be set in the result."
-        )
-
         return run_result

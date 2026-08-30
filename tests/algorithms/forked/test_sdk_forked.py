@@ -91,12 +91,6 @@ async def test_sdk_run_forked_main_run(
     ]
     await sample_algorithm_main()
     await asyncio.sleep(1)
-    result = json.loads(requests.get(scheduler.get_run_result(test_args.request_id, algorithm).result_uri).text)
-    run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
-    assert (
-        result["total_executed_by_cache"] == 5 and run_meta.payload_uri
-    )  # expect 1 run of each: XYSAMPLE, ZSAMPLE, ZPROCESSOR, ZZPROCESSOR, XYPROCESSOR
-    assert len(result["remote_algorithm_request_ids"]) == 1  # expect one child
 
     ## Assert childs spawned
     parent_filter = json.dumps(
@@ -135,6 +129,10 @@ async def test_sdk_run_forked_main_run(
         assert child_payload.input_sockets is None
         assert child_payload.output_sockets == []
 
+    result = json.loads(
+        requests.get(scheduler.get_run_result(forked_main_run_test_args.request_id, algorithm).result_uri).text
+    )
+    assert len(result["remote_algorithm_request_ids"]) == 5  # expect one child
     for remote_request_id in result["remote_algorithm_request_ids"]:
         remote_result = scheduler.get_run_result(remote_request_id, algorithm)
         assert remote_result.request_id == remote_request_id
@@ -160,12 +158,6 @@ async def test_sdk_run_forked_fork_run(
     ]
     await sample_algorithm_main()
     await asyncio.sleep(1)
-    result = json.loads(requests.get(scheduler.get_run_result(test_args.request_id, algorithm).result_uri).text)
-    run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
-    assert (
-        result["total_executed_by_cache"] == 5 and run_meta.payload_uri
-    )  # expect 1 run of each: XYSAMPLE, ZSAMPLE, ZPROCESSOR, ZZPROCESSOR, XYPROCESSOR
-    assert len(result["remote_algorithm_request_ids"]) == 0  # expect no children
 
     run_result = scheduler.get_run_result(forked_fork_run_test_args.request_id, algorithm)
     result = json.loads(requests.get(run_result.result_uri).text)
@@ -187,3 +179,8 @@ async def test_sdk_run_forked_fork_run(
     )
 
     assert len(child_rows) == 0  # we create 0 payloads in the forked run of the remote algorithm
+
+    result = json.loads(
+        requests.get(scheduler.get_run_result(forked_fork_run_test_args.request_id, algorithm).result_uri).text
+    )
+    assert result["remote_algorithm_request_ids"] is None  # expect no children

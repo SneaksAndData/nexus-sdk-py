@@ -13,7 +13,7 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryPathSegment,
 )
 from tests.algorithms.fan_out.fan_out_inputs import TestFanOutAlgorithmPayload
-from tests.algorithms.shared import TestResult
+from tests.algorithms.shared import TestDirectedGraphResult
 
 
 @singleton
@@ -32,7 +32,7 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
     async def _compute(
         self,
         algorithm_payload: TestFanOutAlgorithmPayload,
-        algorithm_result: TestResult,
+        algorithm_result: TestDirectedGraphResult,
         run_id: str,
         **inputs: TTelemetry
     ) -> UserTelemetry:

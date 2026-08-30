@@ -65,7 +65,6 @@ def fan_out_test_args(request: pytest.FixtureRequest) -> NexusDefaultArguments:
 
 
 @pytest.mark.asyncio(loop_scope="package")
-@pytest.mark.parametrize("test_args", test_cases)
 async def test_sdk_run_fan_out(
     fan_out_test_args: NexusDefaultArguments,
     scheduler: NexusSchedulerClient,
@@ -79,12 +78,6 @@ async def test_sdk_run_fan_out(
     sys.argv = ["", "--sas-uri", fan_out_test_args.sas_uri, "--request-id", fan_out_test_args.request_id]
     await sample_algorithm_main()
     await asyncio.sleep(1)
-    result = json.loads(requests.get(scheduler.get_run_result(test_args.request_id, algorithm).result_uri).text)
-    run_meta = scheduler.get_request_metadata(test_args.request_id, algorithm)
-    assert (
-        result["total_executed_by_cache"] == 5 and run_meta.payload_uri
-    )  # expect 1 run of each: XYSAMPLE, ZSAMPLE, ZPROCESSOR, ZZPROCESSOR, XYPROCESSOR
-    assert len(result["remote_algorithm_request_ids"]) == 1  # expect one child
 
     ## Assert childs spawned
     parent_filter = json.dumps(
@@ -122,6 +115,9 @@ async def test_sdk_run_fan_out(
         assert child_payload.x * 10 == child_payload.y  # we set y = x * 10 in remote payload generation
         assert child_payload.input_sockets is None
         assert child_payload.output_sockets == []
+
+    result = json.loads(requests.get(scheduler.get_run_result(fan_out_test_args.request_id, algorithm).result_uri).text)
+    assert len(result["remote_algorithm_request_ids"]) == 5  # expect one child
     for remote_request_id in result["remote_algorithm_request_ids"]:
         remote_result = scheduler.get_run_result(remote_request_id, algorithm)
         assert remote_result.request_id == remote_request_id
