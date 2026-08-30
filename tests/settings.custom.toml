@@ -177,7 +177,3 @@ provider = "adapta.metrics.providers.void_provider.VoidMetricsProvider"
 
 # Initialization configuration for the MetricsProvider defined under `provider`
 init_args = {"metric_namespace" = "sdk"}
-
-[conf]
-c1 = "sum"
-c2 = "mean"
