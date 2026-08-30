@@ -132,7 +132,7 @@ async def test_sdk_run_forked_main_run(
     result = json.loads(
         requests.get(scheduler.get_run_result(forked_main_run_test_args.request_id, algorithm).result_uri).text
     )
-    assert len(result["remote_algorithm_request_ids"]) == 5  # expect 5 forked
+    assert len(result["remote_algorithm_request_ids"]) == 5  # expect 5 forks spawned
     for remote_request_id in result["remote_algorithm_request_ids"]:
         remote_result = scheduler.get_run_result(remote_request_id, algorithm)
         assert remote_result.request_id == remote_request_id

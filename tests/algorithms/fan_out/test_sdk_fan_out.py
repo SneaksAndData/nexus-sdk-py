@@ -117,7 +117,7 @@ async def test_sdk_run_fan_out(
         assert child_payload.output_sockets == []
 
     result = json.loads(requests.get(scheduler.get_run_result(fan_out_test_args.request_id, algorithm).result_uri).text)
-    assert len(result["remote_algorithm_request_ids"]) == 5  # expect one child
+    assert len(result["remote_algorithm_request_ids"]) == 5  # expect 5 children spawned
     for remote_request_id in result["remote_algorithm_request_ids"]:
         remote_result = scheduler.get_run_result(remote_request_id, algorithm)
         assert remote_result.request_id == remote_request_id
