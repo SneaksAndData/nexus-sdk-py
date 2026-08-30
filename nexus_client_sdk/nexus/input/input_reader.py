@@ -22,7 +22,6 @@ from functools import partial
 
 from adapta.metrics import MetricsProvider
 from adapta.process_communication import DataSocket
-from adapta.storage.query_enabled_store import QueryEnabledStore
 from adapta.utils.decorators import run_time_metrics_async
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
@@ -30,32 +29,36 @@ from nexus_client_sdk.nexus.abstractions.input_object import InputObject
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
     TResult,
+    TConfiguration,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
+from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
 
 
-class InputReader(InputObject[TPayload, TResult]):
+class InputReader(InputObject[TPayload, TResult, TConfiguration]):
     """
     Base class for a raw data reader.
     """
 
     def __init__(
         self,
-        store: QueryEnabledStore,
+        stores: QueryEnabledStoreCollection,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         payload: TPayload,
         *readers: "InputReader",
         socket: DataSocket | None = None,
-        cache: InputCache
+        cache: InputCache,
+        configuration: TConfiguration,
     ):
         super().__init__(metrics_provider, logger_factory)
         self.socket = socket
-        self._store = store
+        self._stores = stores
         self._data: TResult | None = None
         self._readers = readers
         self._payload = payload
         self._cache = cache
+        self._configuration = configuration
 
     @property
     def data(self) -> TResult | None:

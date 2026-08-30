@@ -6,6 +6,3 @@ parameter_y = "test"
 
 [remote_algorithm]
 dry_run = "1"
-
-[fan_out]
-remote_name = "hello-world"

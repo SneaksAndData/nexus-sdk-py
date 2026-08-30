@@ -27,6 +27,7 @@ from adapta.metrics import MetricsProvider
 from dataclasses_json.stringcase import snakecase
 
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 
 
 class AlgorithmResult(ABC):
@@ -63,6 +64,7 @@ class DirectedGraphResult(AlgorithmResult, ABC):
 
 
 TPayload = TypeVar("TPayload")
+TConfiguration = TypeVar("TConfiguration", bound=NexusConfigurationModel)
 TResult = TypeVar("TResult", pandas.DataFrame, polars.DataFrame, AlgorithmResult)
 
 
@@ -101,7 +103,7 @@ class NexusCoreObject(ABC):
         """
 
 
-class NexusObject(Generic[TPayload, TResult], NexusCoreObject, ABC):
+class NexusObject(Generic[TPayload, TResult, TConfiguration], NexusCoreObject, ABC):
     """
     Base class for all Nexus objects that perform operations on the algorithm payload.
     """

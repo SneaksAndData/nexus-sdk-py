@@ -1,9 +1,10 @@
 import os
 import math
+import os
 import random
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, final
+from typing import Any
 
 import boto3
 import pandas
@@ -16,62 +17,16 @@ from adapta.storage.query_enabled_store import QueryEnabledStore
 from dataclasses_json import DataClassJsonMixin
 from injector import inject, singleton
 
-from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
-from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
-from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult, DirectedGraphResult
-from nexus_client_sdk.nexus.abstractions.socket_provider import (
-    SocketCollection,
-    InputSocket,
-    ExternalSocketProvider,
-)
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
-from nexus_client_sdk.nexus.core.app_core import Nexus
-from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
-from nexus_client_sdk.nexus.exceptions import FatalNexusError
-from nexus_client_sdk.nexus.input import InputReader, InputProcessor
-from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
-from nexus_client_sdk.nexus.input.payload_reader import SocketOverridePayload
-from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
-    UserTelemetryRecorder,
-    UserTelemetry,
-    UserTelemetryPathSegment,
-    TTelemetry,
-)
+from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
+from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
 from nexus_client_sdk.testing import generate_payload_url
 
 
-def payloads_for_algorithm(
-    algorithm_class: str,
-    compress: bool = False,
-    is_forked: bool = False,
-) -> list[tuple[str, str]]:
-    upload_path = S3Path(bucket="nexus", path="units")
-
-    def _rand_range(limit: int) -> list[int]:
-        return [random.randint(0, 10) for _ in range(limit)]
-
-    generated = [
-        TestAlgorithmPayload(
-            x=_rand_range(10),
-            y=_rand_range(10),
-            z=_rand_range(10),
-            enum_value=random.choice(list(TestEnum)),
-            alg_class=algorithm_class,
-            input_sockets=[InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
-            output_sockets=[],
-            is_forked=is_forked,
-        )
-        for _ in range(10)
-    ]
-    return [
-        generate_payload_url(
-            upload_path,
-            payload,
-            S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
-            compress_payload=compress,
-        )
-        for payload in generated
-    ]
+def get_alg_name() -> str:
+    config = NexusRuntimeConfiguration()
+    config.load()
+    return config.default.algorithm_name
 
 
 def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
@@ -96,6 +51,39 @@ def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
     ]
 
     return input_objects, user_objects
+
+
+def rand_range(limit: int) -> list[int]:
+    return [random.randint(0, 10) for _ in range(limit)]
+
+
+def generate_payloads(
+    payload_class: type[AlgorithmPayload],
+    constructor_args: list[dict[str, Any]],
+    compress: bool = False,
+) -> list[tuple[str, str]]:
+    """
+    Build and upload payloads for algorithm test runs.
+
+    :param algorithm_class: Fully qualified algorithm class path included in each payload.
+    :param compress: Whether to upload compressed payloads.
+    :param payload_class: Payload class used to construct each payload object.
+    :param constructor_args: Optional list of constructor kwargs, one dict per payload.
+    :return: List of tuples containing payload url and request id.
+    :raises TypeError: If payload_class cannot be instantiated with provided constructor args.
+    """
+    upload_path = S3Path(bucket="nexus", path="units")
+
+    generated = [payload_class(**payload_constructor_args) for payload_constructor_args in constructor_args]
+    return [
+        generate_payload_url(
+            base_path=upload_path,
+            payload_object=payload,
+            storage_client=S3StorageClient.for_storage_path(upload_path.to_hdfs_path()),
+            compress_payload=compress,
+        )
+        for payload in generated
+    ]
 
 
 class TestEnum(Enum):

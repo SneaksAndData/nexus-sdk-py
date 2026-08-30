@@ -17,9 +17,9 @@
 #  limitations under the License.
 #
 
-from abc import abstractmethod
-import json
 import base64
+import json
+from abc import abstractmethod
 from functools import partial
 
 from adapta.metrics import MetricsProvider
@@ -29,14 +29,14 @@ from injector import inject
 
 from nexus_client_sdk.models.scheduler import SdkCustomRunConfiguration, SdkParentRequest, RequestMetadata
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     NexusObject,
     TPayload,
     AlgorithmResult,
+    TConfiguration,
 )
-from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NEXUS_FRAMEWORK_CONFIGURATION
 from nexus_client_sdk.nexus.core.app_dependencies import Compressor
 from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input.input_processor import (
@@ -45,7 +45,7 @@ from nexus_client_sdk.nexus.input.input_processor import (
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, CompressedPayload
 
 
-class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
+class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult, TConfiguration]):
     """
     Base class for all algorithm implementations.
     """
@@ -53,6 +53,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
     @inject
     def __init__(
         self,
+        configuration: TConfiguration,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         remote_client: NexusSchedulerAsyncClient,
@@ -89,6 +90,7 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
         self._compress_payload = compress_payload
         self._is_hard_dependency = is_hard_dependency
         self._force_run = force_run
+        self._configuration = configuration
 
     @abstractmethod
     def _generate_tag(self, **kwargs) -> str:
@@ -230,12 +232,12 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult]):
             custom_configuration=self._generate_remote_config_from_remote_payload(payload=payload, **run_args)
             or self._remote_config,
             parent_request=SdkParentRequest.create(
-                algorithm_name=NEXUS_FRAMEWORK_CONFIGURATION.default.algorithm_name, request_id=run_args["request_id"]
+                algorithm_name=self._configuration.algorithm_name, request_id=run_args["request_id"]
             )
             if self._is_hard_dependency
             else None,
             tag=tag,
-            dry_run=NEXUS_FRAMEWORK_CONFIGURATION.default.remote_algorithm.dry_run == "1",
+            dry_run=self._configuration.remote_algorithm.dry_run,
         )
 
         self._logger.info(

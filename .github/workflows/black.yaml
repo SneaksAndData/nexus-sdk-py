@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref != 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -30,10 +30,10 @@ jobs:
         env:
           PROJECT_NAME: nexus_client_sdk
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           find "$PROJECT_NAME" -type f -name "*.py" | xargs poetry run pylint
 
       - name: Black
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           poetry run black . --check --diff

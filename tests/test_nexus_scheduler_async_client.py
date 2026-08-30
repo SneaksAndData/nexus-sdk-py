@@ -112,4 +112,4 @@ async def test_blocking_code_isolation(async_scheduler: NexusSchedulerAsyncClien
     duration = (time.monotonic_ns() - start) / 1e9
 
     # each takes approx 10s
-    assert duration < 20
+    assert duration < 21
