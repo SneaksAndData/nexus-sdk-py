@@ -4,6 +4,8 @@ c1 = "abc"
 c2 = "def"
 forked_algorithm_name = "hello-world"
 
+[runtime]
+
 algorithm = "tests.algorithms.forked.forked_algorithm_sample.TestForkedAlgorithm"
 
 [runtime.payload]
