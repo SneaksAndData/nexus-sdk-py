@@ -91,8 +91,8 @@ class NexusBootstrapper:
         ] = lambda payload, args: {}
 
         # algorithm loading
-        self._algorithm_classes: set[type[BaselineAlgorithm]] = set()
-        self._algorithm_resolvers: list[Callable[[AlgorithmPayload], str]] = []
+        self._algorithm_class: type[BaselineAlgorithm] | None = None
+        self._algorithm_resolver: Callable[[AlgorithmPayload], tuple[str, str]] | None = None
         self._bootstrap_config = bootstrap_config
 
     async def _get_payload(
@@ -107,12 +107,13 @@ class NexusBootstrapper:
             return reader.payload, reader
 
     @property
-    def algorithm_classes(self) -> set[type[BaselineAlgorithm]]:
+    def algorithm_class(self) -> type[BaselineAlgorithm]:
         """
          Bootstrapped algorithm classes.
         :return:
         """
-        return self._algorithm_classes
+        assert self._algorithm_class is not None, "Algorithm class not set or resolved!"
+        return self._algorithm_class
 
     @property
     def logger(self) -> LoggerInterface:
@@ -122,11 +123,11 @@ class NexusBootstrapper:
         """
         return self._logger
 
-    def register_algorithm_resolver(self, resolver: Callable[[AlgorithmPayload], str]) -> None:
+    def register_algorithm_resolver(self, resolver: Callable[[AlgorithmPayload], tuple[str, str]]) -> None:
         """
         Resolves algorithm classes based on the payload received. Resolver must return a fully qualified import name for the algorithm class.
         """
-        self._algorithm_resolvers.append(resolver)
+        self._algorithm_resolver = resolver
 
     def _load_payload_type(self, config_model: NexusConfigurationModel) -> None:
         if not config_model.runtime.payload.type_name:
@@ -167,17 +168,19 @@ class NexusBootstrapper:
 
         return self
 
-    def _load_algorithm(self, algorithm: str) -> None:
+    def _load_algorithm(self, algorithm: str, config_model: str | None) -> None:
         algorithm_class: type[BaselineAlgorithm] = locate(algorithm)
         if algorithm_class is None:
             raise FatalStartupConfigurationError(f"Failed to locate a provided algorithm class: {algorithm}")
-        self._algorithm_classes.add(algorithm_class)
+        self._algorithm_class.add(algorithm_class)
         # load linked configuration if exists
         self._bootstrap_config.load_config_extension(algorithm_class.alias())
+        if config_model is not None:
+            self._configuration_model = locate(config_model)
 
-    def _load_configured_algorithms(self, config_model: NexusConfigurationModel):
-        for algorithm in config_model.runtime.algorithms:
-            self._load_algorithm(algorithm)
+    def _load_configured_algorithm(self, config_model: NexusConfigurationModel):
+        if config_model.runtime.algorithm:
+            self._load_algorithm(config_model.runtime.algorithm, None)
 
     def _get_bootstrap_recorder(
         self, logger_factory: LoggerFactory, model: NexusConfigurationModel, injector: Injector
@@ -280,7 +283,7 @@ class NexusBootstrapper:
         self._load_log_enricher(bootstrap_model)
         self._load_log_tagger(bootstrap_model)
         self._load_metric_tagger(bootstrap_model)
-        self._load_configured_algorithms(bootstrap_model)
+        self._load_configured_algorithm(bootstrap_model)
 
         logger_fixed_template = {}
         logger_tags = {}
@@ -304,8 +307,8 @@ class NexusBootstrapper:
         logger_tags |= self._log_tagger(payload, self._run_args) if self._log_tagger else {}
         metric_tags |= self._metric_tagger(payload, self._run_args) if self._metric_tagger else {}
 
-        for resolver in self._algorithm_resolvers:
-            self._load_algorithm(resolver(payload))
+        if self._algorithm_resolver:
+            self._load_algorithm(*self._algorithm_resolver(payload))
 
         if isinstance(payload, SocketOverridePayload):
             socket_collection = socket_collection.with_inputs(payload.input_sockets or []).with_outputs(

@@ -46,7 +46,8 @@ def payloads() -> list[tuple[str, str]]:
                 "y": rand_range(limit=10),
                 "z": rand_range(limit=10),
                 "enum_value": random.choice(list(TestEnum)),
-                "alg_class": "tests.algorithms.fan_out.fan_out_algorithm_sample.TestFanOutAlgorithm",
+                "alg_class": "",
+                "config_class": "",
                 "input_sockets": [InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
                 "output_sockets": [],
             }

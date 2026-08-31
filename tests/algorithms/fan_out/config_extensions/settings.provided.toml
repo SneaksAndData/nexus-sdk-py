@@ -4,6 +4,8 @@ c1 = "abc"
 c2 = "def"
 child_algorithm_name = "hello-world"
 
+algorithm = "tests.algorithms.forked.forked_algorithm_sample.TestForkedAlgorithm"
+
 [runtime.payload]
 
 # payload type supported by this Nexus application.
