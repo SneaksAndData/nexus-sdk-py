@@ -18,7 +18,7 @@ from tests.algorithms.shared import TestEnum
 
 
 @dataclass
-class TestFanOutChilPayload(SocketOverridePayload):
+class TestFanOutChildPayload(SocketOverridePayload):
     x: int
     y: int
 
