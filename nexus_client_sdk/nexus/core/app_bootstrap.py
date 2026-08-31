@@ -172,7 +172,7 @@ class NexusBootstrapper:
         algorithm_class: type[BaselineAlgorithm] = locate(algorithm)
         if algorithm_class is None:
             raise FatalStartupConfigurationError(f"Failed to locate a provided algorithm class: {algorithm}")
-        self._algorithm_class.add(algorithm_class)
+        self._algorithm_class = algorithm_class
         # load linked configuration if exists
         self._bootstrap_config.load_config_extension(algorithm_class.alias())
         if config_model is not None:

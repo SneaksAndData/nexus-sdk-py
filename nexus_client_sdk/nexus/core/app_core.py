@@ -113,14 +113,13 @@ class Nexus:
 
         attach_signal_handlers()
 
-    def with_algorithm_resolvers(self, *resolvers: Callable[[AlgorithmPayload], tuple[str, str]]) -> Self:
+    def with_algorithm_resolver(self, resolver: Callable[[AlgorithmPayload], tuple[str, str]]) -> Self:
         """
          Add custom algorithm class resolver from a payload instance. This is additive with config-provided values from [runtime.algorithms].
          Resolver must return a class path for the algorithm and a class path for the configuration model to use.
         :return:
         """
-        for resolver in resolvers:
-            self._bootstrapper.register_algorithm_resolver(resolver)
+        self._bootstrapper.register_algorithm_resolver(resolver)
 
         return self
 
