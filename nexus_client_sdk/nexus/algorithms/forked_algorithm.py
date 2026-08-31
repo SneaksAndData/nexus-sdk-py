@@ -29,6 +29,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
     AlgorithmResult,
     TConfiguration,
+    DirectedGraphResult,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms._directed_graph_algorithm import DirectedGraphAlgorithm
@@ -114,13 +115,13 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
         Sets inputs for the forked run - if this node is **NOT** the root node
         """
 
-    async def _run(self, **kwargs) -> AlgorithmResult:
+    async def _run(self, **kwargs) -> DirectedGraphResult:
         if await self._is_forked(**kwargs):
             return await self._fork_run(**kwargs)
 
         return await self._main_run(**kwargs)
 
-    async def run(self, **kwargs) -> AlgorithmResult:
+    async def run(self, **kwargs) -> DirectedGraphResult:
         """
         Coroutine that executes the algorithm logic.
         """
@@ -132,7 +133,7 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
                 "algorithm": self.__class__.alias().upper(),
             },
         )
-        async def _measured_run(**run_args) -> AlgorithmResult:
+        async def _measured_run(**run_args) -> DirectedGraphResult:
             return await self._run(**run_args)
 
         if await self._is_forked(**kwargs):
@@ -152,11 +153,10 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
             logger=self._logger,
         )()
 
-        await self._spawn_remote_algorithms(
+        return await self._spawn_remote_algorithms(
+            run_result=run_result,
             remote_algorithms=forks,
             async_spawn_enabled=self._configuration.forked_algorithm.async_spawn_enabled == "1",
             spawn_base_delay_seconds=int(self._configuration.forked_algorithm.spawn_base_delay_seconds),
             **kwargs,
         )
-
-        return run_result

@@ -23,6 +23,8 @@ from abc import ABC
 
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
+    AlgorithmResult,
+    DirectedGraphResult,
     TConfiguration,
 )
 from nexus_client_sdk.nexus.algorithms._baseline_algorithm import BaselineAlgorithm
@@ -36,11 +38,24 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
 
     async def _spawn_remote_algorithms(
         self,
+        run_result: DirectedGraphResult,
         remote_algorithms: list[RemoteAlgorithm],
         async_spawn_enabled: bool,
         spawn_base_delay_seconds: int,
-        **kwargs
-    ):
+        **kwargs,
+    ) -> DirectedGraphResult:
+        """
+        :param run_result: Run result of run method
+        :param remote_algorithms: List of remote algorithms to spawn
+        :param async_spawn_enabled: Whether to spawn remote algorithms asynchronously
+        :param spawn_base_delay_seconds: Spawn remote algorithms delay seconds
+        :return: DirectedGraphResult with remote algorithm results added.
+        """
+        if not isinstance(run_result, DirectedGraphResult):
+            raise TypeError(
+                f"Expected run_result to be of type DirectedGraphResult, but got {type(run_result).__name__}"
+            )
+
         async def _spawn(remote_algorithm: RemoteAlgorithm, run_index: int, **remote_args) -> asyncio.Task:
             if spawn_base_delay_seconds > 0 and run_index > 0:
                 jitter = spawn_base_delay_seconds + random.random() * spawn_base_delay_seconds
@@ -49,9 +64,9 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
 
             return asyncio.create_task(remote_algorithm.run(**remote_args))
 
-        async def _spawn_remote_algorithm(
+        async def _spawn_all(
             algorithms: list[RemoteAlgorithm],
-        ) -> None:
+        ) -> list[AlgorithmResult]:
             self._logger.info(
                 "Launching {count} remote algorithm(s): {algorithms}",
                 count=str(len(algorithms)),
@@ -61,6 +76,7 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
                 [await _spawn(alg, alg_ix, **kwargs) for alg_ix, alg in enumerate(algorithms)],
                 return_when=asyncio.ALL_COMPLETED,
             )
+            remote_results = []
             for task in done:
                 if task.exception() is not None:
                     self._logger.error(
@@ -76,6 +92,7 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
                         metric_name="remote_algorithm_run_scheduled",
                         tags=self._metric_tags,
                     )
+                    remote_results.append(task.result())
 
             successful_rate = sum(1 for task in done if task.exception() is None) / len(done)
             self._metrics_provider.gauge(
@@ -84,10 +101,19 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
                 tags=self._metric_tags,
             )
 
+            return remote_results
+
         if remote_algorithms:
             if async_spawn_enabled:
-                asyncio.create_task(_spawn_remote_algorithm(remote_algorithms))
-            else:
-                await _spawn_remote_algorithm(remote_algorithms)
-        else:
-            self._logger.info("No remote algorithms to dispatch")
+                asyncio.create_task(_spawn_all(remote_algorithms))
+                self._logger.warning(
+                    "Async spawn enabled, so remote algorithm results will not be available in the DirectedGraphResult."
+                )
+                return run_result
+
+            return run_result.set_remote_algorithm_metadata(
+                remote_algorithm_metadata=await _spawn_all(remote_algorithms)
+            )
+
+        self._logger.info("No remote algorithms to dispatch")
+        return run_result

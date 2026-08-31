@@ -29,6 +29,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
     TPayload,
     AlgorithmResult,
     TConfiguration,
+    DirectedGraphResult,
 )
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
@@ -76,7 +77,7 @@ class FanOutAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
                 "algorithm": self.__class__.alias().upper(),
             },
         )
-        async def _measured_run(**run_args) -> AlgorithmResult:
+        async def _measured_run(**run_args) -> DirectedGraphResult:
             return await self._run(**run_args)
 
         self._logger.info("Starting main run")
@@ -94,11 +95,10 @@ class FanOutAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
 
         child_algorithms = await self._get_branches(**self._inputs, **kwargs)
 
-        await self._spawn_remote_algorithms(
+        return await self._spawn_remote_algorithms(
+            run_result=run_result,
             remote_algorithms=child_algorithms,
             async_spawn_enabled=self._configuration.fan_out.async_spawn_enabled == "1",
             spawn_base_delay_seconds=int(self._configuration.fan_out.spawn_base_delay_seconds),
             **kwargs,
         )
-
-        return run_result

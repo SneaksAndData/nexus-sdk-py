@@ -89,7 +89,7 @@ Nexus provides a set of utilities that allow viewing and inspecting the executio
 
 ```python
 from nexus_client_sdk.nexus.execution.trees import get_tree
-from tests.algorithms.minimalistic.sample_main_minimalistic import TestMinimalisticAlgorithm
+from tests.algorithms.minimalistic.minimalistic_algorithm_sample import TestMinimalisticAlgorithm
 
 print(get_tree(TestMinimalisticAlgorithm).serialize())
 

@@ -19,7 +19,7 @@ from tests.algorithms.forked.forked_inputs import (
     TestForkedChilPayload,
 )
 from tests.algorithms.shared import (
-    TestResult,
+    TestDirectedGraphResult,
 )
 
 
@@ -29,11 +29,11 @@ class TestForkedChildAlgorithmResult(AlgorithmResult):
     Result for a remote algorithm launch.
     """
 
-    forked_request_ids: list[str]
+    request_ids: list[str]
     tag: str
 
     def result(self) -> dict[str, str]:
-        return {"forked_request_id": self.forked_request_ids, "tag": self.tag}
+        return {"request_id": self.request_ids, "tag": self.tag}
 
     def to_kwargs(self) -> dict[str, Any]:
         pass
@@ -62,7 +62,7 @@ class TestForkedChildAlgorithm(RemoteAlgorithm[TestForkedAlgorithmPayload, TestF
         return "forked_test"
 
     def _transform_submission_result(self, request_ids: list[str], tag: str) -> TestForkedChildAlgorithmResult:
-        return TestForkedChildAlgorithmResult(forked_request_ids=request_ids, tag=tag)
+        return TestForkedChildAlgorithmResult(request_ids=request_ids, tag=tag)
 
 
 @singleton
@@ -99,14 +99,18 @@ class TestForkedAlgorithm(ForkedAlgorithm[TestForkedAlgorithmPayload, TestForked
         self._logger_factory = logger_factory
         self._payload = payload
 
-    async def _main_run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
+    async def _main_run(
+        self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs
+    ) -> TestDirectedGraphResult:
         assert (
             self._configuration.extra_parameters.parameter_y == "test"
         ), "Unexpected or missing value of extra_parameters.parameter_y"
 
-        return TestResult(xy, z, self._cache.total_evaluated_inputs())
+        return TestDirectedGraphResult(xy, z, self._cache.total_evaluated_inputs())
 
-    async def _fork_run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
+    async def _fork_run(
+        self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs
+    ) -> TestDirectedGraphResult:
         return await self._main_run(xy=xy, z=z, zz=zz, **kwargs)
 
     async def _main_inputs(self, **kwargs) -> dict:

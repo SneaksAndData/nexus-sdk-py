@@ -19,7 +19,7 @@
 
 from abc import ABC, abstractmethod
 import re
-from typing import Generic, TypeVar, Any
+from typing import Generic, TypeVar, Any, Self
 
 import pandas
 import polars
@@ -46,6 +46,22 @@ class AlgorithmResult(ABC):
         """
         Convert result to kwargs for the next iteration (for recursive algorithms)
         """
+
+
+class DirectedGraphResult(AlgorithmResult, ABC):
+    """
+    Interface for directed graph algorithm run result.
+    It stores a list of remote algorithm results.
+    """
+
+    remote_algorithm_metadata: list[AlgorithmResult] | None = None
+
+    def set_remote_algorithm_metadata(self, remote_algorithm_metadata: list[AlgorithmResult]) -> Self:
+        """
+        Set remote algorithm metadata.
+        """
+        self.remote_algorithm_metadata = remote_algorithm_metadata
+        return self
 
 
 TPayload = TypeVar("TPayload")

@@ -19,7 +19,7 @@ from tests.algorithms.fan_out.fan_out_inputs import (
     TestFanOutChilPayload,
 )
 from tests.algorithms.shared import (
-    TestResult,
+    TestDirectedGraphResult,
 )
 
 
@@ -29,11 +29,11 @@ class TestFanOutChildAlgorithmResult(AlgorithmResult):
     Result for a remote algorithm launch.
     """
 
-    fan_out_request_ids: list[str]
+    request_ids: list[str]
     tag: str
 
     def result(self) -> dict[str, str]:
-        return {"fan_out_request_id": self.fan_out_request_ids, "tag": self.tag}
+        return {"request_id": self.request_ids, "tag": self.tag}
 
     def to_kwargs(self) -> dict[str, Any]:
         pass
@@ -62,7 +62,7 @@ class TestFanOutChildAlgorithm(RemoteAlgorithm[TestFanOutAlgorithmPayload, TestF
         return "fan_out_test"
 
     def _transform_submission_result(self, request_ids: list[str], tag: str) -> TestFanOutChildAlgorithmResult:
-        return TestFanOutChildAlgorithmResult(fan_out_request_ids=request_ids, tag=tag)
+        return TestFanOutChildAlgorithmResult(request_ids=request_ids, tag=tag)
 
 
 @singleton
@@ -97,12 +97,14 @@ class TestFanOutAlgorithm(FanOutAlgorithm[TestFanOutAlgorithmPayload, TestFanOut
         self._remote_client = remote_client
         self._logger_factory = logger_factory
 
-    async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
+    async def _run(
+        self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs
+    ) -> TestDirectedGraphResult:
         assert (
             self._configuration.extra_parameters.parameter_y == "test"
         ), "Unexpected or missing value of extra_parameters.parameter_y"
 
-        return TestResult(xy, z, self._cache.total_evaluated_inputs())
+        return TestDirectedGraphResult(xy, z, self._cache.total_evaluated_inputs())
 
     async def _get_branches(self, **kwargs) -> list[RemoteAlgorithm]:
         return [

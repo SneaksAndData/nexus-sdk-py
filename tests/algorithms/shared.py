@@ -1,3 +1,4 @@
+import os
 import math
 import os
 import random
@@ -8,10 +9,15 @@ from typing import Any
 import boto3
 import pandas
 import polars
+from adapta.metrics import MetricsProvider
+from adapta.storage.blob.base import StorageClient
 from adapta.storage.blob.s3_storage_client import S3StorageClient
 from adapta.storage.models import S3Path
+from adapta.storage.query_enabled_store import QueryEnabledStore
+from dataclasses_json import DataClassJsonMixin
+from injector import inject, singleton
 
-from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
+from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult, DirectedGraphResult
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
 from nexus_client_sdk.testing import generate_payload_url
@@ -100,3 +106,19 @@ class TestResult(AlgorithmResult):
 
     def to_kwargs(self) -> dict[str, Any]:
         pass
+
+
+@dataclass
+class TestDirectedGraphResult(TestResult, DirectedGraphResult):
+    def result(self) -> pandas.DataFrame | polars.DataFrame | dict:
+        return {
+            "number": math.sqrt(float(self.xy.sum()) + float(self.z.sum())),
+            "total_executed_by_cache": self.executed,
+            "remote_algorithm_request_ids": [
+                request_id
+                for _remote_algorithm_metadata in self.remote_algorithm_metadata
+                for request_id in _remote_algorithm_metadata.request_ids
+            ]
+            if self.remote_algorithm_metadata
+            else None,
+        }
