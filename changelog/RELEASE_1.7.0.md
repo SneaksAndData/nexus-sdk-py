@@ -1,7 +1,7 @@
 ## Dependency Injection
 - Replaced singleton QueryEnabledStore with a collection instance (`QueryEnabledStoreCollection`). This allows serving multiple QES instances w/o adding boilerplate to client API.
 - Removed `ExternalSocketsProvider`. Users should use `SocketCollection` to access input/output data sockets from now on.
-- Developers must now specify payload type via `[runtime.payload.types]` configuration. Support for multiple payload types has been removed because it never worked.
+- Developers must now specify payload type via `[runtime.payload.type_name]` configuration. Support for multiple payload types has been removed because it never worked.
 
 ## Bootstrap API
 - Developers can now enabled input/output socket additive override by subclassing payload type from `SocketOverridePayload`.
