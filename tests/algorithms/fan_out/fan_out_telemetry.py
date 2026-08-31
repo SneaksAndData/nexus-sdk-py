@@ -4,6 +4,7 @@ from adapta.storage.blob.base import StorageClient
 from injector import singleton, inject
 
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
@@ -42,12 +43,14 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
         )
 
 
-def tags_from_payload(payload: TestFanOutAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
+def tags_from_payload(
+    payload: TestFanOutAlgorithmPayload, _: NexusConfigurationModel, __: NexusDefaultArguments
+) -> dict[str, str]:
     return {"x_tag": str(sum(payload.x))}
 
 
 def enrich_from_payload(
-    payload: TestFanOutAlgorithmPayload, run_args: NexusDefaultArguments
+    payload: TestFanOutAlgorithmPayload, _: NexusConfigurationModel, run_args: NexusDefaultArguments
 ) -> dict[str, dict[str, str]]:
     return {
         "(mean of z:{z})": {"z": payload.z[: int(len(payload.z) / 2)]},
@@ -55,7 +58,9 @@ def enrich_from_payload(
     }
 
 
-def tag_metrics(payload: TestFanOutAlgorithmPayload, _: NexusDefaultArguments) -> dict[str, str]:
+def tag_metrics(
+    payload: TestFanOutAlgorithmPayload, _: NexusConfigurationModel, __: NexusDefaultArguments
+) -> dict[str, str]:
     return {
         "y_tag": str(sum(payload.y)),
     }
