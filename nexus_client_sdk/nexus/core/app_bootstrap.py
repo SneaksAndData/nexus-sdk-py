@@ -70,25 +70,28 @@ class NexusBootstrapper:
         self._log_enricher: Callable[
             [
                 AlgorithmPayload,
+                NexusConfigurationModel,
                 NexusDefaultArguments,
             ],
             dict[str, dict[str, str]],
-        ] = lambda payload, args: {}
+        ] = lambda payload, model, args: {}
         self._log_tagger: Callable[
             [
                 AlgorithmPayload,
+                NexusConfigurationModel,
                 NexusDefaultArguments,
             ],
             dict[str, str],
-        ] = lambda payload, args: {}
+        ] = lambda payload, model, args: {}
         self._log_enrichment_delimiter: str = ", "
         self._metric_tagger: Callable[
             [
                 AlgorithmPayload,
+                NexusConfigurationModel,
                 NexusDefaultArguments,
             ],
             dict[str, str],
-        ] = lambda payload, args: {}
+        ] = lambda payload, model, args: {}
 
         # algorithm loading
         self._algorithm_class: type[BaselineAlgorithm] | None = None
@@ -303,9 +306,11 @@ class NexusBootstrapper:
             ) from payload_reader.read_exception
 
         app_injector.binder.bind(payload.__class__, to=payload, scope=singleton)
-        logger_fixed_template |= self._log_enricher(payload, self._run_args) if self._log_enricher else {}
-        logger_tags |= self._log_tagger(payload, self._run_args) if self._log_tagger else {}
-        metric_tags |= self._metric_tagger(payload, self._run_args) if self._metric_tagger else {}
+        logger_fixed_template |= (
+            self._log_enricher(payload, bootstrap_model, self._run_args) if self._log_enricher else {}
+        )
+        logger_tags |= self._log_tagger(payload, bootstrap_model, self._run_args) if self._log_tagger else {}
+        metric_tags |= self._metric_tagger(payload, bootstrap_model, self._run_args) if self._metric_tagger else {}
 
         if self._algorithm_resolver:
             self._load_algorithm(*self._algorithm_resolver(payload))
