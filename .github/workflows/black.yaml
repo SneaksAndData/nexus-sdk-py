@@ -22,7 +22,7 @@ jobs:
           architecture: 'x64'
 
       - name: Install Poetry and dependencies
-        uses: SneaksAndData/github-actions/install_poetry@v0.1.11
+        uses: SneaksAndData/github-actions/install_poetry@v0.1.12
         with:
           install_extras: all
 
