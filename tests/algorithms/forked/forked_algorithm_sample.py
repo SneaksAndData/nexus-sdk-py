@@ -16,7 +16,7 @@ from tests.algorithms.forked.forked_inputs import (
     ZProcessor,
     XYProcessor,
     ZZProcessor,
-    TestForkedChilPayload,
+    TestForkedChildPayload,
 )
 from tests.algorithms.shared import (
     TestDirectedGraphResult,
@@ -41,9 +41,9 @@ class TestForkedChildAlgorithmResult(AlgorithmResult):
 
 @singleton
 class TestForkedChildAlgorithm(RemoteAlgorithm[TestForkedAlgorithmPayload, TestForkedAlgorithmConfiguration]):
-    async def _run(self, **kwargs) -> list[TestForkedChilPayload]:
+    async def _run(self, **kwargs) -> list[TestForkedChildPayload]:
         return [
-            TestForkedChilPayload(
+            TestForkedChildPayload(
                 x=i,
                 y=i * 10,
                 input_sockets=None,

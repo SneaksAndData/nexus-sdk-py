@@ -29,7 +29,6 @@ class TestFanOutAlgorithmPayload(SocketOverridePayload):
     y: list[int]
     z: list[int]
     enum_value: TestEnum
-    alg_class: str
 
 
 @singleton

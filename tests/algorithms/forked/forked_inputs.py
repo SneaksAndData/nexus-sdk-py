@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import final
 
 import pandas
 from adapta.metrics import MetricsProvider
@@ -10,7 +9,6 @@ from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
 from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection
-from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.payload_reader import SocketOverridePayload
 from tests.algorithms.forked.forked_configuration import TestForkedAlgorithmConfiguration
@@ -18,7 +16,7 @@ from tests.algorithms.shared import TestEnum
 
 
 @dataclass
-class TestForkedChilPayload(SocketOverridePayload):
+class TestForkedChildPayload(SocketOverridePayload):
     x: int
     y: int
 
@@ -29,7 +27,6 @@ class TestForkedAlgorithmPayload(SocketOverridePayload):
     y: list[int]
     z: list[int]
     enum_value: TestEnum
-    alg_class: str
     is_forked: bool
 
 
