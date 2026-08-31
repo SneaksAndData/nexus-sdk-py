@@ -16,7 +16,7 @@ from tests.algorithms.fan_out.fan_out_inputs import (
     ZProcessor,
     XYProcessor,
     ZZProcessor,
-    TestFanOutChilPayload,
+    TestFanOutChildPayload,
 )
 from tests.algorithms.shared import (
     TestDirectedGraphResult,
@@ -41,9 +41,9 @@ class TestFanOutChildAlgorithmResult(AlgorithmResult):
 
 @singleton
 class TestFanOutChildAlgorithm(RemoteAlgorithm[TestFanOutAlgorithmPayload, TestFanOutAlgorithmConfiguration]):
-    async def _run(self, **kwargs) -> list[TestFanOutChilPayload]:
+    async def _run(self, **kwargs) -> list[TestFanOutChildPayload]:
         return [
-            TestFanOutChilPayload(
+            TestFanOutChildPayload(
                 x=i,
                 y=i * 10,
                 input_sockets=None,

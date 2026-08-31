@@ -113,13 +113,13 @@ class Nexus:
 
         attach_signal_handlers()
 
-    def with_algorithm_resolvers(self, *resolvers: Callable[[AlgorithmPayload], str]) -> Self:
+    def with_algorithm_resolver(self, resolver: Callable[[AlgorithmPayload], tuple[str, str]]) -> Self:
         """
          Add custom algorithm class resolver from a payload instance. This is additive with config-provided values from [runtime.algorithms].
+         Resolver must return a class path for the algorithm and a class path for the configuration model to use.
         :return:
         """
-        for resolver in resolvers:
-            self._bootstrapper.register_algorithm_resolver(resolver)
+        self._bootstrapper.register_algorithm_resolver(resolver)
 
         return self
 
@@ -295,8 +295,7 @@ class Nexus:
 
         root_logger.start()
 
-        # WIP: take list head until https://github.com/SneaksAndData/nexus-sdk-py/issues/178
-        algorithm: BaselineAlgorithm = self._injector.get(self._bootstrapper.algorithm_classes.pop())
+        algorithm: BaselineAlgorithm = self._injector.get(self._bootstrapper.algorithm_class)
         telemetry_recorder: TelemetryRecorder = self._injector.get(TelemetryRecorder)
 
         root_logger.info(

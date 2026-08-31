@@ -13,7 +13,7 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
 from tests.algorithms.shared import generate_payloads, rand_range, TestEnum, get_alg_name
-from tests.algorithms.forked.forked_inputs import TestForkedAlgorithmPayload, TestForkedChilPayload
+from tests.algorithms.forked.forked_inputs import TestForkedAlgorithmPayload, TestForkedChildPayload
 from tests.algorithms.forked.forked_main import main as sample_algorithm_main
 
 
@@ -46,7 +46,6 @@ def payloads(is_forked: bool) -> list[tuple[str, str]]:
                 "y": rand_range(limit=10),
                 "z": rand_range(limit=10),
                 "enum_value": random.choice(list(TestEnum)),
-                "alg_class": "tests.algorithms.forked.forked_algorithm_sample.TestForkedAlgorithm",
                 "input_sockets": [InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
                 "output_sockets": [],
                 "is_forked": is_forked,
@@ -116,7 +115,7 @@ async def test_sdk_run_forked_main_run(
             "localhost",
         )
 
-        child_payload = TestForkedChilPayload.from_dict(
+        child_payload = TestForkedChildPayload.from_dict(
             json.loads(
                 requests.get(
                     url,

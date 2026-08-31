@@ -18,7 +18,7 @@ from tests.algorithms.shared import TestEnum
 
 
 @dataclass
-class TestFanOutChilPayload(SocketOverridePayload):
+class TestFanOutChildPayload(SocketOverridePayload):
     x: int
     y: int
 
@@ -29,7 +29,6 @@ class TestFanOutAlgorithmPayload(SocketOverridePayload):
     y: list[int]
     z: list[int]
     enum_value: TestEnum
-    alg_class: str
 
 
 @singleton

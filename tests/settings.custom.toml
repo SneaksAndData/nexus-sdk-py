@@ -5,8 +5,8 @@ algorithm_name = "hello-world"
 # Nexus runtime configuration
 [runtime]
 
-# Nexus algorithm implementations to activate. At least one must be supplied
-algorithms = []
+# Nexus algorithm implementations to activate.
+algorithm = ""
 
 # additional modules for the DI container
 # use these to provide custom services

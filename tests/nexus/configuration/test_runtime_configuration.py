@@ -56,7 +56,7 @@ def _check_base_model(model_instance: NexusConfigurationModel) -> None:
     assert model_instance.metrics.provider == "adapta.metrics.providers.void_provider.VoidMetricsProvider"
 
     assert isinstance(model_instance.runtime, RuntimeSettings)
-    assert isinstance(model_instance.runtime.algorithms, list)
+    assert isinstance(model_instance.runtime.algorithm, str)
 
 
 def test_runtime_configuration() -> None:

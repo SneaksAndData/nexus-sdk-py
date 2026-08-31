@@ -24,6 +24,7 @@ class TestMinimalisticAlgorithmPayload(SocketOverridePayload):
     z: list[int]
     enum_value: TestEnum
     alg_class: str
+    config_class: str
 
 
 @final

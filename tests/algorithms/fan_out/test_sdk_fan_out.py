@@ -13,7 +13,7 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
 from tests.algorithms.shared import generate_payloads, rand_range, TestEnum, get_alg_name
-from tests.algorithms.fan_out.fan_out_inputs import TestFanOutAlgorithmPayload, TestFanOutChilPayload
+from tests.algorithms.fan_out.fan_out_inputs import TestFanOutAlgorithmPayload, TestFanOutChildPayload
 from tests.algorithms.fan_out.fan_out_main import main as sample_algorithm_main
 
 
@@ -46,7 +46,6 @@ def payloads() -> list[tuple[str, str]]:
                 "y": rand_range(limit=10),
                 "z": rand_range(limit=10),
                 "enum_value": random.choice(list(TestEnum)),
-                "alg_class": "tests.algorithms.fan_out.fan_out_algorithm_sample.TestFanOutAlgorithm",
                 "input_sockets": [InputSocket(alias="test", data_path="file:///tmp/test", data_format="text")],
                 "output_sockets": [],
             }
@@ -103,7 +102,7 @@ async def test_sdk_run_fan_out(
             "localhost",
         )
 
-        child_payload = TestFanOutChilPayload.from_dict(
+        child_payload = TestFanOutChildPayload.from_dict(
             json.loads(
                 requests.get(
                     url,

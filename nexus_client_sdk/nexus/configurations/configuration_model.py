@@ -177,7 +177,7 @@ class FanOutSettings:
 class RuntimeSettings:
     """Runtime configuration settings."""
 
-    algorithms: list[str]
+    algorithm: str
     additional_modules: list[str]
     log_enrichment_function: str
     log_tagging_function: str
