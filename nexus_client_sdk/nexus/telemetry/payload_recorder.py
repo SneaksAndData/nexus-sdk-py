@@ -10,7 +10,6 @@ from pandas import DataFrame
 
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
-from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import UserTelemetryRecorder, UserTelemetry, TTelemetry
 
@@ -54,7 +53,7 @@ class PayloadTelemetry(UserTelemetryRecorder[str, AlgorithmResult, None]):
 
 
 @final
-class FailedPayloadRecorder(UserTelemetryRecorder[str, AlgorithmResult, NexusConfigurationModel]):
+class FailedPayloadRecorder(UserTelemetryRecorder[str, AlgorithmResult, None]):
     """
     Native recorder for algorithm payloads that failed to parse into provided type
     """
@@ -67,9 +66,10 @@ class FailedPayloadRecorder(UserTelemetryRecorder[str, AlgorithmResult, NexusCon
         logger_factory: LoggerFactory,
         storage_client: StorageClient,
         serializer: TelemetrySerializer,
-        configuration: NexusConfigurationModel,
     ):
-        super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer, configuration)
+        super().__init__(
+            algorithm_payload, metrics_provider, logger_factory, storage_client, serializer, configuration=None
+        )
 
     async def _compute(
         self, algorithm_payload: str, algorithm_result: AlgorithmResult, run_id: str, **inputs: TTelemetry
