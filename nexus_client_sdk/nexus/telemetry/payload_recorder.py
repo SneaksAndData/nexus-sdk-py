@@ -15,7 +15,7 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import UserTelemet
 
 
 @final
-class PayloadTelemetry(UserTelemetryRecorder[str, AlgorithmResult]):
+class PayloadTelemetry(UserTelemetryRecorder[str, AlgorithmResult, Any]):
     """
     Native recorder for algorithm payloads that were successfully parsed
     """
@@ -29,7 +29,9 @@ class PayloadTelemetry(UserTelemetryRecorder[str, AlgorithmResult]):
         storage_client: StorageClient,
         serializer: TelemetrySerializer,
     ):
-        super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer)
+        super().__init__(
+            algorithm_payload, metrics_provider, logger_factory, storage_client, serializer, configuration=None
+        )
 
     async def _compute(
         self, algorithm_payload: str, algorithm_result: AlgorithmResult, run_id: str, **inputs: TTelemetry
@@ -51,7 +53,7 @@ class PayloadTelemetry(UserTelemetryRecorder[str, AlgorithmResult]):
 
 
 @final
-class FailedPayloadRecorder(UserTelemetryRecorder[str, AlgorithmResult]):
+class FailedPayloadRecorder(UserTelemetryRecorder[str, AlgorithmResult, Any]):
     """
     Native recorder for algorithm payloads that failed to parse into provided type
     """
@@ -65,7 +67,9 @@ class FailedPayloadRecorder(UserTelemetryRecorder[str, AlgorithmResult]):
         storage_client: StorageClient,
         serializer: TelemetrySerializer,
     ):
-        super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer)
+        super().__init__(
+            algorithm_payload, metrics_provider, logger_factory, storage_client, serializer, configuration=None
+        )
 
     async def _compute(
         self, algorithm_payload: str, algorithm_result: AlgorithmResult, run_id: str, **inputs: TTelemetry

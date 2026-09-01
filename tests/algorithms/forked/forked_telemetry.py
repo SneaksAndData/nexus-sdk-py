@@ -13,12 +13,15 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     TTelemetry,
     UserTelemetryPathSegment,
 )
+from tests.algorithms.forked.forked_configuration import TestForkedAlgorithmConfiguration
 from tests.algorithms.forked.forked_inputs import TestForkedAlgorithmPayload
 from tests.algorithms.shared import TestDirectedGraphResult
 
 
 @singleton
-class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
+class TestUserAnalyticsTelemetry(
+    UserTelemetryRecorder[TestForkedAlgorithmPayload, TestDirectedGraphResult, TestForkedAlgorithmConfiguration]
+):
     @inject
     def __init__(
         self,
@@ -27,8 +30,9 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
         logger_factory: LoggerFactory,
         storage_client: StorageClient,
         serializer: TelemetrySerializer,
+        configuration: TestForkedAlgorithmConfiguration,
     ):
-        super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer)
+        super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer, configuration)
 
     async def _compute(
         self,
@@ -38,7 +42,17 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
         **inputs: TTelemetry
     ) -> UserTelemetry:
         return UserTelemetry(
-            iter([pandas.DataFrame({"x": algorithm_payload.x, "result": algorithm_result.result()["number"]})]),
+            iter(
+                [
+                    pandas.DataFrame(
+                        {
+                            "x": algorithm_payload.x,
+                            "result": algorithm_result.result()["number"],
+                            "config_value_c1": self._configuration.c1,
+                        }
+                    )
+                ]
+            ),
             UserTelemetryPathSegment("analysis", "test-recording"),
         )
 

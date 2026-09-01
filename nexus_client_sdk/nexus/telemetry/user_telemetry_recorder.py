@@ -35,7 +35,7 @@ from dataclasses_json.stringcase import snakecase
 from injector import inject
 
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
-from nexus_client_sdk.nexus.abstractions.nexus_object import TPayload, TResult
+from nexus_client_sdk.nexus.abstractions.nexus_object import TPayload, TResult, TConfiguration
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 
 TTelemetry = TypeVar("TTelemetry", pandas.DataFrame, polars.DataFrame)
@@ -86,7 +86,7 @@ class UserTelemetry:
         return "/".join([str(t_path) for t_path in self._telemetry_path_segments])
 
 
-class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
+class UserTelemetryRecorder(Generic[TPayload, TResult, TConfiguration], ABC):
     """
     Base class for user-defined telemetry recorders.
     """
@@ -99,12 +99,14 @@ class UserTelemetryRecorder(Generic[TPayload, TResult], ABC):
         logger_factory: LoggerFactory,
         storage_client: StorageClient,
         serializer: TelemetrySerializer,
+        configuration: TConfiguration,
     ):
         self._metrics_provider = metrics_provider
         self._logger = logger_factory.create_logger(logger_type=self.__class__)
         self._payload = algorithm_payload
         self._storage_client = storage_client
         self._serializer = serializer
+        self._configuration = configuration
 
     @property
     def _metric_tags(self) -> dict[str, str]:
