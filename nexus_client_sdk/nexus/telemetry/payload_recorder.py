@@ -15,7 +15,7 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import UserTelemet
 
 
 @final
-class PayloadTelemetry(UserTelemetryRecorder[str, AlgorithmResult, None]):
+class PayloadTelemetry(UserTelemetryRecorder[str, AlgorithmResult, Any]):
     """
     Native recorder for algorithm payloads that were successfully parsed
     """
@@ -53,7 +53,7 @@ class PayloadTelemetry(UserTelemetryRecorder[str, AlgorithmResult, None]):
 
 
 @final
-class FailedPayloadRecorder(UserTelemetryRecorder[str, AlgorithmResult, None]):
+class FailedPayloadRecorder(UserTelemetryRecorder[str, AlgorithmResult, Any]):
     """
     Native recorder for algorithm payloads that failed to parse into provided type
     """

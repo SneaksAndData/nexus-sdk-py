@@ -99,7 +99,7 @@ class UserTelemetryRecorder(Generic[TPayload, TResult, TConfiguration], ABC):
         logger_factory: LoggerFactory,
         storage_client: StorageClient,
         serializer: TelemetrySerializer,
-        configuration: TConfiguration | None,
+        configuration: TConfiguration,
     ):
         self._metrics_provider = metrics_provider
         self._logger = logger_factory.create_logger(logger_type=self.__class__)
