@@ -48,7 +48,7 @@ class QueryEnabledStoreCollectionFactory:
         """
         DI factory method.
         """
-        if model.services.query_enabled_store:
+        if not model.services.query_enabled_store.enabled:
             return QueryEnabledStoreCollection()
 
         try:
