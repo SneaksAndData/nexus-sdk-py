@@ -239,3 +239,29 @@ class NexusSchedulerAsyncClient:
             f"Fatal error when getting run results for requests with tag {algorithm}/{tag}",
             method_alias="get_run_results",
         )
+
+    async def await_tagged(
+        self, tags: list[str], algorithm: str | None, poll_interval_seconds=5, report_progress=True
+    ) -> Iterator[RunResult]:
+        """
+         Awaits all runs with matching tags.
+        :param tags: Tags to use when filtering runs
+        :param algorithm: Optional algorithm name to filter tagged runs by. Only set this if client might use the same tag for multiple algorithms.
+        :param poll_interval_seconds: Time between status checks
+        :param report_progress: Whether to report overall progress.
+        :return:
+        """
+
+        return await self._retry_policy_builder.build().execute(
+            lambda: run_blocking(
+                partial(
+                    self._sync_client.await_tagged,
+                    tags=tags,
+                    algorithm=algorithm,
+                    poll_interval_seconds=poll_interval_seconds,
+                    report_progress=report_progress,
+                )
+            ),
+            f"Fatal error when awaiting tagged runs with tags {tags} for algorithm {algorithm}",
+            method_alias="await_tagged",
+        )

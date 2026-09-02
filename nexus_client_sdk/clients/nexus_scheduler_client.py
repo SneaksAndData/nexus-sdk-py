@@ -267,7 +267,9 @@ class NexusSchedulerClient:
             case _:
                 raise converted.error()
 
-    def await_tagged(self, tags: list[str], algorithm: str | None, poll_interval_seconds=5, report_progress=True):
+    def await_tagged(
+        self, tags: list[str], algorithm: str | None, poll_interval_seconds=5, report_progress=True
+    ) -> Iterator[RunResult]:
         """
          Awaits all runs with matching tags.
         :param tags: Tags to use when filtering runs
