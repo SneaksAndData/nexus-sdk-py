@@ -67,6 +67,17 @@ async def test_get_request_metadata(async_scheduler: NexusSchedulerAsyncClient):
     assert meta_data.algorithm == "hello-world"
 
 
+async def test_await_tagged(async_scheduler: NexusSchedulerAsyncClient):
+    _ = await async_scheduler.create_and_await(algorithm_parameters={}, algorithm_name="hello-world", tag="tag1")
+    _ = await async_scheduler.create_and_await(algorithm_parameters={}, algorithm_name="hello-world", tag="tag2")
+
+    results = await async_scheduler.await_tagged(tags=["tag1", "tag2"], algorithm="hello-world")
+    results = list(results)
+    assert len(results) == 2, "Expected 2 results for tags 'tag1' and 'tag2', but got {len(results)}"
+    assert results[0].algorithm == "hello-world"
+    assert results[1].algorithm == "hello-world"
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("propagate", [True, False])
 async def test_custom_error(propagate: bool, async_scheduler: NexusSchedulerAsyncClient, cql_session: Session):
