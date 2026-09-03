@@ -102,8 +102,11 @@ def test_custom_runtime_configuration(set_config_extension_path_override) -> Non
     # check inherited settings
     _check_base_model(model)
 
+
 def test_inputs_sockets() -> None:
-    os.environ['NEXUS__INPUTS__SOCKETS'] = """@json [{"alias": "localfile1", "data_path": "local+file:///tmp/file1.json", "data_format": "text"}, {"alias": "localfile2", "data_path": "local+file:///tmp/file2.json","data_format": "text"}]"""
+    os.environ[
+        "NEXUS__INPUTS__SOCKETS"
+    ] = """@json [{"alias": "localfile1", "data_path": "local+file:///tmp/file1.json", "data_format": "text"}, {"alias": "localfile2", "data_path": "local+file:///tmp/file2.json","data_format": "text"}]"""
     config = NexusRuntimeConfiguration()
     config.load()
     model: NexusConfigurationModel = NexusConfigurationModel.from_runtime_configuration(config)
