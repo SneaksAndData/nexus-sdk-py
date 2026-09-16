@@ -66,7 +66,7 @@ class DirectedGraphResult(AlgorithmResult, ABC):
 
 TPayload = TypeVar("TPayload")
 TConfiguration = TypeVar("TConfiguration", bound=NexusConfigurationModel)
-TResult = TypeVar("TResult", pandas.DataFrame, polars.DataFrame, AlgorithmResult)
+TResult = TypeVar("TResult", pandas.DataFrame, polars.DataFrame, polars.LazyFrame, AlgorithmResult)
 
 
 class NexusCoreObject(ABC):
