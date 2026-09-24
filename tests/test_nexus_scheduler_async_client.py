@@ -13,7 +13,7 @@ from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import
 from tests.conftest import broken_async_scheduler
 
 runtime_config_stub = (
-    open(Path(__file__).parent / "mock_data" / "applied_configuration.json", encoding="utf-8").read().replace("\n", " ")
+    open(Path(__file__).parent / "mock_data" / "applied_configuration.serialized.txt", encoding="utf-8").read().replace("\n", " ")
 )
 
 
@@ -88,7 +88,7 @@ async def test_custom_error(propagate: bool, async_scheduler: NexusSchedulerAsyn
                 algorithm_name="hello-world",
                 propagate_error=propagate,
                 post_create_callback=lambda run_id: cql_session.execute(
-                    f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('hello-world', '{run_id}', 'SCHEDULING_FAILED', '', '{runtime_config_stub}', '{{}}', '{{}}')"
+                    f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('hello-world', '{run_id}', 'SCHEDULING_FAILED', '', '{runtime_config_stub}', 'b64__e30=', 'b64__e30=')"
                 ),
             )
     else:
@@ -98,7 +98,7 @@ async def test_custom_error(propagate: bool, async_scheduler: NexusSchedulerAsyn
                 algorithm_name="hello-world",
                 propagate_error=propagate,
                 post_create_callback=lambda run_id: cql_session.execute(
-                    f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('hello-world', '{run_id}', 'SCHEDULING_FAILED', '', '{runtime_config_stub}', '{{}}', '{{}}')"
+                    f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('hello-world', '{run_id}', 'SCHEDULING_FAILED', '', '{runtime_config_stub}', 'b64__e30=', 'b64__e30=')"
                 ),
             )
             is None
