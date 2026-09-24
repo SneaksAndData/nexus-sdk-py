@@ -1,27 +1,92 @@
-default:
-    @just --list
+set shell := ["bash", "-c"]
 
+# images
+SCYLLA_IMAGE := "scylladb/scylla"
+MINIO_IMAGE  := "quay.io/minio/minio"
+
+# configurations
+MANIFESTS := invocation_directory() / "test-resources/manifests"
+DBSCHEMA := invocation_directory() / "test-resources/e2e"
+
+# Nexus charts and images
+SCHEDULER_IMAGE_REPO := "ghcr.io/sneaksanddata/nexus"
+RECEIVER_IMAGE_REPO := "ghcr.io/sneaksanddata/nexus-receiver"
+
+NEXUS_CHART_NAME := "oci://ghcr.io/sneaksanddata/helm/nexus"
+NEXUS_RECEIVER_CHART_NAME := "oci://ghcr.io/sneaksanddata/helm/nexus-receiver"
+NEXUS_VERSION := "1.2.3-2-g7cf0ab7"
+NEXUS_RECEIVER_VERSION := "1.2.0"
+NEXUS_CRD_VERSION := "1.1.0"
+
+# cluster
+NEXUS_CLUSTER_NAME := "nexus-sdk-tests"
+
+# Default recipe
 fresh: stop up
 
-up: start-kind-cluster \
-    install-ingress-controller \
-    create-ingress \
-    scylla \
-    dbschema \
-    shards-kubeconfig \
-    crd \
-    algorithm \
-    scheduler \
-    receiver \
-    supervisor \
-    minio \
-    wait-for-services
-
-stop:
-    kind delete cluster
+# Start CI environment
+up: start-kind-cluster install-ingress-controller create-namespace create-ingress scylla-kind minio-kind crd apply-manifests dbschema scheduler receiver
 
 start-kind-cluster:
-    kind create cluster --config=integration_tests/kind.yaml
+    kind create cluster --config=test-resources/kind.yaml --name {{NEXUS_CLUSTER_NAME}}
+
+# Cleanup CI environment
+stop:
+    @echo "🧹 Cleaning up..."
+    kind delete cluster --name {{NEXUS_CLUSTER_NAME}}
+    rm -f cover-indexed.out cover-bare.out cover.out
+
+# View logs
+logs name="":
+    docker logs -f {{if name == "" { "scylla" } else { name }}}
+
+create-namespace:
+    kubectl create namespace nexus --dry-run=client -o yaml | kubectl apply -f -
+
+# install chart
+scheduler:
+    kubectl create secret generic cassandra-credentials \
+        --namespace nexus \
+        --from-literal=NEXUS__SCYLLA_CQL_STORE__HOSTS="scylla.nexus.svc.cluster.local" \
+        --from-literal=NEXUS__SCYLLA_CQL_STORE__INDEXES_SUPPORTED="true" \
+        --from-literal=NEXUS__SCYLLA_CQL_STORE__USER="cassandra" \
+        --from-literal=NEXUS__SCYLLA_CQL_STORE__PASSWORD="cassandra" \
+        --from-literal=NEXUS__SCYLLA_CQL_STORE__KEYSPACE="nexus" --dry-run=client -o yaml | kubectl apply -f -
+
+    kubectl create secret generic nexus-s3 \
+        --namespace nexus \
+        --from-literal=NEXUS__S3_BUFFER__REGION="us-east-1" \
+        --from-literal=NEXUS__S3_BUFFER__ACCESS_KEY_ID="minioadmin" \
+        --from-literal=NEXUS__S3_BUFFER__SECRET_ACCESS_KEY="minioadmin" \
+        --from-literal=NEXUS__S3_BUFFER__ENDPOINT="http://minio.nexus.svc.cluster.local:9000" --dry-run=client -o yaml | kubectl apply -f -
+
+    kubectl create secret generic nexus-sign-key \
+        --namespace nexus \
+        --from-literal=NEXUS__S3_BUFFER__REQUEST_PAYLOAD_PROXY_CONFIGURATION__SIGN_SECRET="test" --dry-run=client -o yaml | kubectl apply -f -
+
+    helm upgrade nexus {{NEXUS_CHART_NAME}} --install --create-namespace --namespace nexus --version v{{NEXUS_VERSION}} \
+        --set image.repository={{SCHEDULER_IMAGE_REPO}} \
+        --set image.tag={{NEXUS_VERSION}} \
+        --set scheduler.config.checkpointStore.type=cassandra-scylla \
+        --set scheduler.config.checkpointStore.secretName="cassandra-credentials" \
+        --set scheduler.config.s3Buffer.s3Credentials.secretName="nexus-s3" \
+        --set scheduler.config.s3Buffer.processing.payloadProxy.externalName="nexus.nexus.svc.cluster.local:8080" \
+        --set scheduler.config.s3Buffer.processing.payloadProxy.insecure="true" \
+        --set scheduler.config.logLevel="DEBUG"
+    kubectl -n nexus rollout status deployment/nexus --timeout=180s
+
+receiver:
+    helm upgrade nexus-receiver {{NEXUS_RECEIVER_CHART_NAME}} --install --create-namespace --namespace nexus --version v{{NEXUS_RECEIVER_VERSION}} \
+        --set image.repository={{RECEIVER_IMAGE_REPO}} \
+        --set image.tag={{NEXUS_RECEIVER_VERSION}} \
+        --set receiver.config.checkpointStore.type=cassandra-scylla \
+        --set receiver.config.checkpointStore.secretName="cassandra-credentials" \
+        --set receiver.config.logLevel="DEBUG"
+    kubectl -n nexus rollout status deployment/nexus-receiver --timeout=180s
+
+# cleanup
+remove-chart:
+    helm uninstall -n nexus nexus
 
 install-ingress-controller:
     kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
@@ -30,7 +95,7 @@ install-ingress-controller:
 create-ingress:
     # Create ingress rules for services
     for i in $(seq 1 30); do \
-      kubectl apply -f ./integration_tests/manifests/ingress.yaml && break || \
+      kubectl apply -f {{MANIFESTS}}/ingress.yaml && break || \
       (echo "Retry $i/30: failed to apply ingress, retrying in 1s..." && sleep 1); \
     done; \
     if [ $i -eq 30 ]; then \
@@ -38,61 +103,21 @@ create-ingress:
       exit 1; \
     fi
 
-scylla:
-    kubectl apply -f integration_tests/manifests/scylladb.yaml
-    kubectl rollout status deployment/scylla --timeout=180s
+scylla-kind:
+    kubectl apply -f {{MANIFESTS}}/scylladb.yaml
+    kubectl -n nexus rollout status deployment/scylla --timeout=180s
 
-minio:
-    kubectl apply -f integration_tests/manifests/minio.yaml
-    kubectl rollout status deployment/minio --timeout=180s
+minio-kind:
+    kubectl apply -f {{MANIFESTS}}/minio.yaml
+    kubectl -n nexus rollout status deployment/minio --timeout=180s
 
 crd:
-    helm upgrade --install nexus-crd  oci://ghcr.io/sneaksanddata/helm/nexus-crd --version v1.0.0
+    helm upgrade --install --namespace nexus nexus-crd  oci://ghcr.io/sneaksanddata/helm/nexus-crd --version v{{NEXUS_CRD_VERSION}}
 
-algorithm:
-    kubectl apply -f integration_tests/manifests/hello-world-algorithm.yaml
-    kubectl apply -f integration_tests/manifests/hello-world-workgroup.yaml
-    kubectl apply -f integration_tests/manifests/nexus-algorithm-sa.yaml
-
-shards-kubeconfig:
-    kind get kubeconfig \
-      | yq -o=json '.clusters[].cluster.server = "https://kubernetes.default.svc.cluster.local"' \
-      | kubectl create secret generic nexus-shards --from-file=kind-nexus-shard-0.kubeconfig=/dev/stdin --type=Opaque --dry-run=client -o yaml \
-      | kubectl apply -f -
-
-scheduler:
-    helm upgrade --install nexus oci://ghcr.io/sneaksanddata/helm/nexus --version v1.1.12  \
-      --set scheduler.replicas=1 \
-      --set scheduler.config.cqlStore.type=scylla \
-      --set scheduler.config.cqlStore.secretRefEnabled=true \
-      --set 'extraEnvFrom[0].secretRef.name=cassandra-credentials' \
-      --set 'scheduler.config.cqlStore.secretName=cassandra-credentials' \
-      --set 'scheduler.config.s3Buffer.s3Credentials.secretRefEnabled=true' \
-      --set 'scheduler.config.s3Buffer.s3Credentials.secretName=minio-credentials' \
-      --set 'scheduler.config.s3Buffer.processing.payloadStoragePath=s3a://nexus'
-
-
-receiver:
-    helm upgrade --install nexus-receiver oci://ghcr.io/sneaksanddata/helm/nexus-receiver --version v1.1.4  \
-      --set receiver.replicas=1 \
-      --set receiver.config.cqlStore.type=scylla \
-      --set receiver.config.cqlStore.secretRefEnabled=true \
-      --set 'extraEnvFrom[0].secretRef.name=cassandra-credentials' \
-      --set receiver.config.cqlStore.secretName="cassandra-credentials"
-
-supervisor:
-    helm upgrade --install nexus-supervisor oci://ghcr.io/sneaksanddata/helm/nexus-supervisor --version v0.1.6  \
-      --set 'extraEnvFrom[0].secretRef.name=cassandra-credentials' \
-      --set 'supervisor.replicas=1' \
-      --set 'supervisor.config.cqlStore.type=scylla' \
-      --set 'supervisor.config.cqlStore.secretRefEnabled=true' \
-      --set 'supervisor.config.cqlStore.secretName=cassandra-credentials' \
-      --set 'supervisor.config.resourceNamespace=default'
-
-wait-for-services:
-    kubectl rollout status deployment/nexus --timeout=180s
-    kubectl rollout status deployment/nexus-receiver --timeout=180s
-    kubectl rollout status deployment/nexus-supervisor --timeout=180s
+apply-manifests:
+    kubectl apply -n nexus -f {{MANIFESTS}}/nexus-algorithm-sa.yaml
+    kubectl apply -n nexus -f {{MANIFESTS}}/hello-world-workgroup.yaml
+    kubectl apply -n nexus -f {{MANIFESTS}}/hello-world-algorithm.yaml
 
 dbschema:
-  docker run --rm -v $(pwd)/integration_tests/storage:/opt/storage --network=host --entrypoint /opt/storage/prepare-scylla.sh scylladb/scylla:5.0.1
+  docker run --rm -v {{DBSCHEMA}}:/opt/storage --network=host --entrypoint /opt/storage/prepare-db.sh {{SCYLLA_IMAGE}}

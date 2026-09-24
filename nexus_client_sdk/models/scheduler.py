@@ -162,6 +162,8 @@ class SdkCustomRunConfiguration(ctypes.Structure):
         ("workgroup_kind", ctypes.c_char_p),
         ("cpu_limit", ctypes.c_char_p),
         ("memory_limit", ctypes.c_char_p),
+        ("cpu_request", ctypes.c_char_p),
+        ("memory_request", ctypes.c_char_p),
         ("deadline_seconds", ctypes.c_int32),
         ("maximum_retries", ctypes.c_int32),
     ]
@@ -174,6 +176,8 @@ class SdkCustomRunConfiguration(ctypes.Structure):
         workgroup_name: str | None = None,
         cpu_limit: str | None = None,
         memory_limit: str | None = None,
+        cpu_request: str | None = None,
+        memory_request: str | None = None,
         workgroup_group: str = "science.sneaksanddata.com/v1",
         workgroup_kind: str = "NexusAlgorithmWorkgroup",
         max_deadline_seconds: int | None = None,
@@ -187,6 +191,8 @@ class SdkCustomRunConfiguration(ctypes.Structure):
         :param workgroup_kind: Algorithm workgroup kind override
         :param cpu_limit: Run CPU limit override
         :param memory_limit: Run max memory limit override
+        :param cpu_request: Run CPU initial request override
+        :param memory_request: Run initial memory request override
         :param max_deadline_seconds: Maximum deadline seconds override
         :param max_retries: Maximum retries override
         :return:
@@ -198,6 +204,8 @@ class SdkCustomRunConfiguration(ctypes.Structure):
             workgroup_kind=bytes(workgroup_kind, encoding="utf-8") if workgroup_kind else None,
             cpu_limit=bytes(cpu_limit, encoding="utf-8") if cpu_limit else None,
             memory_limit=bytes(memory_limit, encoding="utf-8") if memory_limit else None,
+            cpu_request=bytes(cpu_request, encoding="utf-8") if cpu_request else None,
+            memory_request=bytes(memory_request, encoding="utf-8") if memory_request else None,
             deadline_seconds=max_deadline_seconds if max_deadline_seconds else 0,
             maximum_retries=max_retries if max_retries else -1,
         )
@@ -261,7 +269,6 @@ class SdkRequestMetadata(ctypes.Structure):
         ("lifecycle_stage", ctypes.c_char_p),
         ("parent_job", ctypes.c_char_p),
         ("payload_uri", ctypes.c_char_p),
-        ("payload_valid_for", ctypes.c_char_p),
         ("received_at", ctypes.c_char_p),
         ("received_by_host", ctypes.c_char_p),
         ("result_uri", ctypes.c_char_p),
@@ -290,7 +297,6 @@ class RequestMetadata(PySdkType):
     :attr lifecycle_stage: Lifecycle stage
     :attr parent_job: Parent job information
     :attr payload_uri: Payload URI
-    :attr payload_valid_for: Payload validity duration
     :attr received_at: Timestamp of when the request was received
     :attr received_by_host: Nexus Host that received the request
     :attr result_uri: Result URI
@@ -311,7 +317,6 @@ class RequestMetadata(PySdkType):
     lifecycle_stage: str | None
     parent_job: dict[str, str] | None
     payload_uri: str | None
-    payload_valid_for: str | None
     received_at: str | None
     received_by_host: str | None
     result_uri: str | None
@@ -344,7 +349,6 @@ class RequestMetadata(PySdkType):
             lifecycle_stage=result.lifecycle_stage.decode() if result.lifecycle_stage else None,
             parent_job=result.parent_job.decode() if result.parent_job else None,
             payload_uri=result.payload_uri.decode() if result.payload_uri else None,
-            payload_valid_for=result.payload_valid_for.decode() if result.payload_valid_for else None,
             received_at=result.received_at.decode() if result.received_at else None,
             received_by_host=result.received_by_host.decode() if result.received_by_host else None,
             result_uri=result.result_uri.decode() if result.result_uri else None,

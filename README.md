@@ -64,7 +64,6 @@ new_run = client.create_run(
     algorithm_name="test-algorithm",
     custom_configuration=SdkCustomRunConfiguration.create(version="v1.2.3"),
     tag="test-py-sdk",
-    payload_valid_for="6h",
 )
 
 print(f"Run id: {new_run}")

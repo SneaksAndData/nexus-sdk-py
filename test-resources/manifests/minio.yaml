@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: minio
+  namespace: nexus
   labels:
     app: minio
 spec:
@@ -47,6 +48,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: minio
+  namespace: nexus
 spec:
   selector:
     app: minio
@@ -63,6 +65,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: minio-setup
+  namespace: nexus
 spec:
   backoffLimit: 5
   template:
@@ -78,7 +81,7 @@ spec:
               echo "Waiting for Minio to be available via mc..."
               max_retries=30
               attempt=1
-              until mc alias set e2e "http://minio.default.svc.cluster.local:9000" minioadmin minioadmin >/dev/null 2>&1; do
+              until mc alias set e2e "http://minio.nexus.svc.cluster.local:9000" minioadmin minioadmin >/dev/null 2>&1; do
               if (( attempt >= max_retries )); then
                 echo "minio did not become available after $max_retries attempts."
               exit 1
@@ -90,12 +93,13 @@ spec:
               mc admin info e2e
               mc mb --ignore-existing e2e/tmp
               mc mb --ignore-existing e2e/nexus
-              mc mb --ignore-existing e2e/nexus-sdk-tests
+              mc mb --ignore-existing e2e/algorithms
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: minio-node-port
+  namespace: nexus
 spec:
   selector:
     app: minio
@@ -104,13 +108,3 @@ spec:
       targetPort: 9000
       nodePort: 30043
   type: NodePort
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: minio-credentials
-stringData:
-  NEXUS__S3_BUFFER__ACCESS_KEY_ID: "minioadmin"
-  NEXUS__S3_BUFFER__SECRET_ACCESS_KEY: "minioadmin"
-  NEXUS__S3_BUFFER__ENDPOINT: "http://minio.default.svc.cluster.local:9000"
-  NEXUS__S3_BUFFER__REGION: "us-east-1"
