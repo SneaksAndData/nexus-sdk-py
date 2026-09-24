@@ -13,7 +13,9 @@ from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import
 from tests.conftest import broken_async_scheduler
 
 runtime_config_stub = (
-    open(Path(__file__).parent / "mock_data" / "applied_configuration.serialized.txt", encoding="utf-8").read().replace("\n", " ")
+    open(Path(__file__).parent / "mock_data" / "applied_configuration.serialized.txt", encoding="utf-8")
+    .read()
+    .replace("\n", " ")
 )
 
 

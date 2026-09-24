@@ -84,6 +84,7 @@ def broken_async_scheduler():
     finally:
         logger.stop()
 
+
 class _IgnorePeerAddressesTranslator(AddressTranslator):
     def __init__(self, contact_points):
         self.contact_points = contact_points
@@ -97,8 +98,7 @@ class _IgnorePeerAddressesTranslator(AddressTranslator):
 @pytest.fixture
 def cql_session():
     cluster = Cluster(
-        address_translator=_IgnorePeerAddressesTranslator(contact_points=["127.0.0.1"]),
-        protocol_version=4
+        address_translator=_IgnorePeerAddressesTranslator(contact_points=["127.0.0.1"]), protocol_version=4
     )
     cluster.control_connection_timeout = 5.0
     cluster.schema_metadata_enabled = False

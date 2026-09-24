@@ -25,7 +25,7 @@ NEXUS_CLUSTER_NAME := "nexus-sdk-tests"
 fresh: stop up
 
 # Start CI environment
-up: start-kind-cluster install-ingress-controller create-namespace create-ingress scylla-kind minio-kind crd apply-manifests dbschema scheduler receiver
+up: start-kind-cluster install-ingress-controller create-namespace create-ingress scylla-kind s2 crd apply-manifests dbschema scheduler receiver
 
 start-kind-cluster:
     kind create cluster --config=test-resources/kind.yaml --name {{NEXUS_CLUSTER_NAME}}
@@ -68,9 +68,10 @@ scheduler:
         --set image.repository={{SCHEDULER_IMAGE_REPO}} \
         --set image.tag={{NEXUS_VERSION}} \
         --set scheduler.config.checkpointStore.type=cassandra-scylla \
+        --set scheduler.config.s3Buffer.processing.payloadStoragePath="s3a://nexus/algorithms" \
         --set scheduler.config.checkpointStore.secretName="cassandra-credentials" \
         --set scheduler.config.s3Buffer.s3Credentials.secretName="nexus-s3" \
-        --set scheduler.config.s3Buffer.processing.payloadProxy.externalName="nexus.nexus.svc.cluster.local:8080" \
+        --set scheduler.config.s3Buffer.processing.payloadProxy.externalName="localhost:5555" \
         --set scheduler.config.s3Buffer.processing.payloadProxy.insecure="true" \
         --set scheduler.config.logLevel="DEBUG"
     kubectl -n nexus rollout status deployment/nexus --timeout=180s
@@ -107,8 +108,8 @@ scylla-kind:
     kubectl apply -f {{MANIFESTS}}/scylladb.yaml
     kubectl -n nexus rollout status deployment/scylla --timeout=180s
 
-minio-kind:
-    kubectl apply -f {{MANIFESTS}}/minio.yaml
+s2:
+    kubectl apply -f {{MANIFESTS}}/s2.yaml
     kubectl -n nexus rollout status deployment/minio --timeout=180s
 
 crd:

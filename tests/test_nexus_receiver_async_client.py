@@ -9,7 +9,9 @@ from nexus_client_sdk.clients.fault_tolerance.models import NexusClientRuntimeEr
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 
 runtime_config_stub = (
-    open(Path(__file__).parent / "mock_data" / "applied_configuration.json", encoding="utf-8").read().replace("\n", " ")
+    open(Path(__file__).parent / "mock_data" / "applied_configuration.serialized.txt", encoding="utf-8")
+    .read()
+    .replace("\n", " ")
 )
 
 

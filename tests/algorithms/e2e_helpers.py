@@ -3,7 +3,7 @@ from pathlib import Path
 ALGORITHMS_ROOT = Path(__file__).parent
 
 RUNTIME_CONFIG_STUB = (
-    (Path(__file__).parent.parent / "mock_data" / "applied_configuration.json")
+    (Path(__file__).parent.parent / "mock_data" / "applied_configuration.serialized.txt")
     .read_text(encoding="utf-8")
     .replace("\n", " ")
 )

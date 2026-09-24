@@ -3,6 +3,7 @@ import json
 import os
 import random
 import sys
+from base64 import b64encode
 
 import pytest
 import requests
@@ -92,13 +93,15 @@ async def test_sdk_run_forked_main_run(
     await asyncio.sleep(1)
 
     ## Assert childs spawned
-    parent_filter = json.dumps(
-        {
-            "requestId": forked_main_run_test_args.request_id,
-            "algorithmName": algorithm,
-        },
-        separators=(",", ":"),
-    )
+    parent_filter = "b64__" + b64encode(
+        json.dumps(
+            {
+                "requestId": forked_main_run_test_args.request_id,
+                "algorithmName": algorithm,
+            },
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).decode("utf-8")
 
     child_rows = list(
         cql_session.execute(
@@ -111,15 +114,14 @@ async def test_sdk_run_forked_main_run(
     ## Assert that payload is correctly created and can be deserialized
     for row in child_rows:
         url = row.payload_uri.replace(
-            "minio.default.svc.cluster.local",
-            "localhost",
+            "localhost:5555",
+            "localhost:5555/scheduler",
         )
 
         child_payload = TestForkedChildPayload.from_dict(
             json.loads(
                 requests.get(
                     url,
-                    headers={"Host": "minio.default.svc.cluster.local:9000"},
                 ).text
             )
         )
@@ -163,13 +165,15 @@ async def test_sdk_run_forked_fork_run(
     assert "number" in result  # we need to ensure it succeeded, otherwise below check can give false positive
 
     ## Assert childs spawned
-    parent_filter = json.dumps(
-        {
-            "requestId": forked_fork_run_test_args.request_id,
-            "algorithmName": algorithm,
-        },
-        separators=(",", ":"),
-    )
+    parent_filter = "b64__" + b64encode(
+        json.dumps(
+            {
+                "requestId": forked_fork_run_test_args.request_id,
+                "algorithmName": algorithm,
+            },
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).decode("utf-8")
 
     child_rows = list(
         cql_session.execute(
