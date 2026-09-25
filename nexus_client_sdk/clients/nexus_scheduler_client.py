@@ -188,7 +188,6 @@ class NexusSchedulerClient:
         custom_configuration: SdkCustomRunConfiguration | None = None,
         parent_request: SdkParentRequest | None = None,
         tag: str | None = None,
-        payload_valid_for: str = "24h",
         dry_run: bool = False,
     ) -> str:
         """
@@ -198,7 +197,6 @@ class NexusSchedulerClient:
         :param custom_configuration: Optional custom run configuration.
         :param parent_request: Optional Parent request reference, if applicable. Specifying a parent request allows indirect cancellation of the submission - via cancellation of a parent.
         :param tag: Client side assigned run tag.
-        :param payload_valid_for: Payload pre-signed URL validity period.
         :param dry_run: Dry run, if set to True, will only buffer a submission but skip job creation.
         :return:
         """
@@ -208,7 +206,6 @@ class NexusSchedulerClient:
             bytes(json.dumps(algorithm_parameters), encoding="utf-8"),
             custom_configuration.as_pointer() if custom_configuration else None,
             parent_request.as_pointer() if parent_request else None,
-            bytes(payload_valid_for, encoding="utf-8"),
             bytes(tag, encoding="utf-8") if tag else None,
             bytes(str(dry_run).lower(), encoding="utf-8"),
         )

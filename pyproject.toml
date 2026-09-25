@@ -12,7 +12,7 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.11, <3.13"
+python = ">=3.11, <3.15"
 adapta = { version = ">=4", extras = ["aws", "aws-fileio", "datadog", "storage-cassandra", "storage-delta", "storage-iceberg"] }
 injector = "^0.24.0"
 dynaconf = "^3.3"

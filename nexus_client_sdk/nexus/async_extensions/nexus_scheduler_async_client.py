@@ -65,7 +65,6 @@ class NexusSchedulerAsyncClient:
         custom_configuration: SdkCustomRunConfiguration | None = None,
         parent_request: SdkParentRequest | None = None,
         tag: str | None = None,
-        payload_valid_for: str = "24h",
         dry_run: bool = False,
     ) -> str | None:
         """
@@ -75,7 +74,6 @@ class NexusSchedulerAsyncClient:
         :param custom_configuration: Optional custom run configuration.
         :param parent_request: Optional Parent request reference, if applicable. Specifying a parent request allows indirect cancellation of the submission - via cancellation of a parent.
         :param tag: Client side assigned run tag.
-        :param payload_valid_for: Payload pre-signed URL validity period.
         :param dry_run: If True, will buffer but skip creating an actual algorithm job.
         :return:
         """
@@ -88,7 +86,6 @@ class NexusSchedulerAsyncClient:
                     algorithm_name=algorithm_name,
                     custom_configuration=custom_configuration,
                     parent_request=parent_request,
-                    payload_valid_for=payload_valid_for,
                     tag=tag,
                     dry_run=dry_run,
                 )
@@ -130,7 +127,6 @@ class NexusSchedulerAsyncClient:
         custom_configuration: SdkCustomRunConfiguration | None = None,
         parent_request: SdkParentRequest | None = None,
         tag: str | None = None,
-        payload_valid_for: str = "24h",
         dry_run: bool = False,
         poll_interval_seconds: int = 5,
         propagate_error: bool = True,
@@ -144,7 +140,6 @@ class NexusSchedulerAsyncClient:
         :param custom_configuration: Optional custom run configuration.
         :param parent_request: Optional Parent request reference, if applicable. Specifying a parent request allows indirect cancellation of the submission - via cancellation of a parent.
         :param tag: Client side assigned run tag.
-        :param payload_valid_for: Payload pre-signed URL validity period.
         :param dry_run: If True, will buffer but skip creating an actual algorithm job.
         :param poll_interval_seconds: Time between status checks
         :param propagate_error: If True, error in this method will be propagated to the caller. If False, will return an empty value.
@@ -158,7 +153,6 @@ class NexusSchedulerAsyncClient:
                 algorithm_name=kwargs["algorithm_name"],
                 custom_configuration=kwargs["custom_configuration"],
                 parent_request=kwargs["parent_request"],
-                payload_valid_for=kwargs["payload_valid_for"],
                 tag=kwargs["tag"],
                 dry_run=kwargs["dry_run"],
             )
@@ -189,7 +183,6 @@ class NexusSchedulerAsyncClient:
                     algorithm_name=algorithm_name,
                     custom_configuration=custom_configuration,
                     parent_request=parent_request,
-                    payload_valid_for=payload_valid_for,
                     poll_interval_seconds=poll_interval_seconds,
                     tag=tag,
                     dry_run=dry_run,

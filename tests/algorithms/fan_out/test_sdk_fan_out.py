@@ -3,6 +3,7 @@ import json
 import os
 import random
 import sys
+from base64 import b64encode
 
 import pytest
 import requests
@@ -79,13 +80,15 @@ async def test_sdk_run_fan_out(
     await asyncio.sleep(1)
 
     ## Assert childs spawned
-    parent_filter = json.dumps(
-        {
-            "requestId": fan_out_test_args.request_id,
-            "algorithmName": algorithm,
-        },
-        separators=(",", ":"),
-    )
+    parent_filter = "b64__" + b64encode(
+        json.dumps(
+            {
+                "requestId": fan_out_test_args.request_id,
+                "algorithmName": algorithm,
+            },
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).decode("utf-8")
 
     child_rows = list(
         cql_session.execute(
@@ -98,18 +101,11 @@ async def test_sdk_run_fan_out(
     ## Assert that payload is correctly created and can be deserialized
     for row in child_rows:
         url = row.payload_uri.replace(
-            "minio.default.svc.cluster.local",
-            "localhost",
+            "localhost:5555",
+            "localhost:5555/scheduler",
         )
 
-        child_payload = TestFanOutChildPayload.from_dict(
-            json.loads(
-                requests.get(
-                    url,
-                    headers={"Host": "minio.default.svc.cluster.local:9000"},
-                ).text
-            )
-        )
+        child_payload = TestFanOutChildPayload.from_dict(json.loads(requests.get(url).text))
 
         assert child_payload.x * 10 == child_payload.y  # we set y = x * 10 in remote payload generation
         assert child_payload.input_sockets is None
