@@ -24,7 +24,7 @@ def run_configuration():
     os.environ["PROTEUS__AWS_ENDPOINT"] = "http://localhost:9000"
     os.environ["PROTEUS__AWS_SECRET_ACCESS_KEY"] = "minioadmin"
     os.environ["PROTEUS__AWS_ACCESS_KEY_ID"] = "minioadmin"
-    os.environ["NEXUS__SERVICES__QUERY_ENABLED_STORE__ENABLED"] = "0"
+    os.environ["NEXUS__SERVICES__QUERY_ENABLED_STORE__ENABLED"] = "False"
     os.environ["NEXUS__RESULT__OUTPUT_PATH"] = "s3a://nexus-sdk-tests/result"
     os.environ["NEXUS__LOGGING__DATADOG__IGNORE_FLUSH_FAILURE"] = "'False'"
 

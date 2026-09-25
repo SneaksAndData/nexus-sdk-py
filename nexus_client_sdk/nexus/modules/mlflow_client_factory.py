@@ -17,36 +17,30 @@
 MLFlow module that provides the MLFlow client to the Nexus framework.
 """
 
-import os
 from typing import final
-from injector import Module, singleton, provider
+
 from adapta.ml.mlflow import MlflowBasicClient
 
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
-from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 
 
 @final
-class MlflowModule(Module):
+class MlflowClientFactory:
     """
     MLFlow module.
     """
 
-    @singleton
-    @provider
-    def provide(self, model: NexusRuntimeConfiguration) -> MlflowBasicClient:
+    @classmethod
+    def get_client(cls, model: NexusConfigurationModel) -> MlflowBasicClient | None:
         """
         DI factory method.
         """
 
-        if model.default.exists("mlflow.tracking.username") and model.default.exists("mlflow.tracking.password"):
+        if model.services.mlflow_client.enabled:
             return MlflowBasicClient.from_static_credentials(
-                tracking_server_uri=model.default.mlflow.tracking.uri,
-                username=model.default.mlflow.tracking.username,
-                password=model.default.mlflow.tracking.password,
+                tracking_server_uri=model.services.mlflow_client.uri,
+                username=model.services.mlflow_client.username,
+                password=model.services.mlflow_client.password,
             )
 
-        if "NEXUS__MLFLOW_TRACKING_URI" not in os.environ:
-            raise FatalStartupConfigurationError("NEXUS__MLFLOW_TRACKING_URI")
-
-        return MlflowBasicClient.from_environment_credentials(os.environ["NEXUS__MLFLOW_TRACKING_URI"])
+        return None

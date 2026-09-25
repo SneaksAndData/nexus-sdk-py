@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import final
 
 import pandas
 from adapta.metrics import MetricsProvider
@@ -10,7 +9,6 @@ from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
 from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection
-from nexus_client_sdk.nexus.exceptions import FatalNexusError
 from nexus_client_sdk.nexus.input import InputReader, InputProcessor
 from nexus_client_sdk.nexus.input.payload_reader import SocketOverridePayload
 from tests.algorithms.fan_out.fan_out_configuration import TestFanOutAlgorithmConfiguration

@@ -19,4 +19,4 @@ type_name = "tests.algorithms.forked.forked_inputs.TestForkedAlgorithmPayload"
     # Query Enabled Stores
     [query_enabled_store]
 
-    enabled = "0"
+    enabled = false

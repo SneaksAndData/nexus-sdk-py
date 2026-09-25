@@ -98,10 +98,41 @@ class QueryEnabledStoreSettings:
 
 
 @dataclass
+class TrinoClientSettings:
+    """Trino Client configuration settings."""
+
+    enabled: bool
+    host: str
+    username: str
+    password: str
+
+@dataclass
+class AstraClientSettings:
+    """Astra Client configuration settings."""
+
+    enabled: bool
+    keyspace: str
+    secure_connect_bundle_bytes: str
+    client_id: str
+    client_secret: str
+
+@dataclass
+class MlflowClientSettings:
+    """Mlflow Client configuration settings."""
+
+    enabled: bool
+    uri: str
+    username: str
+    password: str
+
+@dataclass
 class AdditionalServicesSettings:
     """Additional services configuration settings."""
 
     query_enabled_store: QueryEnabledStoreSettings
+    trino_client: TrinoClientSettings
+    astra_client: AstraClientSettings
+    mlflow_client: MlflowClientSettings
 
 
 @dataclass
@@ -162,7 +193,7 @@ class ForkedAlgorithmSettings:
     """Forked algorithm configuration settings."""
 
     spawn_base_delay_seconds: str
-    async_spawn_enabled: str
+    async_spawn_enabled: bool
 
 
 @dataclass
@@ -170,7 +201,7 @@ class FanOutSettings:
     """Fan-out algorithm configuration settings."""
 
     spawn_base_delay_seconds: str
-    async_spawn_enabled: str
+    async_spawn_enabled: bool
 
 
 @dataclass

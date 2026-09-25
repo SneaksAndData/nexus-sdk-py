@@ -19,4 +19,4 @@ type_name = "tests.algorithms.fan_out.fan_out_inputs.TestFanOutAlgorithmPayload"
     # Query Enabled Stores
     [query_enabled_store]
 
-    enabled = "0"
+    enabled = false

@@ -19,29 +19,22 @@
 from typing import final
 
 from adapta.storage.database.v3.trino_sql import TrinoClient
-from injector import Module, singleton, provider
 
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 
 
 @final
-class TrinoClientModule(Module):
+class TrinoClientFactory:
     """
     Trino Client module.
     """
 
-    @singleton
-    @provider
-    def provide(self, model: NexusRuntimeConfiguration) -> TrinoClient:
-        """
-        DI factory method.
-        """
-
-        if model.default.inputs.trino_client.enabled == "1":
+    @classmethod
+    def get_client(cls, model: NexusConfigurationModel) -> TrinoClient | None:
+        if model.services.trino_client.enabled:
             return TrinoClient(
-                host=model.default.inputs.trino_client.host,
-                username=model.default.inputs.trino_client.username,
-                password=model.default.inputs.trino_client.password,
+                host=model.services.trino_client.host,
+                username=model.services.trino_client.username,
+                password=model.services.trino_client.password,
             )
-
         return None

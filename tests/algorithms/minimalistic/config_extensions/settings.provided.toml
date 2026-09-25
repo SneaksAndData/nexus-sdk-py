@@ -14,4 +14,4 @@ type_name = "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticA
     # Query Enabled Stores
     [services.query_enabled_store]
 
-    enabled = "0"
+    enabled = false

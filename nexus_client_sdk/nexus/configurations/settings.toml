@@ -108,7 +108,7 @@ scheduler_access_token = ""
 [remote_algorithm]
 
 # If set to "1" will only create run metadata
-dry_run = "0"
+dry_run = false
 
 # Import path to a compression method to use, if remote payload compression is required
 compression_import_path = ""
@@ -142,13 +142,13 @@ serializers = [
    # Input telemetry configurations. Inputs are dataframes and other objects passed to algorithm class from processors
    [telemetry.input]
      # Control whether algorithm inputs are recorded as telemetry
-     enabled = "1"
+     enabled = true
 
     # User telemetry configurations. User telemetry comes from custom classes provided by algorithm developers that extend UserTelemetry interface
     # User telemetry is often used for measure health, output quality and other data that is important for observing the runs in a live system
     [telemetry.user]
       # Control whether user telemetry recording is enabled
-      enabled = "1"
+      enabled = true
 
       # Provide a list of user telemetry classes to execute. If empty, all user telemetry will be recorded
       # THIS IS A RESERVATION FOR https://github.com/SneaksAndData/nexus-sdk-py/issues/126
@@ -159,11 +159,45 @@ serializers = [
     # Query Enabled Stores
     [services.query_enabled_store]
 
-    enabled = "1"
+    enabled = true
 
     # Connection strings for all supported QES instances
     store_connections = ["qes://engine=LOCAL;plaintext_credentials={};settings={}"]
 
+    [services.astra_client]
+
+    enabled = false
+
+    # Cassandra keyspace
+    keyspace = ""
+    # AstraDB ssl bundle
+    secure_connect_bundle_bytes = ""
+    # AstraDB role client id
+    client_id = ""
+    # AstraDB role client secret
+    client_secret = ""
+
+    [services.trino_client]
+    enabled = false
+
+    # Trino Coordinator hostname
+    host = ""
+
+    # Trino Basic Auth - User
+    username = ""
+
+    # Trino Basic Auth - pass
+    password = ""
+
+    [services.mlflow_client]
+    enabled = false
+
+    # Tracking server url
+    uri = ""
+    # Tracking server user
+    username = ""
+    # Tracking server password
+    password = ""
 # INPUTS - configuration for data read interfaces
 [inputs]
 
@@ -213,7 +247,7 @@ fixed_template_delimiter = ""
     [logging.datadog]
     # If enabled, remember to add PROTEUS__DD_API_KEY, PROTEUS__DD_APP_KEY and PROTEUS__DD_SITE to your environment
     # variables
-    enabled = "0"
+    enabled = false
     buffer_size = "1"
     debug = "False"
     max_flush_retry_time = "30"
@@ -248,7 +282,7 @@ spawn_base_delay_seconds = "1"
 
 # Enable or disable async spawn mode for forks
 # In async mode, forks are spawned without awaiting completion, allowing main run to proceed while forks are spawning.
-async_spawn_enabled = "0"
+async_spawn_enabled = false
 
 # Settings for FanOutAlgorithm runtime
 [fan_out]
@@ -258,5 +292,5 @@ spawn_base_delay_seconds = "1"
 
 # Enable or disable async spawn mode for child algorithm runs
 # In async mode,  child algorithm runs are spawned without awaiting completion.
-async_spawn_enabled = "0"
+async_spawn_enabled = false
 

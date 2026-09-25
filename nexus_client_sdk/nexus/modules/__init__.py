@@ -26,6 +26,6 @@ try:
 except ModuleNotFoundError:
     pass
 try:
-    from nexus_client_sdk.nexus.modules.trino_client_module import TrinoClientModule
+    from nexus_client_sdk.nexus.modules.trino_client_module import TrinoClientFactory
 except ModuleNotFoundError:
     pass
