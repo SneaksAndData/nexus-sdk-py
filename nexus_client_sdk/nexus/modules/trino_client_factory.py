@@ -31,6 +31,7 @@ class TrinoClientFactory:
 
     @classmethod
     def get_client(cls, model: NexusConfigurationModel) -> TrinoClient | None:
+        """Provision a Trino client instance."""
         if model.services.trino_client.enabled:
             return TrinoClient(
                 host=model.services.trino_client.host,

@@ -18,14 +18,14 @@
 """
 
 try:
-    from nexus_client_sdk.nexus.modules.mlflow_module import MlflowModule
+    from nexus_client_sdk.nexus.modules.mlflow_client_factory import MlflowClientFactory
 except ModuleNotFoundError:
     pass
 try:
-    from nexus_client_sdk.nexus.modules.astra_client_module import AstraClientModule
+    from nexus_client_sdk.nexus.modules.astra_client_factory import AstraClientFactory
 except ModuleNotFoundError:
     pass
 try:
-    from nexus_client_sdk.nexus.modules.trino_client_module import TrinoClientFactory
+    from nexus_client_sdk.nexus.modules.trino_client_factory import TrinoClientFactory
 except ModuleNotFoundError:
     pass
