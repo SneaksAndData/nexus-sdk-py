@@ -18,7 +18,10 @@
 """
 from typing import final
 
-from adapta.storage.database.v3.trino_sql import TrinoClient
+try:
+    from adapta.storage.database.v3.trino_sql import TrinoClient
+except ModuleNotFoundError:
+    pass
 
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 
@@ -30,7 +33,7 @@ class TrinoClientFactory:
     """
 
     @classmethod
-    def get_client(cls, model: NexusConfigurationModel) -> TrinoClient | None:
+    def get_client(cls, model: NexusConfigurationModel) -> "TrinoClient":
         """Provision a Trino client instance."""
         if model.services.trino_client.enabled:
             return TrinoClient(

@@ -31,9 +31,7 @@ from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer, ResultS
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader, SocketOverridePayload
-from nexus_client_sdk.nexus.modules import TrinoClientFactory, AstraClientFactory
-
-from nexus_client_sdk.nexus.modules.mlflow_client_factory import MlflowClientFactory
+from nexus_client_sdk.nexus.modules import TrinoClientFactory, AstraClientFactory, MlflowClientFactory
 from nexus_client_sdk.nexus.telemetry.payload_recorder import (
     PayloadTelemetry,
     FailedPayloadRecorder,

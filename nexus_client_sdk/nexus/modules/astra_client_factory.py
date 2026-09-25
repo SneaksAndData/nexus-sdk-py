@@ -19,7 +19,10 @@ Astra Client module that provides the astra client to the Nexus framework.
 
 from typing import final
 
-from adapta.storage.distributed_object_store.v3.datastax_astra import AstraClient
+try:
+    from adapta.storage.distributed_object_store.v3.datastax_astra import AstraClient
+except ModuleNotFoundError:
+    pass
 
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 
@@ -31,7 +34,7 @@ class AstraClientFactory:
     """
 
     @classmethod
-    def get_client(cls, model: NexusConfigurationModel) -> AstraClient | None:
+    def get_client(cls, model: NexusConfigurationModel) -> "AstraClient":
         """
         DI factory method.
         """

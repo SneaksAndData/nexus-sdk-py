@@ -19,7 +19,10 @@ MLFlow module that provides the MLFlow client to the Nexus framework.
 
 from typing import final
 
-from adapta.ml.mlflow import MlflowBasicClient
+try:
+    from adapta.ml.mlflow import MlflowBasicClient
+except ModuleNotFoundError:
+    pass
 
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 
@@ -31,7 +34,7 @@ class MlflowClientFactory:
     """
 
     @classmethod
-    def get_client(cls, model: NexusConfigurationModel) -> MlflowBasicClient | None:
+    def get_client(cls, model: NexusConfigurationModel) -> "MlflowBasicClient":
         """
         DI factory method.
         """
