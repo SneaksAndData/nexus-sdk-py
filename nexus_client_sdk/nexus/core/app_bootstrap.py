@@ -6,10 +6,7 @@ from typing import final, Callable
 from adapta.logs import LoggerInterface
 from adapta.metrics import MetricsProvider
 from adapta.metrics.providers.void_provider import VoidMetricsProvider
-from adapta.ml.mlflow import MlflowBasicClient
 from adapta.storage.blob.base import StorageClient
-from adapta.storage.database.v3.trino_sql import TrinoClient
-from adapta.storage.distributed_object_store.v3.datastax_astra import AstraClient
 from injector import Injector, Module, singleton
 
 from nexus_client_sdk.models.access_token import AccessToken
@@ -275,21 +272,37 @@ class NexusBootstrapper:
             to=CacheFactory.get_cache(bootstrap_model),
             scope=singleton,
         )
-        app_injector.binder.bind(
-            TrinoClient,
-            to=TrinoClientFactory.get_client(bootstrap_model),
-            scope=singleton,
-        )
-        app_injector.binder.bind(
-            AstraClient,
-            to=AstraClientFactory.get_client(bootstrap_model),
-            scope=singleton,
-        )
-        app_injector.binder.bind(
-            MlflowBasicClient,
-            to=MlflowClientFactory.get_client(bootstrap_model),
-            scope=singleton,
-        )
+        try:
+            from adapta.storage.database.v3.trino_sql import TrinoClient  # pylint: disable=C0415
+
+            app_injector.binder.bind(
+                TrinoClient,
+                to=TrinoClientFactory.get_client(bootstrap_model),
+                scope=singleton,
+            )
+        except ModuleNotFoundError:
+            pass
+
+        try:
+            from adapta.storage.distributed_object_store.v3.datastax_astra import AstraClient  # pylint: disable=C0415
+
+            app_injector.binder.bind(
+                AstraClient,
+                to=AstraClientFactory.get_client(bootstrap_model),
+                scope=singleton,
+            )
+        except ModuleNotFoundError:
+            pass
+        try:
+            from adapta.ml.mlflow import MlflowBasicClient  # pylint: disable=C0415
+
+            app_injector.binder.bind(
+                MlflowBasicClient,
+                to=MlflowClientFactory.get_client(bootstrap_model),
+                scope=singleton,
+            )
+        except ModuleNotFoundError:
+            pass
 
         # load additional services
         for additional_module in bootstrap_model.runtime.additional_modules:
