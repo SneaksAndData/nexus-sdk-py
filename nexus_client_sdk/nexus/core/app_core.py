@@ -325,11 +325,11 @@ class Nexus:
             metrics_provider = self._injector.get(MetricsProvider)
 
             async with telemetry_recorder as recorder:
-                if self._base_configuration.default.telemetry.input.enabled == "1":
+                if self._base_configuration.default.telemetry.input.enabled:
                     await recorder.record(run_id=self._run_args.request_id, **algorithm.inputs)
 
                 # only execute user telemetry if this run has succeeded
-                if ex is None and self._base_configuration.default.telemetry.user.enabled == "1":
+                if ex is None and self._base_configuration.default.telemetry.user.enabled:
                     on_complete_tasks = [
                         recorder.record_user_telemetry(
                             user_recorder=self._injector.get(on_complete_task_class),

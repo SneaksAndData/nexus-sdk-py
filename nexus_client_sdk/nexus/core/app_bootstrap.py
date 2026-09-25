@@ -31,6 +31,7 @@ from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer, ResultS
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader, SocketOverridePayload
+from nexus_client_sdk.nexus.modules import TrinoClientFactory, AstraClientFactory, MlflowClientFactory
 from nexus_client_sdk.nexus.telemetry.payload_recorder import (
     PayloadTelemetry,
     FailedPayloadRecorder,
@@ -269,6 +270,37 @@ class NexusBootstrapper:
             to=CacheFactory.get_cache(bootstrap_model),
             scope=singleton,
         )
+        try:
+            from adapta.storage.database.v3.trino_sql import TrinoClient  # pylint: disable=C0415
+
+            app_injector.binder.bind(
+                TrinoClient,
+                to=TrinoClientFactory.get_client(bootstrap_model),
+                scope=singleton,
+            )
+        except ModuleNotFoundError:
+            pass
+
+        try:
+            from adapta.storage.distributed_object_store.v3.datastax_astra import AstraClient  # pylint: disable=C0415
+
+            app_injector.binder.bind(
+                AstraClient,
+                to=AstraClientFactory.get_client(bootstrap_model),
+                scope=singleton,
+            )
+        except ModuleNotFoundError:
+            pass
+        try:
+            from adapta.ml.mlflow import MlflowBasicClient  # pylint: disable=C0415
+
+            app_injector.binder.bind(
+                MlflowBasicClient,
+                to=MlflowClientFactory.get_client(bootstrap_model),
+                scope=singleton,
+            )
+        except ModuleNotFoundError:
+            pass
 
         # load additional services
         for additional_module in bootstrap_model.runtime.additional_modules:

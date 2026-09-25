@@ -98,7 +98,7 @@ class FanOutAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
         return await self._spawn_remote_algorithms(
             run_result=run_result,
             remote_algorithms=child_algorithms,
-            async_spawn_enabled=self._configuration.fan_out.async_spawn_enabled == "1",
+            async_spawn_enabled=self._configuration.fan_out.async_spawn_enabled,
             spawn_base_delay_seconds=int(self._configuration.fan_out.spawn_base_delay_seconds),
             **kwargs,
         )

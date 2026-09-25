@@ -14,6 +14,12 @@ additional_modules = [
     "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
 ]
 
+# Settings for AstraClientModule
+[services.astra_client]
+
+# Enabled injection of AstraClientModule
+enabled = false
+
 # optional function that applies additional context to all logs emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
 log_enrichment_function = "tests.algorithms.minimalistic.minimalistic_telemetry.enrich_from_payload"
@@ -112,13 +118,13 @@ serializers = [
    # Input telemetry configurations. Inputs are dataframes and other objects passed to algorithm class from processors
    [telemetry.input]
      # Control whether algorithm inputs are recorded as telemetry
-     enabled = "1"
+     enabled = true
 
     # User telemetry configurations. User telemetry comes from custom classes provided by algorithm developers that extend UserTelemetry interface
     # User telemetry is often used for measure health, output quality and other data that is important for observing the runs in a live system
     [telemetry.user]
       # Control whether user telemetry recording is enabled
-      enabled = "1"
+      enabled = true
 
       # Provide a list of user telemetry classes to execute. If empty, all user telemetry will be recorded
       # THIS IS A RESERVATION FOR https://github.com/SneaksAndData/nexus-sdk-py/issues/126
@@ -141,12 +147,6 @@ serializers = [
 # default is empty list
 sockets = []
 
-    # Settings for AstraClientModule
-    [inputs.astra_client]
-
-    # Enabled injection of AstraClientModule
-    enabled = "0"
-
 # Framework-powered logging
 [logging]
 # Global template to apply to ALL log messages emitted by framework loggers. This setting conflicts with
@@ -163,7 +163,7 @@ fixed_template_delimiter = ""
     [logging.datadog]
     # If enabled, remember to add PROTEUS__DD_API_KEY, PROTEUS__DD_APP_KEY and PROTEUS__DD_SITE to your environment
     # variables
-    enabled = 0
+    enabled = false
     buffer_size = 1
     debug = "False"
     max_flush_retry_time = 30

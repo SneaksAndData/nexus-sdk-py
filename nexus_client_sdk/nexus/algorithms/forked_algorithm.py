@@ -156,7 +156,7 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
         return await self._spawn_remote_algorithms(
             run_result=run_result,
             remote_algorithms=forks,
-            async_spawn_enabled=self._configuration.forked_algorithm.async_spawn_enabled == "1",
+            async_spawn_enabled=self._configuration.forked_algorithm.async_spawn_enabled,
             spawn_base_delay_seconds=int(self._configuration.forked_algorithm.spawn_base_delay_seconds),
             **kwargs,
         )

@@ -51,7 +51,7 @@ class BootstrapLoggerFactory:
             SafeStreamHandler(stream=sys.stdout),
         ]
         self._default_log_level = config.default.logging.log_level
-        if config.default.logging.datadog.enabled == "1":
+        if config.default.logging.datadog.enabled:
             self._log_handlers.append(
                 DataDogApiHandler(
                     buffer_size=int(config.default.logging.datadog.buffer_size),
@@ -99,7 +99,7 @@ class LoggerFactory:
         ]
         self._default_log_level = config.default.logging.log_level
 
-        if config.default.logging.datadog.enabled == "1":
+        if config.default.logging.datadog.enabled:
             self._log_handlers.append(
                 DataDogApiHandler(
                     buffer_size=int(config.default.logging.datadog.buffer_size),

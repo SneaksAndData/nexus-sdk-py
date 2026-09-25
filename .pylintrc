@@ -11,4 +11,5 @@ max-args = 15
 min-similarity-lines = 20
 max-locals = 25
 max-statements = 100
+max-branches=20
 

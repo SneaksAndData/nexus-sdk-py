@@ -14,34 +14,36 @@
 #
 
 """
- Trino Client module that provides the trino client to the Nexus framework.
+MLFlow module that provides the MLFlow client to the Nexus framework.
 """
+
 from typing import final
 
-from adapta.storage.database.v3.trino_sql import TrinoClient
-from injector import Module, singleton, provider
+try:
+    from adapta.ml.mlflow import MlflowBasicClient
+except ModuleNotFoundError:
+    pass
 
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 
 
 @final
-class TrinoClientModule(Module):
+class MlflowClientFactory:
     """
-    Trino Client module.
+    MLFlow module.
     """
 
-    @singleton
-    @provider
-    def provide(self, model: NexusRuntimeConfiguration) -> TrinoClient:
+    @classmethod
+    def get_client(cls, model: NexusConfigurationModel) -> "MlflowBasicClient":
         """
         DI factory method.
         """
 
-        if model.default.inputs.trino_client.enabled == "1":
-            return TrinoClient(
-                host=model.default.inputs.trino_client.host,
-                username=model.default.inputs.trino_client.username,
-                password=model.default.inputs.trino_client.password,
+        if model.services.mlflow_client.enabled:
+            return MlflowBasicClient.from_static_credentials(
+                tracking_server_uri=model.services.mlflow_client.uri,
+                username=model.services.mlflow_client.username,
+                password=model.services.mlflow_client.password,
             )
 
         return None

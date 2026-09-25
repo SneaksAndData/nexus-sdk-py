@@ -19,32 +19,33 @@ Astra Client module that provides the astra client to the Nexus framework.
 
 from typing import final
 
-from adapta.storage.distributed_object_store.v3.datastax_astra import AstraClient
-from injector import Module, singleton, provider
+try:
+    from adapta.storage.distributed_object_store.v3.datastax_astra import AstraClient
+except ModuleNotFoundError:
+    pass
 
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 
 
 @final
-class AstraClientModule(Module):
+class AstraClientFactory:
     """
     Astra Client module.
     """
 
-    @singleton
-    @provider
-    def provide(self, model: NexusRuntimeConfiguration) -> AstraClient:
+    @classmethod
+    def get_client(cls, model: NexusConfigurationModel) -> "AstraClient":
         """
         DI factory method.
         """
 
-        if model.default.inputs.astra_client.enabled == "1":
+        if model.services.astra_client.enabled:
             return AstraClient(
-                client_name=model.default.algorithm_name,
-                keyspace=model.default.inputs.astra_client.keyspace,
-                secure_connect_bundle_bytes=model.default.inputs.astra_client.bundle,
-                client_id=model.default.inputs.astra_client.client_id,
-                client_secret=model.default.inputs.astra_client.client_secret,
+                client_name=model.algorithm_name,
+                keyspace=model.services.astra_client.keyspace,
+                secure_connect_bundle_bytes=model.services.astra_client.secure_connect_bundle_bytes,
+                client_id=model.services.astra_client.client_id,
+                client_secret=model.services.astra_client.client_secret,
             )
 
         return None
