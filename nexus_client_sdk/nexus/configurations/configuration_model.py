@@ -106,6 +106,7 @@ class TrinoClientSettings:
     username: str
     password: str
 
+
 @dataclass
 class AstraClientSettings:
     """Astra Client configuration settings."""
@@ -116,6 +117,7 @@ class AstraClientSettings:
     client_id: str
     client_secret: str
 
+
 @dataclass
 class MlflowClientSettings:
     """Mlflow Client configuration settings."""
@@ -124,6 +126,7 @@ class MlflowClientSettings:
     uri: str
     username: str
     password: str
+
 
 @dataclass
 class AdditionalServicesSettings:
