@@ -183,7 +183,7 @@ class Nexus:
                 serialization_format=serializer.get_serialization_format(result_),
                 overwrite=True,
             )
-            return storage_client.get_blob_uri(blob_path=blob_path)
+            return storage_client.get_blob_uri(blob_path=blob_path, expires_in_seconds=86400)
 
         receiver = self._injector.get(NexusReceiverAsyncClient)
         metrics_provider = self._injector.get(MetricsProvider)
