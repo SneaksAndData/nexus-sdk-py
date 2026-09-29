@@ -3,23 +3,28 @@ run-name: Release CPython wheels from ${{github.ref_name}} by @${{ github.actor 
 
 on: workflow_dispatch
 
+permissions: {}
+
 jobs:
   macos:
     name: Create a MacOS Release
     runs-on: macos-latest
     if: startsWith(github.ref, 'refs/tags')
+    permissions:
+      contents: write # upload release assets
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
 
       - name: Get project version
-        uses: SneaksAndData/github-actions/generate_version@v0.1.11
+        uses: SneaksAndData/github-actions/generate_version@6c8187f0d8c167a9410a76bed2e98409449ed495 # v0.1.11
         id: version
 
       - name: Install, Configure Poetry and Build
@@ -64,18 +69,21 @@ jobs:
     name: Create ARM64 Release
     runs-on: ubuntu-24.04-arm
     if: startsWith(github.ref, 'refs/tags')
+    permissions:
+      contents: write # upload release assets
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
 
       - name: Get project version
-        uses: SneaksAndData/github-actions/generate_version@v0.1.11
+        uses: SneaksAndData/github-actions/generate_version@6c8187f0d8c167a9410a76bed2e98409449ed495 # v0.1.11
         id: version
 
       - name: Install, Configure Poetry and Build
@@ -118,19 +126,22 @@ jobs:
     name: Create AMD64 Release
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags')
+    permissions:
+      contents: write # upload release assets
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
           architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
 
       - name: Get project version
-        uses: SneaksAndData/github-actions/generate_version@v0.1.11
+        uses: SneaksAndData/github-actions/generate_version@6c8187f0d8c167a9410a76bed2e98409449ed495 # v0.1.11
         id: version
 
       - name: Install, Configure Poetry and Build

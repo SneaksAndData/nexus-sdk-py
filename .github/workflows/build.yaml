@@ -6,26 +6,29 @@ on:
   pull_request:
     branches: [ main ]
 
-permissions:
-  pull-requests: write
-  contents: read
+permissions: {}
 
 jobs:
   validate_commit_py311:
-    name: Validate commit on Python 3.11
+    name: Validate commit
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write      # required for dependabot PRs
+      pull-requests: write # required for dependabot PRs; coverage PR comment
+      contents: read       # required for dependabot PRs
     if: ${{ github.ref != 'refs/heads/main' }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v4
+          persist-credentials: false
+      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
           python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
           #architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
 
       - name: Setup just
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3.1.0
 
       - name: Setup integration tests
         run: just up
@@ -40,7 +43,7 @@ jobs:
           mkdir cext && tar -xvzf nexus_sdk_linux_amd64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_amd64.so nexus_client_sdk/.extensions/nexus_sdk.so   
 
       - name: Install Poetry and dependencies
-        uses: SneaksAndData/github-actions/install_poetry@v0.1.11
+        uses: SneaksAndData/github-actions/install_poetry@6c8187f0d8c167a9410a76bed2e98409449ed495 # v0.1.11
         with:
           install_extras: all
 
@@ -60,7 +63,7 @@ jobs:
           kubectl describe pods --namespace default || true
 
       - name: Publish Code Coverage
-        uses: MishaKav/pytest-coverage-comment@main
+        uses: MishaKav/pytest-coverage-comment@432ac90e8d345c93e1d90ee0838b35913abc9c9b # v1.12.2
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./junit/test-results.xml
