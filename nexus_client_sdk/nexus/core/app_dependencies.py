@@ -93,7 +93,12 @@ class ResultSerializerFactory:
         """
         serializer = ResultSerializer()
         for serializer_class in model.result.serializers:
-            serializer = serializer.with_format(locate(serializer_class))
+            try:
+                serializer = serializer.with_format(locate(serializer_class))
+            except Exception as e:
+                raise FatalStartupConfigurationError(
+                    f"Serializer class {serializer_class}  cannot be created for result, serializer missing or invalid. Review the underlying exception."
+                ) from e
 
         return serializer
 
@@ -111,7 +116,12 @@ class TelemetrySerializerFactory:
         """
         serializer = TelemetrySerializer()
         for serializer_class in model.telemetry.serializers:
-            serializer = serializer.with_format(locate(serializer_class))
+            try:
+                serializer = serializer.with_format(locate(serializer_class))
+            except Exception as e:
+                raise FatalStartupConfigurationError(
+                    f"Serializer class {serializer_class} cannot be created for telemetry, serializer missing or invalid. Review the underlying exception."
+                ) from e
 
         return serializer
 
