@@ -22,13 +22,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
           #architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
 
       - name: Setup just
-        uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3.1.0
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
 
       - name: Setup integration tests
         run: just up
@@ -43,7 +43,7 @@ jobs:
           mkdir cext && tar -xvzf nexus_sdk_linux_amd64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_amd64.so nexus_client_sdk/.extensions/nexus_sdk.so   
 
       - name: Install Poetry and dependencies
-        uses: SneaksAndData/github-actions/install_poetry@6c8187f0d8c167a9410a76bed2e98409449ed495 # v0.1.11
+        uses: SneaksAndData/github-actions/install_poetry@e3f4ea513c548adf4e774364872966d0d4a3d2fe # v0.1.12
         with:
           install_extras: all
 

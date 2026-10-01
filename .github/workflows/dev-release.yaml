@@ -14,7 +14,7 @@ jobs:
       pull-requests: write # create_package posts a comment with the package version
     if: ${{ github.event.issue.pull_request && github.event.comment.body == 'create_package' && github.event.issue.state == 'open' }}
     steps:
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.11.x'
           architecture: 'x64'
@@ -24,11 +24,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Install Poetry and dependencies
-        uses: SneaksAndData/github-actions/install_poetry@6c8187f0d8c167a9410a76bed2e98409449ed495 # v0.1.11
+        uses: SneaksAndData/github-actions/install_poetry@e3f4ea513c548adf4e774364872966d0d4a3d2fe # v0.1.12
         with:
           skip_dependencies: true
       - name: Create package
-        uses: SneaksAndData/github-actions/create_package@6c8187f0d8c167a9410a76bed2e98409449ed495 # v0.1.11
+        uses: SneaksAndData/github-actions/create_package@e3f4ea513c548adf4e774364872966d0d4a3d2fe # v0.1.12
         with:
           public_package_index_token: ${{ secrets.PYPI_API_TOKEN }}
           package_name: nexus-sdk
