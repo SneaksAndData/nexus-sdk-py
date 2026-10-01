@@ -2,27 +2,33 @@ name: Create development package
 
 on: issue_comment
 
+permissions: {}
+
 jobs:
   pr_commented:
     # This job only runs for pull request comments
     name: PR comment
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # create_package posts a comment with the package version
     if: ${{ github.event.issue.pull_request && github.event.comment.body == 'create_package' && github.event.issue.state == 'open' }}
     steps:
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.11.x'
           architecture: 'x64'
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/pull/${{github.event.issue.number}}/merge
           fetch-depth: 0
+          persist-credentials: false
       - name: Install Poetry and dependencies
-        uses: SneaksAndData/github-actions/install_poetry@v0.1.11
+        uses: SneaksAndData/github-actions/install_poetry@6c8187f0d8c167a9410a76bed2e98409449ed495 # v0.1.11
         with:
           skip_dependencies: true
       - name: Create package
-        uses: SneaksAndData/github-actions/create_package@v0.1.11
+        uses: SneaksAndData/github-actions/create_package@6c8187f0d8c167a9410a76bed2e98409449ed495 # v0.1.11
         with:
           public_package_index_token: ${{ secrets.PYPI_API_TOKEN }}
           package_name: nexus-sdk
