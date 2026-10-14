@@ -1,0 +1,10 @@
+dynaconf_merge = true
+
+[extra_parameters]
+parameter_x = 1
+parameter_y = "test"
+
+[runtime.payload]
+
+# payload type supported by this algorithm
+type_name = "tests.algorithms.testalgorithm.testalgorithm_inputs.TestAlgorithmPayload"
