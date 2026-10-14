@@ -65,8 +65,8 @@ class NexusBootstrapper:
         ]
         self._run_args = run_args
         # payload processing
-        self._payload_type: type[AlgorithmPayload]
-        self._bootstrap_payload_type: type[AlgorithmPayload]
+        self._payload_type: type[AlgorithmPayload] | None = None
+        self._bootstrap_payload_type: type[AlgorithmPayload] | None = None
 
         # observability
         self._log_enricher: Callable[
@@ -321,6 +321,9 @@ class NexusBootstrapper:
 
         socket_collection = SocketCollection.from_config(bootstrap_model)
 
+        if self._bootstrap_payload_type is None and bootstrap_model.runtime.payload.bootstrap_type_name:
+            self._bootstrap_payload_type = self._load_payload_type(bootstrap_model.runtime.payload.bootstrap_type_name)
+
         # if bootstrap payload type is provided, read and cache content for morph
         # if no bootstrap, proceed to reading dedicated type
         payload, payload_reader = (
@@ -351,6 +354,7 @@ class NexusBootstrapper:
         # at this point runtime configuration is fully resolved, which includes payload type overrides
         # if bootstrap payload type is provided, morph it into the target type that should now be available
         if self._bootstrap_payload_type:
+            bootstrap_model = NexusConfigurationModel.from_runtime_configuration(self._bootstrap_config)
             self._payload_type = self._load_payload_type(bootstrap_model.runtime.payload.type_name)
             payload = payload_reader.morph(self._payload_type)
 

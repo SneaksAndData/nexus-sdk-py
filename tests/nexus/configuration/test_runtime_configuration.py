@@ -58,6 +58,7 @@ def _check_base_model(model_instance: NexusConfigurationModel) -> None:
 
     assert isinstance(model_instance.runtime, RuntimeSettings)
     assert isinstance(model_instance.runtime.algorithm, str)
+    assert isinstance(model_instance.runtime.payload.bootstrap_type_name, str)
 
 
 def test_runtime_configuration() -> None:
