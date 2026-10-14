@@ -166,7 +166,9 @@ async def test__algorithm_payload_reader__morph_success():
     mock_session = MagicMock()
     mock_session.get.return_value = mock_response
 
-    reader = AlgorithmPayloadReader(payload_uri="http://mock.uri/payload.json", payload_type=SimpleTestPayload, save_content=True)
+    reader = AlgorithmPayloadReader(
+        payload_uri="http://mock.uri/payload.json", payload_type=SimpleTestPayload, save_content=True
+    )
     reader._http = mock_session
 
     async with reader as payload_reader:
@@ -187,7 +189,9 @@ async def test__algorithm_payload_reader__morph_without_saved_content():
     mock_session = MagicMock()
     mock_session.get.return_value = mock_response
 
-    reader = AlgorithmPayloadReader(payload_uri="http://mock.uri/payload.json", payload_type=SimpleTestPayload, save_content=False)
+    reader = AlgorithmPayloadReader(
+        payload_uri="http://mock.uri/payload.json", payload_type=SimpleTestPayload, save_content=False
+    )
     reader._http = mock_session
 
     async with reader as payload_reader:
@@ -195,4 +199,3 @@ async def test__algorithm_payload_reader__morph_without_saved_content():
 
     assert morphed is None
     assert isinstance(payload_reader.read_exception, FatalStartupConfigurationError)
-

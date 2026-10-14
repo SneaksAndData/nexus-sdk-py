@@ -53,10 +53,12 @@ async def test_bootstrap_payload_resolves_algorithm_and_morphs(
 
     config = NexusRuntimeConfiguration()
     config.load()
-    config.default["RUNTIME"]["PAYLOAD"]["BOOTSTRAP_TYPE_NAME"] = f"{BootstrapPayload.__module__}.{BootstrapPayload.__name__}"
-    config.default["RUNTIME"]["PAYLOAD"]["TYPE_NAME"] = (
-        "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
-    )
+    config.default["RUNTIME"]["PAYLOAD"][
+        "BOOTSTRAP_TYPE_NAME"
+    ] = f"{BootstrapPayload.__module__}.{BootstrapPayload.__name__}"
+    config.default["RUNTIME"]["PAYLOAD"][
+        "TYPE_NAME"
+    ] = "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
 
     args = NexusDefaultArguments(sas_uri="http://mock.uri/payload.json", request_id="test-req-1")
     bootstrapper = NexusBootstrapper(run_args=args, bootstrap_config=config)
@@ -114,10 +116,12 @@ async def test_bootstrap_payload_morph_failure_raises_startup_error(
 
     config = NexusRuntimeConfiguration()
     config.load()
-    config.default["RUNTIME"]["PAYLOAD"]["BOOTSTRAP_TYPE_NAME"] = f"{BootstrapPayload.__module__}.{BootstrapPayload.__name__}"
-    config.default["RUNTIME"]["PAYLOAD"]["TYPE_NAME"] = (
-        "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
-    )
+    config.default["RUNTIME"]["PAYLOAD"][
+        "BOOTSTRAP_TYPE_NAME"
+    ] = f"{BootstrapPayload.__module__}.{BootstrapPayload.__name__}"
+    config.default["RUNTIME"]["PAYLOAD"][
+        "TYPE_NAME"
+    ] = "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
 
     args = NexusDefaultArguments(sas_uri="http://mock.uri/payload.json", request_id="test-req-2")
     bootstrapper = NexusBootstrapper(run_args=args, bootstrap_config=config)
@@ -153,10 +157,12 @@ async def test_bootstrap_payload_parse_failure_raises_startup_error(
 
     config = NexusRuntimeConfiguration()
     config.load()
-    config.default["RUNTIME"]["PAYLOAD"]["BOOTSTRAP_TYPE_NAME"] = f"{BootstrapPayload.__module__}.{BootstrapPayload.__name__}"
-    config.default["RUNTIME"]["PAYLOAD"]["TYPE_NAME"] = (
-        "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
-    )
+    config.default["RUNTIME"]["PAYLOAD"][
+        "BOOTSTRAP_TYPE_NAME"
+    ] = f"{BootstrapPayload.__module__}.{BootstrapPayload.__name__}"
+    config.default["RUNTIME"]["PAYLOAD"][
+        "TYPE_NAME"
+    ] = "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
 
     args = NexusDefaultArguments(sas_uri="http://mock.uri/payload.json", request_id="test-req-3")
     bootstrapper = NexusBootstrapper(run_args=args, bootstrap_config=config)
@@ -200,9 +206,9 @@ async def test_bootstrap_payload_type_direct_property_assignment(
 
     config = NexusRuntimeConfiguration()
     config.load()
-    config.default["RUNTIME"]["PAYLOAD"]["TYPE_NAME"] = (
-        "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
-    )
+    config.default["RUNTIME"]["PAYLOAD"][
+        "TYPE_NAME"
+    ] = "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
 
     args = NexusDefaultArguments(sas_uri="http://mock.uri/payload.json", request_id="test-req-4")
     bootstrapper = NexusBootstrapper(run_args=args, bootstrap_config=config)
