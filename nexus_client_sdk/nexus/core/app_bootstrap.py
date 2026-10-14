@@ -65,7 +65,8 @@ class NexusBootstrapper:
         ]
         self._run_args = run_args
         # payload processing
-        self._payload_type = type[AlgorithmPayload]
+        self._payload_type: type[AlgorithmPayload]
+        self._bootstrap_payload_type: type[AlgorithmPayload]
 
         # observability
         self._log_enricher: Callable[
@@ -133,18 +134,16 @@ class NexusBootstrapper:
         """
         self._algorithm_resolver = resolver
 
-    def _load_payload_type(self, config_model: NexusConfigurationModel) -> None:
-        if not config_model.runtime.payload.type_name:
+    def _load_payload_type(self, type_name: str) -> type[AlgorithmPayload]:
+        if not type_name:
             raise FatalStartupConfigurationError(
-                "No payload type specified - please supply the value in [runtime.payload.type]"
+                "No payload type specified - please supply the value in [runtime.payload.type_name]"
             )
 
-        payload_class: type[AlgorithmPayload] = locate(config_model.runtime.payload.type_name)
+        payload_class: type[AlgorithmPayload] = locate(type_name)
         if payload_class is None:
-            raise FatalStartupConfigurationError(
-                f"Failed to locate required payload type: {config_model.runtime.payload.type_name}"
-            )
-        self._payload_type = payload_class
+            raise FatalStartupConfigurationError(f"Failed to locate required payload type: {type_name}")
+        return payload_class
 
     def _load_log_enricher(self, config_model: NexusConfigurationModel):
         if config_model.runtime.log_enrichment_function:
@@ -181,10 +180,6 @@ class NexusBootstrapper:
         self._bootstrap_config.load_config_extension(algorithm_class.alias())
         if config_model is not None:
             self._configuration_model = locate(config_model)
-
-    def _load_configured_algorithm(self, config_model: NexusConfigurationModel):
-        if config_model.runtime.algorithm:
-            self._load_algorithm(config_model.runtime.algorithm, None)
 
     def _get_bootstrap_recorder(
         self, logger_factory: LoggerFactory, model: NexusConfigurationModel, injector: Injector
@@ -238,7 +233,9 @@ class NexusBootstrapper:
         :return:
         """
         app_injector = Injector()
-        bootstrap_model = NexusConfigurationModel.from_runtime_configuration(self._bootstrap_config)
+        bootstrap_model: NexusConfigurationModel = NexusConfigurationModel.from_runtime_configuration(
+            self._bootstrap_config
+        )
 
         # load always available services
         for bound_module in self._injection_binds:
@@ -314,11 +311,9 @@ class NexusBootstrapper:
                     f"Failed to activate required module module: {additional_module}"
                 ) from error
 
-        self._load_payload_type(bootstrap_model)
         self._load_log_enricher(bootstrap_model)
         self._load_log_tagger(bootstrap_model)
         self._load_metric_tagger(bootstrap_model)
-        self._load_configured_algorithm(bootstrap_model)
 
         logger_fixed_template = {}
         logger_tags = {}
@@ -326,16 +321,43 @@ class NexusBootstrapper:
 
         socket_collection = SocketCollection.from_config(bootstrap_model)
 
-        payload, payload_reader = await self._get_payload(
-            payload_type=self._payload_type,
-            save_content=bootstrap_model.runtime.payload.serialization_mode != _PayloadSerializationMode.OFF.value,
+        # if bootstrap payload type is provided, read and cache content for morph
+        # if no bootstrap, proceed to reading dedicated type
+        payload, payload_reader = (
+            await self._get_payload(
+                payload_type=self._bootstrap_payload_type,
+                save_content=True,
+            )
+            if self._bootstrap_payload_type
+            else await self._get_payload(
+                payload_type=self._load_payload_type(bootstrap_model.runtime.payload.type_name),
+                save_content=bootstrap_model.runtime.payload.serialization_mode != _PayloadSerializationMode.OFF.value,
+            )
         )
 
         # always report payload parsing failures
         if payload_reader.read_exception is not None or payload is None:
             raise FatalStartupConfigurationError(
-                f"Unable to parse payload from {self._run_args.sas_uri} into {str(self._payload_type.__name__)}"
+                f"Unable to parse bootstrap payload from {self._run_args.sas_uri} into {str(self._bootstrap_payload_type.__name__ if self._bootstrap_payload_type else self._payload_type.__name__)}"
             ) from payload_reader.read_exception
+
+        # if resolver is defined, load class using resolve and either bootstrap or static payload type
+        if self._algorithm_resolver:
+            self._load_algorithm(*self._algorithm_resolver(payload))
+        # load class directly from config
+        else:
+            self._load_algorithm(bootstrap_model.runtime.algorithm, None)
+
+        # at this point runtime configuration is fully resolved, which includes payload type overrides
+        # if bootstrap payload type is provided, morph it into the target type that should now be available
+        if self._bootstrap_payload_type:
+            self._payload_type = self._load_payload_type(bootstrap_model.runtime.payload.type_name)
+            payload = payload_reader.morph(self._payload_type)
+
+            if payload is None:
+                raise FatalStartupConfigurationError(
+                    f"Failed to morph bootstrap payload of class {self._bootstrap_payload_type.__name__} into runtime payload of class {self._payload_type.__name__}"
+                ) from payload_reader.read_exception
 
         app_injector.binder.bind(payload.__class__, to=payload, scope=singleton)
         logger_fixed_template |= (
@@ -343,9 +365,6 @@ class NexusBootstrapper:
         )
         logger_tags |= self._log_tagger(payload, bootstrap_model, self._run_args) if self._log_tagger else {}
         metric_tags |= self._metric_tagger(payload, bootstrap_model, self._run_args) if self._metric_tagger else {}
-
-        if self._algorithm_resolver:
-            self._load_algorithm(*self._algorithm_resolver(payload))
 
         if isinstance(payload, SocketOverridePayload):
             socket_collection = socket_collection.with_inputs(payload.input_sockets or []).with_outputs(

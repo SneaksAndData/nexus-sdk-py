@@ -123,6 +123,18 @@ class AlgorithmPayloadReader:
         except BaseException as error:  # pylint: disable=broad-except
             self._read_exc = error
 
+    def morph(self, target_type: type[AlgorithmPayload]) -> AlgorithmPayload | None:
+        """Morph payload into a new type, using cached JSON string"""
+        try:
+            if self._payload_str is None:
+                raise FatalStartupConfigurationError(
+                    "Cannot morph payload into target type - bootstrap payload not cached. Please call reader with save_content = True"
+                )
+
+            return target_type.from_json(self._payload_str)
+        except BaseException as error:  # pylint: disable=broad-except
+            self._read_exc = error
+
     def __init__(self, payload_uri: str, payload_type: type[AlgorithmPayload], save_content: bool):
         self._http = session_with_retries()
         self._save_content = save_content
