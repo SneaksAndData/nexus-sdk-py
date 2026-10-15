@@ -6,7 +6,7 @@ c2 = "def"
 [runtime.payload]
 
 # bootstrap payload type to parse initial payload before algorithm resolution
-bootstrap_type_name = "tests.algorithms.testalgorithm.testalgorithm_inputs.BootstrapAlgorithmPayload"
+bootstrap_type_name = "tests.algorithms.minimalistic_bootstrap_payload.minimalistic_bootstrap_payload_inputs.BootstrapAlgorithmPayload"
 
 [services]
     [services.query_enabled_store]

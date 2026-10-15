@@ -8,9 +8,11 @@ from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
 from tests.algorithms.shared import (
     TestResult,
 )
-from tests.algorithms.testalgorithm.testalgorithm_configuration import TestAlgorithmConfiguration
-from tests.algorithms.testalgorithm.testalgorithm_inputs import (
-    TestAlgorithmPayload,
+from tests.algorithms.minimalistic_bootstrap_payload.minimalistic_bootstrap_payload_configuration import (
+    TestMinimalisticBootstrapPayloadAlgorithmConfiguration,
+)
+from tests.algorithms.minimalistic_bootstrap_payload.minimalistic_bootstrap_payload_inputs import (
+    TestMinimalisticBootstrapPayloadAlgorithmPayload,
     ZProcessor,
     XYProcessor,
     ZZProcessor,
@@ -18,10 +20,15 @@ from tests.algorithms.testalgorithm.testalgorithm_inputs import (
 
 
 @singleton
-class TestAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload, TestAlgorithmConfiguration]):
+class TestMinimalisticBootstrapPayloadAlgorithm(
+    MinimalisticAlgorithm[
+        TestMinimalisticBootstrapPayloadAlgorithmPayload,
+        TestMinimalisticBootstrapPayloadAlgorithmConfiguration,
+    ]
+):
     @classmethod
     def alias(cls) -> str:
-        return "testalgorithm"
+        return "minimalistic_bootstrap_payload"
 
     async def _context_open(self):
         pass
@@ -38,7 +45,7 @@ class TestAlgorithm(MinimalisticAlgorithm[TestAlgorithmPayload, TestAlgorithmCon
         z_processor: ZProcessor,
         zz_processor: ZZProcessor,
         cache: InputCache,
-        configuration: TestAlgorithmConfiguration,
+        configuration: TestMinimalisticBootstrapPayloadAlgorithmConfiguration,
     ):
         super().__init__(
             metrics_provider,

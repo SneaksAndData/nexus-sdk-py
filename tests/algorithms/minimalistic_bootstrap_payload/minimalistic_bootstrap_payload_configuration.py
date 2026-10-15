@@ -5,7 +5,7 @@ from tests.algorithms.minimalistic.minimalistic_configuration import TestExtraPa
 
 
 @dataclass
-class TestAlgorithmConfiguration(NexusConfigurationModel):
+class TestMinimalisticBootstrapPayloadAlgorithmConfiguration(NexusConfigurationModel):
     c1: str
     c2: str
     extra_parameters: TestExtraParameters

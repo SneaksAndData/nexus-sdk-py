@@ -12,26 +12,34 @@ from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
     UserTelemetryPathSegment,
 )
 from tests.algorithms.shared import TestResult
-from tests.algorithms.testalgorithm.testalgorithm_configuration import TestAlgorithmConfiguration
-from tests.algorithms.testalgorithm.testalgorithm_inputs import TestAlgorithmPayload
+from tests.algorithms.minimalistic_bootstrap_payload.minimalistic_bootstrap_payload_configuration import (
+    TestMinimalisticBootstrapPayloadAlgorithmConfiguration,
+)
+from tests.algorithms.minimalistic_bootstrap_payload.minimalistic_bootstrap_payload_inputs import (
+    TestMinimalisticBootstrapPayloadAlgorithmPayload,
+)
 
 
 @singleton
-class TestAlgorithmTelemetry(UserTelemetryRecorder):
+class TestMinimalisticBootstrapPayloadTelemetry(UserTelemetryRecorder):
     @inject
     def __init__(
         self,
-        algorithm_payload: TestAlgorithmPayload,
+        algorithm_payload: TestMinimalisticBootstrapPayloadAlgorithmPayload,
         metrics_provider: MetricsProvider,
         logger_factory: LoggerFactory,
         storage_client: StorageClient,
         serializer: TelemetrySerializer,
-        configuration: TestAlgorithmConfiguration,
+        configuration: TestMinimalisticBootstrapPayloadAlgorithmConfiguration,
     ):
         super().__init__(algorithm_payload, metrics_provider, logger_factory, storage_client, serializer, configuration)
 
     async def _compute(
-        self, algorithm_payload: TestAlgorithmPayload, algorithm_result: TestResult, run_id: str, **inputs: TTelemetry
+        self,
+        algorithm_payload: TestMinimalisticBootstrapPayloadAlgorithmPayload,
+        algorithm_result: TestResult,
+        run_id: str,
+        **inputs: TTelemetry
     ) -> UserTelemetry:
         return UserTelemetry(
             iter(
