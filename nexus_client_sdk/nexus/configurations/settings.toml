@@ -35,6 +35,9 @@ metric_tagging_function = ""
 # payload type supported by this Nexus application.
 type_name = ""
 
+# optional bootstrap payload type to parse initial payload before algorithm resolution
+bootstrap_type_name = ""
+
 # optional raw payload serialization for later analysis
 # you can serialize payload via user telemetry, however that won't catch failed payloads
 # for production scenarios recommended setup is to pair this setting with `on_failure` and

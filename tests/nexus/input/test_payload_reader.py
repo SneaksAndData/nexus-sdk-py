@@ -9,6 +9,7 @@ import gzip
 import zlib
 import bz2
 
+from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader, CompressedPayload
 
 
@@ -147,3 +148,54 @@ async def test__algorithm_payload_reader__general(
     # Verify that the mock HTTP client was called as expected
     mock_session.get.assert_called_once_with(url=dummy_uri)
     mock_response.raise_for_status.assert_called_once()
+
+
+@dataclass
+class MorphedTargetPayload(AlgorithmPayload):
+    """Target payload for morph testing."""
+
+    test_id: str
+    item_count: int
+
+
+@pytest.mark.asyncio
+async def test__algorithm_payload_reader__morph_success():
+    mock_response = MagicMock()
+    mock_response.content = uncompressed_json_bytes
+
+    mock_session = MagicMock()
+    mock_session.get.return_value = mock_response
+
+    reader = AlgorithmPayloadReader(
+        payload_uri="http://mock.uri/payload.json", payload_type=SimpleTestPayload, save_content=True
+    )
+    reader._http = mock_session
+
+    async with reader as payload_reader:
+        assert isinstance(payload_reader.payload, SimpleTestPayload)
+        morphed = payload_reader.morph(MorphedTargetPayload)
+
+    assert morphed is not None
+    assert isinstance(morphed, MorphedTargetPayload)
+    assert morphed.test_id == "test_123"
+    assert morphed.item_count == 42
+
+
+@pytest.mark.asyncio
+async def test__algorithm_payload_reader__morph_without_saved_content():
+    mock_response = MagicMock()
+    mock_response.content = uncompressed_json_bytes
+
+    mock_session = MagicMock()
+    mock_session.get.return_value = mock_response
+
+    reader = AlgorithmPayloadReader(
+        payload_uri="http://mock.uri/payload.json", payload_type=SimpleTestPayload, save_content=False
+    )
+    reader._http = mock_session
+
+    async with reader as payload_reader:
+        morphed = payload_reader.morph(MorphedTargetPayload)
+
+    assert morphed is None
+    assert isinstance(payload_reader.read_exception, FatalStartupConfigurationError)

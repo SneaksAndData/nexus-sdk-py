@@ -78,6 +78,7 @@ class RuntimePayloadSettings:
     """Runtime payload configuration settings."""
 
     type_name: str
+    bootstrap_type_name: str
     serialization_mode: str
 
 
