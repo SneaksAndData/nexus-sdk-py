@@ -180,6 +180,8 @@ class NexusBootstrapper:
         self._bootstrap_config.load_config_extension(algorithm_class.alias())
         if config_model is not None:
             self._configuration_model = locate(config_model)
+            if self._configuration_model is None:
+                raise FatalStartupConfigurationError(f"Failed to locate a provided configuration model: {config_model}")
 
     def _get_bootstrap_recorder(
         self, logger_factory: LoggerFactory, model: NexusConfigurationModel, injector: Injector
