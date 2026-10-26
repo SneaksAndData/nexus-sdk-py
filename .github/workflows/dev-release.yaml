@@ -24,11 +24,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Install Poetry and dependencies
-        uses: SneaksAndData/github-actions/install_poetry@e3f4ea513c548adf4e774364872966d0d4a3d2fe # v0.1.12
+        uses: SneaksAndData/github-actions/install_poetry@42d1e71a9297cc52e824d9405604073a1da7a5cf # v0.1.13
         with:
           skip_dependencies: true
       - name: Create package
-        uses: SneaksAndData/github-actions/create_package@e3f4ea513c548adf4e774364872966d0d4a3d2fe # v0.1.12
+        uses: SneaksAndData/github-actions/create_package@42d1e71a9297cc52e824d9405604073a1da7a5cf # v0.1.13
         with:
           public_package_index_token: ${{ secrets.PYPI_API_TOKEN }}
           package_name: nexus-sdk
