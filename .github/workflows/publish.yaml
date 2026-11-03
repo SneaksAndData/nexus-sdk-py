@@ -46,7 +46,4 @@ jobs:
           ls -la dist/
 
       - name: Publish distribution 📦 to PyPI
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-        # Switching to PyPI trusted publishing needs PyPI-side configuration; out of scope here.
         run: uv publish # zizmor: ignore[use-trusted-publishing]
