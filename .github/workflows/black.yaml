@@ -31,14 +31,11 @@ jobs:
         with:
           install_extras: all
 
+      - name: Setup just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+
       - name: Lint
-        env:
-          PROJECT_NAME: nexus_client_sdk
-        run: |
-          set -euo pipefail
-          find "$PROJECT_NAME" -type f -name "*.py" | xargs poetry run pylint
+        run: just lint
 
       - name: Black
-        run: |
-          set -euo pipefail
-          poetry run black . --check --diff
+        run: just format-check

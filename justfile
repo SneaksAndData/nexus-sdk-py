@@ -14,8 +14,8 @@ RECEIVER_IMAGE_REPO := "ghcr.io/sneaksanddata/nexus-receiver"
 
 NEXUS_CHART_NAME := "oci://ghcr.io/sneaksanddata/helm/nexus"
 NEXUS_RECEIVER_CHART_NAME := "oci://ghcr.io/sneaksanddata/helm/nexus-receiver"
-NEXUS_VERSION := "1.2.3-2-g7cf0ab7"
-NEXUS_RECEIVER_VERSION := "1.2.0"
+NEXUS_VERSION := "1.2.7"
+NEXUS_RECEIVER_VERSION := "1.2.1"
 NEXUS_CRD_VERSION := "1.1.0"
 
 # cluster
@@ -23,6 +23,39 @@ NEXUS_CLUSTER_NAME := "nexus-sdk-tests"
 
 # Default recipe
 fresh: stop up
+
+# Download the Go SDK c-shared extension matching .extensions/cext_version
+cext:
+    chmod +x ./sdk-installer.sh && ./sdk-installer.sh
+
+# Full test suite, mirrors CI. Requires `just up` and `just cext` first
+test *args:
+    cd {{ justfile_directory() }} && \
+    NEXUS__SDK_LOG_LEVEL=INFO \
+    ROOT_PATH_FOR_DYNACONF={{ justfile_directory() }}/tests \
+    CONFIG_EXTENSION_PATH_OVERRIDE={{ justfile_directory() }}/tests/config_extensions \
+    poetry run pytest -n auto --dist loadgroup --doctest-modules \
+      --cov=. --cov-report=term-missing:skip-covered {{args}}
+
+# Unit tests only: no Kind cluster, no Scylla/S3 required
+test-unit *args:
+    cd {{ justfile_directory() }} && \
+    NEXUS__SDK_LOG_LEVEL=INFO \
+    ROOT_PATH_FOR_DYNACONF={{ justfile_directory() }}/tests \
+    poetry run pytest tests/nexus {{args}}
+
+# Pylint over the package, must stay at 10.00/10
+lint:
+    cd {{ justfile_directory() }} && \
+    find nexus_client_sdk -type f -name "*.py" | xargs poetry run pylint
+
+# Black check, as enforced by CI
+format-check:
+    cd {{ justfile_directory() }} && poetry run black . --check --diff
+
+# Apply Black formatting
+format:
+    cd {{ justfile_directory() }} && poetry run black .
 
 # Start CI environment
 up: start-kind-cluster install-ingress-controller create-namespace create-ingress scylla-kind s2 crd apply-manifests dbschema scheduler receiver
