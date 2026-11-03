@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-cext_version=$(cat nexus_client_sdk/.extensions/cext_version)
+cext_version=$(cat src/nexus_client_sdk/.extensions/cext_version)
 arch=$(uname -m)
 os=$(uname -s)
 
@@ -25,6 +25,6 @@ trap 'rm -rf "$workdir"' EXIT
 curl -fsSL "https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_$suffix.tar.gz" \
   -o "$workdir/nexus_sdk_$suffix.tar.gz"
 tar -xzf "$workdir/nexus_sdk_$suffix.tar.gz" -C "$workdir"
-mv "$workdir/dist/nexus_sdk_$suffix.so" nexus_client_sdk/.extensions/nexus_sdk.so
+mv "$workdir/dist/nexus_sdk_$suffix.so" src/nexus_client_sdk/.extensions/nexus_sdk.so
 
 echo "Installed nexus_sdk.so ($suffix, v$cext_version)"
