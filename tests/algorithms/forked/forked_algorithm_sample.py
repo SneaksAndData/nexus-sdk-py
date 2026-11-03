@@ -1,22 +1,22 @@
+from dataclasses import dataclass
 from typing import Any
 
 import pandas
 from adapta.metrics import MetricsProvider
 from injector import inject, singleton
-from dataclasses import dataclass
 
-from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
+from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.algorithms import ForkedAlgorithm, RemoteAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from tests.algorithms.forked.forked_configuration import TestForkedAlgorithmConfiguration
 from tests.algorithms.forked.forked_inputs import (
     TestForkedAlgorithmPayload,
-    ZProcessor,
-    XYProcessor,
-    ZZProcessor,
     TestForkedChildPayload,
+    XYProcessor,
+    ZProcessor,
+    ZZProcessor,
 )
 from tests.algorithms.shared import (
     TestDirectedGraphResult,
@@ -102,9 +102,9 @@ class TestForkedAlgorithm(ForkedAlgorithm[TestForkedAlgorithmPayload, TestForked
     async def _main_run(
         self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs
     ) -> TestDirectedGraphResult:
-        assert (
-            self._configuration.extra_parameters.parameter_y == "test"
-        ), "Unexpected or missing value of extra_parameters.parameter_y"
+        assert self._configuration.extra_parameters.parameter_y == "test", (
+            "Unexpected or missing value of extra_parameters.parameter_y"
+        )
 
         return TestDirectedGraphResult(xy, z, self._cache.total_evaluated_inputs())
 

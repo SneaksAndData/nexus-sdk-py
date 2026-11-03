@@ -22,10 +22,14 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-          #architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install
 
       - name: Setup just
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
@@ -36,10 +40,8 @@ jobs:
       - name: Download C-Shared Build of Go SDK
         run: just cext
 
-      - name: Install Poetry and dependencies
-        uses: SneaksAndData/github-actions/install_poetry@42d1e71a9297cc52e824d9405604073a1da7a5cf # v0.1.13
-        with:
-          install_extras: all
+      - name: Prepare environment
+        run: uv sync --frozen
 
       - name: Unit test
         run: |

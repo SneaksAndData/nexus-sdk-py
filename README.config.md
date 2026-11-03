@@ -38,7 +38,7 @@ Environment variables (e.g. `NEXUS__*`) are applied by Dynaconf with higher prec
 When `NEXUS_FRAMEWORK_CONFIGURATION.load()` is invoked on application startup, Dynaconf initializes with the following base setting files (listed from lowest to highest precedence):
 
 1. **Framework Defaults (`settings.toml`)**
-   - **Path**: Shipped with SDK package at `nexus_client_sdk/nexus/configurations/settings.toml`
+   - **Path**: Shipped with SDK package at `src/nexus_client_sdk/nexus/configurations/settings.toml`
    - **Purpose**: Defines system-wide framework defaults (e.g., logging defaults, error handlers, payload settings).
 
 2. **Secret Configuration (`.secrets.toml`)**

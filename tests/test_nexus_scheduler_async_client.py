@@ -5,16 +5,15 @@ from pathlib import Path
 import pytest
 from cassandra.cluster import Session
 
-from nexus_client_sdk.models.client_errors.go_http_errors import BadRequestError
-
 from nexus_client_sdk.clients.fault_tolerance.models import NexusClientRuntimeError
+from nexus_client_sdk.models.client_errors.go_http_errors import BadRequestError
 from nexus_client_sdk.models.scheduler import SdkCustomRunConfiguration
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from tests.conftest import broken_async_scheduler
 
 runtime_config_stub = (
-    open(Path(__file__).parent / "mock_data" / "applied_configuration.serialized.txt", encoding="utf-8")
-    .read()
+    (Path(__file__).parent / "mock_data" / "applied_configuration.serialized.txt")
+    .read_text(encoding="utf-8")
     .replace("\n", " ")
 )
 
@@ -27,19 +26,17 @@ async def test_create_run_propagates(async_scheduler: NexusSchedulerAsyncClient)
 
 @pytest.mark.asyncio
 async def test_create_run_retries():
-    with broken_async_scheduler() as scheduler:
-        with pytest.raises(NexusClientRuntimeError):
-            _ = await scheduler.create_run(algorithm_parameters={}, algorithm_name="hello-world")
+    with broken_async_scheduler() as scheduler, pytest.raises(NexusClientRuntimeError):
+        _ = await scheduler.create_run(algorithm_parameters={}, algorithm_name="hello-world")
 
 
 @pytest.mark.asyncio
 async def test_await_run_retries():
-    with broken_async_scheduler() as scheduler:
-        with pytest.raises(NexusClientRuntimeError):
-            _ = await scheduler.await_run(
-                request_id="test",
-                algorithm="test",
-            )
+    with broken_async_scheduler() as scheduler, pytest.raises(NexusClientRuntimeError):
+        _ = await scheduler.await_run(
+            request_id="test",
+            algorithm="test",
+        )
 
 
 @pytest.mark.asyncio

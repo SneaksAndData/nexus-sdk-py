@@ -11,24 +11,64 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write # create_package posts a comment with the package version
+      pull-requests: write # posts a comment with the package version
     if: ${{ github.event.issue.pull_request && github.event.comment.body == 'create_package' && github.event.issue.state == 'open' }}
     steps:
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.11.x'
-          architecture: 'x64'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/pull/${{github.event.issue.number}}/merge
           fetch-depth: 0
           persist-credentials: false
-      - name: Install Poetry and dependencies
-        uses: SneaksAndData/github-actions/install_poetry@42d1e71a9297cc52e824d9405604073a1da7a5cf # v0.1.13
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          skip_dependencies: true
-      - name: Create package
-        uses: SneaksAndData/github-actions/create_package@42d1e71a9297cc52e824d9405604073a1da7a5cf # v0.1.13
+          enable-cache: false
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Setup just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+
+      - name: Build development package
+        id: package-generator
+        env:
+          PULL_REQUEST_NUMBER: ${{ github.event.issue.number }}
+          COMMENTS_COUNT: ${{ github.event.issue.comments }}
+        run: |
+          set -euo pipefail
+
+          # PEP 440 development release derived from the next patch version.
+          next_version=$(git describe --tags --abbrev=0 | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.)
+          version="${next_version#v}a${PULL_REQUEST_NUMBER}.dev${COMMENTS_COUNT}"
+
+          uv version --no-sync "$version"
+          echo "__version__ = \"$version\"" > ./src/nexus_client_sdk/_version.py
+
+          # The .so is gitignored, so it has to be fetched before the wheel is built.
+          just cext
+
+          uv build --wheel
+
+          # The wheel embeds a linux x86_64 .so, so it must not stay py3-none-any.
+          uv run wheel tags \
+            --platform-tag=manylinux_2_28_x86_64 \
+            --python-tag=cp311 \
+            --abi-tag=cp311 \
+            --remove \
+            dist/nexus_client_sdk-"$version"-py3-none-any.whl
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Publish development package 📦 to PyPI
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        # Switching to PyPI trusted publishing needs PyPI-side configuration; out of scope here.
+        run: uv publish # zizmor: ignore[use-trusted-publishing]
+
+      - name: Create comment
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4.0.0
         with:
-          public_package_index_token: ${{ secrets.PYPI_API_TOKEN }}
-          package_name: nexus-sdk
+          issue-number: ${{ github.event.issue.number }}
+          body: Created package with number `${{ steps.package-generator.outputs.version }}`

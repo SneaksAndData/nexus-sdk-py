@@ -2,20 +2,21 @@
 
 Python SDK for the Nexus platform. Two distinct things live in one package:
 
-- `nexus_client_sdk/clients`, `nexus_client_sdk/models` — API clients that are **thin `ctypes` wrappers over a Go shared library**, not Python HTTP code. See `clients/cwrapper.py`.
-- `nexus_client_sdk/nexus` — the "Nexus framework": an asyncio + dependency-injection runtime for building algorithms.
+- `src/nexus_client_sdk/clients`, `src/nexus_client_sdk/models` — API clients that are **thin `ctypes` wrappers over a Go shared library**, not Python HTTP code. See `clients/cwrapper.py`.
+- `src/nexus_client_sdk/nexus` — the "Nexus framework": an asyncio + dependency-injection runtime for building algorithms.
 
 ## Commands
 
-Use `just` for everything. Never invoke `pytest`/`pylint`/`black` directly; the recipes carry required env vars.
+Use `just` for everything. Never invoke `pytest`/`ruff` directly; the recipes carry required env vars.
 
 ```sh
 just cext          # download nexus_sdk.so (required once; see below)
+just install       # uv sync --frozen
 just up            # create Kind cluster + full Nexus stack (slow, minutes)
 just test-unit     # tests/nexus only — no cluster needed
 just test          # full suite, mirrors CI exactly
-just lint          # pylint, must stay 10.00/10
-just format        # black (line-length 120)
+just lint          # ruff check, must stay clean
+just format        # ruff format + ruff check --fix (line-length 120)
 just stop          # delete the Kind cluster
 ```
 
@@ -25,11 +26,11 @@ CI gate order: `just lint` → `just format-check` → `just test`. The workflow
 
 ## The `.so` is mandatory and gitignored
 
-`nexus_client_sdk/.extensions/nexus_sdk.so` is a `c-shared` build of [nexus-sdk-go](https://github.com/SneaksAndData/nexus-sdk-go). It is **not in git** (`*.so` is ignored) but importing any client loads it via `cdll.LoadLibrary`. Without it everything fails at import.
+`src/nexus_client_sdk/.extensions/nexus_sdk.so` is a `c-shared` build of [nexus-sdk-go](https://github.com/SneaksAndData/nexus-sdk-go). It is **not in git** (`*.so` is ignored) but importing any client loads it via `cdll.LoadLibrary`. Without it everything fails at import.
 
-- Get it with `just cext`, which reads the pinned version from `nexus_client_sdk/.extensions/cext_version` and is the single code path used by local dev **and** every CI job.
+- Get it with `just cext`, which reads the pinned version from `src/nexus_client_sdk/.extensions/cext_version` and is the single code path used by local dev **and** every CI job.
 - Bumping Go SDK behaviour means editing `cext_version`, not Python code.
-- To test unreleased Go changes: `go build -v -buildmode=c-shared -o nexus_sdk.so main.go` in the Go repo, then copy over `nexus_client_sdk/.extensions/nexus_sdk.so`.
+- To test unreleased Go changes: `go build -v -buildmode=c-shared -o nexus_sdk.so main.go` in the Go repo, then copy over `src/nexus_client_sdk/.extensions/nexus_sdk.so`.
 
 ## Tests
 
@@ -57,12 +58,22 @@ E2E tests seed their own `nexus.checkpoints` row via `cql_session` before callin
 
 Test classes named `Test*` with `__init__` (payloads, algorithms) emit `PytestCollectionWarning`. That is expected noise, not something to fix.
 
+## Dependencies (uv)
+
+`uv` owns the environment; there is no Poetry and no `requirements.txt`.
+
+- `uv.lock` is committed and CI installs with `uv sync --frozen`. Changing `pyproject.toml` deps means running `uv lock` and committing the result, or CI fails on a stale lock.
+- Runtime deps live in `[project.dependencies]`; tooling lives in `[dependency-groups].dev`. `[tool.uv] default-groups = "all"` means `uv run`/`uv sync` pull the dev group with no extra flags.
+- `.python-version` (3.11) is the single source of truth for the interpreter; workflows just call `uv python install`.
+- The build backend is `uv_build`, which requires the `src/nexus_client_sdk/` layout. It picks up `.extensions/nexus_sdk.so` automatically — no `include` directives needed.
+- Ask before adding a third-party dependency.
+
 ## Configuration (Dynaconf)
 
 Read `README.config.md` before touching config. Essentials:
 
 - Prefix is `NEXUS_`, so nested overrides use **double** underscore: `NEXUS__RESULT__OUTPUT_PATH`.
-- Base defaults ship inside the package at `nexus_client_sdk/nexus/configurations/settings.toml`. Projects layer `settings.custom.toml` and `.secrets.toml` from the Dynaconf root.
+- Base defaults ship inside the package at `src/nexus_client_sdk/nexus/configurations/settings.toml`. Projects layer `settings.custom.toml` and `.secrets.toml` from the Dynaconf root.
 - `ROOT_PATH_FOR_DYNACONF` must point at `tests/` for the suite to find `tests/settings.custom.toml`. `tests/.secrets.toml` is gitignored but required — create it containing just `dynaconf_merge = true`.
 - Custom TOML files need `dynaconf_merge = true` as the first line or they replace whole sections instead of merging.
 - `CONFIG_EXTENSION_PATH_OVERRIDE` (default `config_extensions/`) controls discovery of `settings.provided*.toml` and `settings.<algorithm_alias>*.toml`. Each `tests/algorithms/<name>/` owns its own `config_extensions/` dir and the tests `monkeypatch` the var per module.
@@ -86,9 +97,9 @@ Copy `tests/algorithms/minimalistic/` when adding a framework feature — it is 
 
 ## Conventions
 
-- Pylint must be 10.00/10 **without** adding exceptions to `.pylintrc` (stated in the PR template).
+- `just lint` must stay clean **without** adding ignores to `[tool.ruff.lint]` (stated in the PR template). Existing ignores are documented in `pyproject.toml` — read the comments before adding more.
 - Most source files carry the ECCO Apache-2.0 header (58 of 75). Match the surrounding files when adding new ones.
-- `version = "0.0.0"` in `pyproject.toml` and `_version.py` is a placeholder; release workflows `sed` the git tag in. Do not hand-edit versions.
+- `version = "0.0.0"` in `pyproject.toml` and `_version.py` is a placeholder; release workflows run `uv version` and rewrite `_version.py`. Do not hand-edit versions. `uv version` also rewrites `uv.lock`, so release jobs never pass `--frozen` after bumping.
 - Releases are two manual steps on a tag: `release.yaml` builds per-platform wheels (macOS arm64, manylinux x86_64/aarch64) as GH release assets, then `publish.yaml` downloads them and publishes to PyPI. Wheels are platform-tagged because each embeds the `.so`.
 - Commenting `create_package` on an open PR builds a dev package (`dev-release.yaml`).
 - Release notes go in `changelog/RELEASE_<version>.md` and are linked from `changelog/CHANGELOG.md`.

@@ -1,17 +1,17 @@
 import pandas
 from adapta.metrics import MetricsProvider
 from adapta.storage.blob.base import StorageClient
-from injector import singleton, inject
+from injector import inject, singleton
 
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.core.serializers import TelemetrySerializer
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
-    UserTelemetryRecorder,
-    UserTelemetry,
     TTelemetry,
+    UserTelemetry,
     UserTelemetryPathSegment,
+    UserTelemetryRecorder,
 )
 from tests.algorithms.fan_out.fan_out_configuration import TestFanOutAlgorithmConfiguration
 from tests.algorithms.fan_out.fan_out_inputs import TestFanOutAlgorithmPayload
@@ -37,7 +37,7 @@ class TestUserAnalyticsTelemetry(UserTelemetryRecorder):
         algorithm_payload: TestFanOutAlgorithmPayload,
         algorithm_result: TestDirectedGraphResult,
         run_id: str,
-        **inputs: TTelemetry
+        **inputs: TTelemetry,
     ) -> UserTelemetry:
         return UserTelemetry(
             iter(

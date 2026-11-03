@@ -2,18 +2,18 @@ from dataclasses import dataclass
 
 import pandas
 from adapta.metrics import MetricsProvider
-from injector import singleton, inject
+from injector import inject, singleton
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
 from nexus_client_sdk.nexus.abstractions.socket_provider import SocketCollection
-from nexus_client_sdk.nexus.input import InputReader, InputProcessor
+from nexus_client_sdk.nexus.input import InputProcessor, InputReader
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, SocketOverridePayload
-from tests.algorithms.shared import TestEnum
 from tests.algorithms.minimalistic_bootstrap_payload.minimalistic_bootstrap_payload_configuration import (
     TestMinimalisticBootstrapPayloadAlgorithmConfiguration,
 )
+from tests.algorithms.shared import TestEnum
 
 
 @dataclass
@@ -53,6 +53,7 @@ class XYSampleReader(
         configuration: TestMinimalisticBootstrapPayloadAlgorithmConfiguration,
     ):
         super().__init__(
+            *readers,
             socket=None,
             stores=stores,
             metrics_provider=metrics_provider,
@@ -60,14 +61,13 @@ class XYSampleReader(
             payload=payload,
             cache=cache,
             configuration=configuration,
-            *readers,
         )
         self._socket_collection = socket_collection
 
     async def _read_input(self, **_) -> pandas.DataFrame:
-        assert (
-            self._socket_collection.input_socket("test").data_format == "text"
-        ), "Unexpected data format for socket 'test'"
+        assert self._socket_collection.input_socket("test").data_format == "text", (
+            "Unexpected data format for socket 'test'"
+        )
         return pandas.DataFrame({"x": self._payload.x, "y": self._payload.y})
 
 
@@ -91,6 +91,7 @@ class ZSampleReader(
         configuration: TestMinimalisticBootstrapPayloadAlgorithmConfiguration,
     ):
         super().__init__(
+            *readers,
             socket=None,
             stores=stores,
             metrics_provider=metrics_provider,
@@ -98,7 +99,6 @@ class ZSampleReader(
             payload=payload,
             cache=cache,
             configuration=configuration,
-            *readers,
         )
 
     async def _read_input(self, **_) -> pandas.DataFrame:
@@ -189,7 +189,7 @@ class ZZProcessor(
         configuration: TestMinimalisticBootstrapPayloadAlgorithmConfiguration,
     ):
         super().__init__(
-            *[z],
+            z,
             metrics_provider=metrics_provider,
             logger_factory=logger_factory,
             payload=None,

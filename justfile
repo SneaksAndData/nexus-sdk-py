@@ -28,13 +28,17 @@ fresh: stop up
 cext:
     chmod +x ./sdk-installer.sh && ./sdk-installer.sh
 
+# Install all dependencies from uv.lock
+install:
+    cd {{ justfile_directory() }} && uv sync --frozen
+
 # Full test suite, mirrors CI. Requires `just up` and `just cext` first
 test *args:
     cd {{ justfile_directory() }} && \
     NEXUS__SDK_LOG_LEVEL=INFO \
     ROOT_PATH_FOR_DYNACONF={{ justfile_directory() }}/tests \
     CONFIG_EXTENSION_PATH_OVERRIDE={{ justfile_directory() }}/tests/config_extensions \
-    poetry run pytest -n auto --dist loadgroup --doctest-modules \
+    uv run pytest -n auto --dist loadgroup --doctest-modules \
       --cov=. --cov-report=term-missing:skip-covered {{args}}
 
 # Unit tests only: no Kind cluster, no Scylla/S3 required
@@ -42,20 +46,19 @@ test-unit *args:
     cd {{ justfile_directory() }} && \
     NEXUS__SDK_LOG_LEVEL=INFO \
     ROOT_PATH_FOR_DYNACONF={{ justfile_directory() }}/tests \
-    poetry run pytest tests/nexus {{args}}
+    uv run pytest tests/nexus {{args}}
 
-# Pylint over the package, must stay at 10.00/10
+# Ruff lint over the whole project, as enforced by CI
 lint:
-    cd {{ justfile_directory() }} && \
-    find nexus_client_sdk -type f -name "*.py" | xargs poetry run pylint
+    cd {{ justfile_directory() }} && uv run ruff check
 
-# Black check, as enforced by CI
+# Ruff format check, as enforced by CI
 format-check:
-    cd {{ justfile_directory() }} && poetry run black . --check --diff
+    cd {{ justfile_directory() }} && uv run ruff format --check --diff
 
-# Apply Black formatting
+# Apply Ruff formatting and autofixes
 format:
-    cd {{ justfile_directory() }} && poetry run black .
+    cd {{ justfile_directory() }} && uv run ruff format && uv run ruff check --fix
 
 # Start CI environment
 up: start-kind-cluster install-ingress-controller create-namespace create-ingress scylla-kind s2 crd apply-manifests dbschema scheduler receiver

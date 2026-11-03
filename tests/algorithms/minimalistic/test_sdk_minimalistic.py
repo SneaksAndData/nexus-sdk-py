@@ -13,13 +13,12 @@ from cassandra.cluster import Session
 from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.models.scheduler import RequestLifeCycleStage
 from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
-from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.testing import generate_payload_url
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
-from tests.algorithms.minimalistic.minimalistic_inputs import TestMinimalisticAlgorithmPayload, NegativeZError
-from tests.algorithms.shared import find_telemetry_objects, generate_payloads, TestEnum, rand_range, get_alg_name
+from tests.algorithms.minimalistic.minimalistic_inputs import NegativeZError, TestMinimalisticAlgorithmPayload
 from tests.algorithms.minimalistic.minimalistic_main import main as sample_algorithm_main
+from tests.algorithms.shared import TestEnum, find_telemetry_objects, generate_payloads, get_alg_name, rand_range
 
 
 def _set_env_variables() -> None:
@@ -92,13 +91,13 @@ def negative_z_payload(
 
 @pytest.fixture(scope="module", params=payloads())
 def minimalistic_test_args(request: pytest.FixtureRequest) -> NexusDefaultArguments:
-    payload_url, request_id = getattr(request, "param")
+    payload_url, request_id = request.param
     return NexusDefaultArguments(sas_uri=payload_url, request_id=request_id)
 
 
 @pytest.fixture(scope="module", params=payloads(compress=True))
 def compressed_test_args(request: pytest.FixtureRequest) -> NexusDefaultArguments:
-    payload_url, request_id = getattr(request, "param")
+    payload_url, request_id = request.param
     return NexusDefaultArguments(sas_uri=payload_url, request_id=request_id)
 
 

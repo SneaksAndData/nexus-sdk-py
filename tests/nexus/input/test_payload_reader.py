@@ -1,13 +1,13 @@
 import base64
+import bz2
+import gzip
 import json
+import zlib
 from dataclasses import dataclass
 from enum import Enum
 from unittest.mock import MagicMock, patch
 
 import pytest
-import gzip
-import zlib
-import bz2
 
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader, CompressedPayload

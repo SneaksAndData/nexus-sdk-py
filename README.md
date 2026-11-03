@@ -15,9 +15,15 @@ chmod +x ./sdk-installer.sh
 ### Setting up the development environment
 
 To set up the development environment, follow these steps:
+- Install uv (https://docs.astral.sh/uv/) - the package and environment manager used by this project.
 - Install just (https://just.systems/man/en/introduction.html) - a handy command runner, which we use for development tasks.
 - Install Kind (https://kind.sigs.k8s.io/) - a tool for running local Kubernetes clusters, which we use for testing.
 - Ensure you have Docker installed and running, as it is required for both Just and Kind to function properly.
+
+Install the Python dependencies with:
+```shell
+just install
+```
 
 To start a local Nexus stack for testing, run:
 ```shell
@@ -44,7 +50,7 @@ In case you are testing changes for Go SDK, clone branch you are testing and com
 go build -v -buildmode=c-shared -o nexus_sdk.so main.go
 ```
 
-Afterwards, copy the `nexus_sdk.so` under `nexus_client_sdk/.extensions/nexus_sdk.so`. 
+Afterwards, copy the `nexus_sdk.so` under `src/nexus_client_sdk/.extensions/nexus_sdk.so`. 
 
 Initialize a client and retrieve results for a tagged submission:
 
@@ -111,7 +117,7 @@ Example:
 ```python
 {
     "content": "SGVsbG8gd29ybGQ=",  # base64-encoded string of compressed bytes
-    "decompressor_import_path": "my_module.my_decompress"
+    "decompressor_import_path": "my_module.my_decompress",
 }
 ```
 
