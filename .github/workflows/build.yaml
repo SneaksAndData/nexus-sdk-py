@@ -34,13 +34,7 @@ jobs:
         run: just up
 
       - name: Download C-Shared Build of Go SDK
-        run: |
-          set -e
-          
-          cext_version=$(cat nexus_client_sdk/.extensions/cext_version)
-          
-          curl -L https://github.com/SneaksAndData/nexus-sdk-go/releases/download/v$cext_version/nexus_sdk_linux_amd64.tar.gz > nexus_sdk_linux_amd64.tar.gz
-          mkdir cext && tar -xvzf nexus_sdk_linux_amd64.tar.gz -C cext && mv cext/dist/nexus_sdk_linux_amd64.so nexus_client_sdk/.extensions/nexus_sdk.so   
+        run: just cext
 
       - name: Install Poetry and dependencies
         uses: SneaksAndData/github-actions/install_poetry@42d1e71a9297cc52e824d9405604073a1da7a5cf # v0.1.13
@@ -48,14 +42,10 @@ jobs:
           install_extras: all
 
       - name: Unit test
-        env:
-          NEXUS__SDK_LOG_LEVEL: INFO
-          ROOT_PATH_FOR_DYNACONF: ${{ github.workspace }}/tests
-          CONFIG_EXTENSION_PATH_OVERRIDE: ${{ github.workspace }}/tests/config_extensions
         run: |
           set -euo pipefail
-          
-          poetry run pytest -n auto --dist loadgroup --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=term-missing:skip-covered | tee pytest-coverage.txt
+
+          just test --junitxml=junit/test-results.xml | tee pytest-coverage.txt
 
       - name: Get logs from application pods
         if: always()
