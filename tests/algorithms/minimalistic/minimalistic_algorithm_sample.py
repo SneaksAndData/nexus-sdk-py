@@ -5,6 +5,7 @@ from injector import inject, singleton
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
+from tests.algorithms.minimalistic.minimalistic_client import TestMinimalisticClient
 from tests.algorithms.minimalistic.minimalistic_configuration import TestMinimalisticAlgorithmConfiguration
 from tests.algorithms.minimalistic.minimalistic_inputs import (
     TestMinimalisticAlgorithmPayload,
@@ -37,6 +38,7 @@ class TestMinimalisticAlgorithm(
         zz_processor: ZZProcessor,
         cache: InputCache,
         configuration: TestMinimalisticAlgorithmConfiguration,
+        client: TestMinimalisticClient,
     ):
         super().__init__(
             metrics_provider,
@@ -47,10 +49,14 @@ class TestMinimalisticAlgorithm(
             cache=cache,
             configuration=configuration,
         )
+        self._client = client
 
     async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
         assert self._configuration.extra_parameters.parameter_y == "test", (
             "Unexpected or missing value of extra_parameters.parameter_y"
+        )
+        assert self._client.algorithm_name == self._configuration.algorithm_name, (
+            "Client from additional factory was not built from the resolved configuration"
         )
 
         return TestResult(xy, z, self._cache.total_evaluated_inputs())

@@ -9,6 +9,10 @@ c2 = "def"
 # payload type supported by this Nexus application.
 type_name = "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
 
+[[runtime.additional_factories]]
+factory_class = "tests.algorithms.minimalistic.minimalistic_client.TestMinimalisticClientFactory"
+client_class = "tests.algorithms.minimalistic.minimalistic_client.TestMinimalisticClient"
+
 # ADDITIONAL SERVICES
 [services]
     # Query Enabled Stores
