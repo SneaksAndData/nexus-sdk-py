@@ -11,6 +11,7 @@ from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 from tests.algorithms.minimalistic.minimalistic_algorithm_sample import TestMinimalisticAlgorithm
 from tests.algorithms.minimalistic.minimalistic_inputs import TestMinimalisticAlgorithmPayload
+from tests.nexus.core.custom_client_factory_sample import SampleCustomClient
 
 
 @dataclass
@@ -224,3 +225,116 @@ async def test_bootstrap_payload_type_direct_property_assignment(
     assert morphed.x == [10]
     assert morphed.y == [20]
     assert morphed.z == [30]
+
+
+@pytest.mark.asyncio
+@patch("nexus_client_sdk.nexus.core.app_bootstrap.StorageClientFactory")
+@patch("nexus_client_sdk.nexus.core.app_bootstrap.QueryEnabledStoreCollectionFactory")
+@patch("nexus_client_sdk.nexus.core.app_bootstrap.ResultSerializerFactory")
+@patch("nexus_client_sdk.nexus.core.app_bootstrap.TelemetrySerializerFactory")
+@patch("nexus_client_sdk.nexus.core.app_bootstrap.CacheFactory")
+@patch("nexus_client_sdk.nexus.input.payload_reader.session_with_retries")
+async def test_bootstrap_activates_additional_factories(
+    mock_session_factory: MagicMock,
+    mock_cache_factory: MagicMock,
+    mock_telemetry_serializer_factory: MagicMock,
+    mock_result_serializer_factory: MagicMock,
+    mock_qes_factory: MagicMock,
+    mock_storage_client_factory: MagicMock,
+):
+    raw_payload = {
+        "x": [1],
+        "y": [2],
+        "z": [3],
+        "enum_value": "A",
+        "alg_class": "tests.algorithms.minimalistic.minimalistic_algorithm_sample.TestMinimalisticAlgorithm",
+        "config_class": "tests.algorithms.minimalistic.minimalistic_configuration.TestMinimalisticAlgorithmConfiguration",
+        "input_sockets": [],
+        "output_sockets": [],
+    }
+
+    mock_response = MagicMock()
+    mock_response.content = json.dumps(raw_payload).encode("utf-8")
+    mock_session = MagicMock()
+    mock_session.get.return_value = mock_response
+    mock_session_factory.return_value = mock_session
+
+    config = NexusRuntimeConfiguration()
+    config.load()
+    config.default["RUNTIME"]["PAYLOAD"]["TYPE_NAME"] = (
+        "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
+    )
+    config.default["RUNTIME"]["ALGORITHM"] = (
+        "tests.algorithms.minimalistic.minimalistic_algorithm_sample.TestMinimalisticAlgorithm"
+    )
+    config.default["RUNTIME"]["ADDITIONAL_FACTORIES"] = [
+        {
+            "factory_class": "tests.nexus.core.custom_client_factory_sample.SampleCustomClientFactory",
+            "client_class": "tests.nexus.core.custom_client_factory_sample.SampleCustomClient",
+        }
+    ]
+    config.default["ALGORITHM_NAME"] = "hello-world"
+
+    args = NexusDefaultArguments(sas_uri="http://mock.uri/payload.json", request_id="test-req-5")
+    bootstrapper = NexusBootstrapper(run_args=args, bootstrap_config=config)
+
+    injector = await bootstrapper.bootstrap()
+
+    custom_client = injector.get(SampleCustomClient)
+    assert isinstance(custom_client, SampleCustomClient)
+    assert custom_client.algorithm_name == "hello-world"
+
+
+@pytest.mark.asyncio
+@patch("nexus_client_sdk.nexus.core.app_bootstrap.StorageClientFactory")
+@patch("nexus_client_sdk.nexus.core.app_bootstrap.QueryEnabledStoreCollectionFactory")
+@patch("nexus_client_sdk.nexus.core.app_bootstrap.ResultSerializerFactory")
+@patch("nexus_client_sdk.nexus.core.app_bootstrap.TelemetrySerializerFactory")
+@patch("nexus_client_sdk.nexus.core.app_bootstrap.CacheFactory")
+@patch("nexus_client_sdk.nexus.input.payload_reader.session_with_retries")
+async def test_bootstrap_additional_factory_not_located_raises_startup_error(
+    mock_session_factory: MagicMock,
+    mock_cache_factory: MagicMock,
+    mock_telemetry_serializer_factory: MagicMock,
+    mock_result_serializer_factory: MagicMock,
+    mock_qes_factory: MagicMock,
+    mock_storage_client_factory: MagicMock,
+):
+    raw_payload = {
+        "x": [1],
+        "y": [2],
+        "z": [3],
+        "enum_value": "A",
+        "alg_class": "tests.algorithms.minimalistic.minimalistic_algorithm_sample.TestMinimalisticAlgorithm",
+        "config_class": "tests.algorithms.minimalistic.minimalistic_configuration.TestMinimalisticAlgorithmConfiguration",
+        "input_sockets": [],
+        "output_sockets": [],
+    }
+
+    mock_response = MagicMock()
+    mock_response.content = json.dumps(raw_payload).encode("utf-8")
+    mock_session = MagicMock()
+    mock_session.get.return_value = mock_response
+    mock_session_factory.return_value = mock_session
+
+    config = NexusRuntimeConfiguration()
+    config.load()
+    config.default["RUNTIME"]["PAYLOAD"]["TYPE_NAME"] = (
+        "tests.algorithms.minimalistic.minimalistic_inputs.TestMinimalisticAlgorithmPayload"
+    )
+    config.default["RUNTIME"]["ALGORITHM"] = (
+        "tests.algorithms.minimalistic.minimalistic_algorithm_sample.TestMinimalisticAlgorithm"
+    )
+    config.default["RUNTIME"]["ADDITIONAL_FACTORIES"] = [
+        {
+            "factory_class": "tests.nexus.core.custom_client_factory_sample.DoesNotExist",
+            "client_class": "tests.nexus.core.custom_client_factory_sample.SampleCustomClient",
+        }
+    ]
+    config.default["ALGORITHM_NAME"] = "hello-world"
+
+    args = NexusDefaultArguments(sas_uri="http://mock.uri/payload.json", request_id="test-req-6")
+    bootstrapper = NexusBootstrapper(run_args=args, bootstrap_config=config)
+
+    with pytest.raises(FatalStartupConfigurationError, match="Failed to locate required factory"):
+        await bootstrapper.bootstrap()

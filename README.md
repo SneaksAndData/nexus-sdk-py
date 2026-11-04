@@ -151,3 +151,39 @@ Once the environment variables are set, you can activate compression on a `Remot
 ### Important Requirement
 
 For compression to work, both conditions must be met. The application will raise an error if `compress_payload` is set to `True` but a valid `Compressor` instance is not injected. Ensure that the required environment variables are set so the `Compressor` service can be created and injected successfully.
+
+## Providing Custom Client Factories
+
+Nexus ships built-in factories for common clients (`TrinoClientFactory`, `MlflowClientFactory`, ...), each turning `NexusConfigurationModel` settings into a client instance bound into the DI container. You can register your own factories the same way, without writing a full DI `Module`.
+
+### Step 1: Implement a factory
+
+Extend `ClientFactory`, parameterized with the client type, and implement `get_client`:
+
+```python
+from nexus_client_sdk.nexus.abstractions.client_factory import ClientFactory
+from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
+
+
+class MyClient:
+    def __init__(self, host: str):
+        self.host = host
+
+
+class MyClientFactory(ClientFactory[MyClient]):
+    @classmethod
+    def get_client(cls, model: NexusConfigurationModel) -> MyClient:
+        return MyClient(host=model.algorithm_name)
+```
+
+### Step 2: Register the factory in configuration
+
+Add an entry to `[[runtime.additional_factories]]`, providing import paths for both the factory and the client type it returns. The client type is used as the DI binding key, so algorithm classes can request `MyClient` via constructor injection.
+
+```toml
+[[runtime.additional_factories]]
+factory_class = "my_module.MyClientFactory"
+client_class = "my_module.MyClient"
+```
+
+Nexus locates and activates each factory during bootstrap, right alongside the built-in client factories.

@@ -26,6 +26,7 @@ from adapta.storage.blob.base import StorageClient
 from injector import Module, provider, singleton
 
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.client_factory import ClientFactory
 from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.core.serializers import (
@@ -61,7 +62,7 @@ class QueryEnabledStoreCollectionFactory:
 
 
 @final
-class StorageClientFactory:
+class StorageClientFactory(ClientFactory[StorageClient]):
     """
     Storage client factory
     """
