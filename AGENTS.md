@@ -100,6 +100,6 @@ Copy `tests/algorithms/minimalistic/` when adding a framework feature — it is 
 - `just lint` must stay clean **without** adding ignores to `[tool.ruff.lint]` (stated in the PR template). Existing ignores are documented in `pyproject.toml` — read the comments before adding more.
 - Most source files carry the ECCO Apache-2.0 header (58 of 75). Match the surrounding files when adding new ones.
 - `version = "0.0.0"` in `pyproject.toml` and `_version.py` is a placeholder; release workflows run `uv version` and rewrite `_version.py`. Do not hand-edit versions. `uv version` also rewrites `uv.lock`, so release jobs never pass `--frozen` after bumping.
-- Releases are two manual steps on a tag: `release.yaml` builds per-platform wheels (macOS arm64, manylinux x86_64/aarch64) as GH release assets, then `publish.yaml` downloads them and publishes to PyPI. Wheels are platform-tagged because each embeds the `.so`.
+- Releases are two manual steps on a tag: `release.yaml` builds per-platform wheels (macOS arm64, manylinux x86_64/aarch64) as GH release assets, then `publish.yaml` downloads them from the GH release, attests them (PEP 740) and publishes to PyPI with `uv publish` via trusted publishing (`pypi` environment, OIDC; no API token). Wheels are platform-tagged because each embeds the `.so`, so `publish.yaml` does not run `uv build` itself.
 - Commenting `create_package` on an open PR builds a dev package (`dev-release.yaml`).
 - Release notes go in `changelog/RELEASE_<version>.md` and are linked from `changelog/CHANGELOG.md`.
