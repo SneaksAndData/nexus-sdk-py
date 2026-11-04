@@ -18,9 +18,14 @@ Support functionality for asyncio and Nexus interaction.
 #
 
 import asyncio
-from collections.abc import Callable
+import functools
+import inspect
+from collections.abc import Awaitable, Callable
+from typing import ParamSpec
 
 from nexus_client_sdk.clients.fault_tolerance.models import TExecuteResult
+
+TParams = ParamSpec("TParams")
 
 
 async def run_blocking(method: Callable[[...], TExecuteResult]) -> TExecuteResult:
@@ -35,3 +40,31 @@ async def run_blocking(method: Callable[[...], TExecuteResult]) -> TExecuteResul
 
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, method)
+
+
+def blocking(method: Callable[TParams, TExecuteResult]) -> Callable[TParams, Awaitable[TExecuteResult]]:
+    """
+     Decorator that turns a sync method into a coroutine function that runs on the blocking thread pool via `run_blocking`.
+     Works on plain functions and instance methods. Callers must `await` the decorated method.
+
+     Example:
+
+        class MyReader(InputReader[...]):
+            @blocking
+            def _load_file(self, path: str) -> bytes:
+                return libc_read(path)
+
+            async def _read_input(self, **kwargs):
+                return await self._load_file("/tmp/data")
+
+    :param method: A sync callable that contains blocking code. Async functions are rejected.
+    :return:
+    """
+    if inspect.iscoroutinefunction(method):
+        raise TypeError(f"@blocking cannot be applied to async function {method.__qualname__}, it is already async.")
+
+    @functools.wraps(method)
+    async def wrapper(*args: TParams.args, **kwargs: TParams.kwargs) -> TExecuteResult:
+        return await run_blocking(functools.partial(method, *args, **kwargs))
+
+    return wrapper
