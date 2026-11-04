@@ -16,7 +16,7 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.testing import generate_payload_url
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
-from tests.algorithms.minimalistic.minimalistic_client import TestMinimalisticClient
+from tests.algorithms.minimalistic.minimalistic_client import TestMinimalisticClient, TestMinimalisticClientFactory
 from tests.algorithms.minimalistic.minimalistic_inputs import NegativeZError, TestMinimalisticAlgorithmPayload
 from tests.algorithms.minimalistic.minimalistic_main import main as sample_algorithm_main
 from tests.algorithms.shared import TestEnum, find_telemetry_objects, generate_payloads, get_alg_name, rand_range
@@ -175,14 +175,31 @@ async def test_failing_reader(scheduler: NexusSchedulerClient, cql_session: Sess
     )
 
 
+FACTORY_PATH = f"{TestMinimalisticClientFactory.__module__}.{TestMinimalisticClientFactory.__name__}"
+CLIENT_PATH = f"{TestMinimalisticClient.__module__}.{TestMinimalisticClient.__name__}"
+MISSING_PATH = "tests.algorithms.minimalistic.minimalistic_client.DoesNotExist"
+
+
+@pytest.mark.parametrize(
+    ("factory_class", "client_class", "expected_error"),
+    [
+        (MISSING_PATH, CLIENT_PATH, f"Failed to locate required factory: {MISSING_PATH}"),
+        (FACTORY_PATH, MISSING_PATH, f"Failed to locate required client class: {MISSING_PATH}"),
+    ],
+    ids=["factory_not_found", "client_not_found"],
+)
 @pytest.mark.asyncio(loop_scope="package")
 async def test_unlocatable_additional_factory_fails_run(
-    scheduler: NexusSchedulerClient, cql_session: Session, monkeypatch: pytest.MonkeyPatch
+    factory_class: str,
+    client_class: str,
+    expected_error: str,
+    scheduler: NexusSchedulerClient,
+    cql_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    missing_factory = "tests.algorithms.minimalistic.minimalistic_client.DoesNotExistFactory"
     monkeypatch.setenv(
         "NEXUS__RUNTIME__ADDITIONAL_FACTORIES",
-        f'[{{factory_class = "{missing_factory}", client_class = "{TestMinimalisticClient.__module__}.{TestMinimalisticClient.__name__}"}}]',
+        f'[{{factory_class = "{factory_class}", client_class = "{client_class}"}}]',
     )
     algorithm = get_alg_name()
     payload_url, request_id = negative_z_payload()
@@ -204,5 +221,5 @@ async def test_unlocatable_additional_factory_fails_run(
         run_details.lifecycle_stage == RequestLifeCycleStage.FAILED.value
         and scheduler.is_finished(run_result)
         and not scheduler.has_succeeded(run_result)
-        and f"Failed to locate required factory: {missing_factory}" in run_details.algorithm_failure_details
+        and expected_error in run_details.algorithm_failure_details
     )
