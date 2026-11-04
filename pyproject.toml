@@ -1,37 +1,67 @@
-[tool.poetry]
+[project]
 name = "nexus-client-sdk"
 version = "0.0.0"
 description = "Nexus SDK library for Python."
-authors = ["ECCO Sneaks & Data <esdsupport@ecco.com>"]
-maintainers = ["ECCO Sneaks & Data <esdsupport@ecco.com>"]
-license = 'Apache-2.0'
+authors = [{ name = "ECCO Sneaks & Data", email = "esdsupport@ecco.com" }]
+maintainers = [{ name = "ECCO Sneaks & Data", email = "esdsupport@ecco.com" }]
+requires-python = ">=3.11, <3.15"
 readme = "README.md"
-repository = 'https://github.com/SneaksAndData/nexus-sdk-py'
-include = [
-    { path = "nexus_client_sdk/.extensions/nexus_sdk.so", format = ["wheel"] }
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "adapta[aws,aws-fileio,datadog,storage-cassandra,storage-delta,storage-iceberg]>=4",
+    "injector>=0.24,<0.25",
+    "dynaconf>=3.3,<4",
+    "pydantic>=2.13,<3",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.11, <3.15"
-adapta = { version = ">=4", extras = ["aws", "aws-fileio", "datadog", "storage-cassandra", "storage-delta", "storage-iceberg"] }
-injector = "^0.24.0"
-dynaconf = "^3.3"
-pydantic = "^2.13"
+[project.urls]
+Repository = "https://github.com/SneaksAndData/nexus-sdk-py"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^9"
-pytest-mock = "^3"
-pytest-xdist = "^3"
-pytest-asyncio = "^1.1"
-pytest-cov = "^7.1"
-pylint = "^3"
-black = "^23"
-wheel = "^0.42.0"
-pyupgrade = "^3"
-scylla-driver = "^3"
+[dependency-groups]
+dev = [
+    "pytest>=9",
+    "pytest-mock>=3",
+    "pytest-xdist>=3",
+    "pytest-asyncio>=1.1",
+    "pytest-cov>=7.1",
+    "ruff>=0.16.5",
+    "wheel>=0.42.0",
+    "pyupgrade>=3,<4",
+    "scylla-driver>=3",
+]
 
-[tool.black]
+[tool.uv]
+default-groups = "all"
+
+[tool.ruff]
+src = ["src"]
+target-version = "py311"
 line-length = 120
+
+[tool.ruff.lint]
+ignore = [
+    # adapta's LoggerInterface takes `{}`-style templates plus a positional
+    # `exception`, so ruff's stdlib-logging arity check misfires on every call.
+    "PLE1205",
+    # Nexus deliberately catches BaseException at the run boundary to classify
+    # transient-vs-fatal failures before reporting to the receiver.
+    "BLE001",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Optional integrations are probed with try/except ImportError on purpose.
+"src/nexus_client_sdk/nexus/modules/__init__.py" = ["F401"]
+# Payload reader probes several decode strategies; a failed attempt is not an error.
+"src/nexus_client_sdk/nexus/input/payload_reader.py" = ["S110"]
+# E2E tests drive the sync clients from async test functions against a local stack.
+"tests/**" = ["ASYNC210"]
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "session"
@@ -58,9 +88,9 @@ exclude_also = [
 ]
 omit = [
     # omit custom modules
-    "nexus_client_sdk/nexus/modules/*",
+    "src/nexus_client_sdk/nexus/modules/*",
 ]
 
 [build-system]
-requires = ["poetry-core>=1.2.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"

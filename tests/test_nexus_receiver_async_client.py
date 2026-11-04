@@ -4,13 +4,13 @@ from pathlib import Path
 import pytest
 from cassandra.cluster import Session
 
-from nexus_client_sdk.models.receiver import SdkCompletedRunResult
 from nexus_client_sdk.clients.fault_tolerance.models import NexusClientRuntimeError
+from nexus_client_sdk.models.receiver import SdkCompletedRunResult
 from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import NexusReceiverAsyncClient
 
 runtime_config_stub = (
-    open(Path(__file__).parent / "mock_data" / "applied_configuration.serialized.txt", encoding="utf-8")
-    .read()
+    (Path(__file__).parent / "mock_data" / "applied_configuration.serialized.txt")
+    .read_text(encoding="utf-8")
     .replace("\n", " ")
 )
 

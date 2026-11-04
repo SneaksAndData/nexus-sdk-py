@@ -5,7 +5,6 @@ from pydoc import locate
 from unittest.mock import MagicMock
 
 import pytest
-from pygments.lexers import q
 
 from nexus_client_sdk.nexus.algorithms import RemoteAlgorithm
 from nexus_client_sdk.nexus.core.app_dependencies import Compressor

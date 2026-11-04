@@ -8,8 +8,8 @@ from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
 from tests.algorithms.minimalistic.minimalistic_configuration import TestMinimalisticAlgorithmConfiguration
 from tests.algorithms.minimalistic.minimalistic_inputs import (
     TestMinimalisticAlgorithmPayload,
-    ZProcessor,
     XYProcessor,
+    ZProcessor,
     ZZProcessor,
 )
 from tests.algorithms.shared import (
@@ -49,8 +49,8 @@ class TestMinimalisticAlgorithm(
         )
 
     async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
-        assert (
-            self._configuration.extra_parameters.parameter_y == "test"
-        ), "Unexpected or missing value of extra_parameters.parameter_y"
+        assert self._configuration.extra_parameters.parameter_y == "test", (
+            "Unexpected or missing value of extra_parameters.parameter_y"
+        )
 
         return TestResult(xy, z, self._cache.total_evaluated_inputs())

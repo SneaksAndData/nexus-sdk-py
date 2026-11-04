@@ -13,9 +13,9 @@ from nexus_client_sdk.clients.nexus_scheduler_client import NexusSchedulerClient
 from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
-from tests.algorithms.shared import generate_payloads, rand_range, TestEnum, get_alg_name
 from tests.algorithms.fan_out.fan_out_inputs import TestFanOutAlgorithmPayload, TestFanOutChildPayload
 from tests.algorithms.fan_out.fan_out_main import main as sample_algorithm_main
+from tests.algorithms.shared import TestEnum, generate_payloads, get_alg_name, rand_range
 
 
 def _set_env_variables() -> None:
@@ -60,7 +60,7 @@ def payloads() -> list[tuple[str, str]]:
 
 @pytest.fixture(scope="module", params=payloads())
 def fan_out_test_args(request: pytest.FixtureRequest) -> NexusDefaultArguments:
-    payload_url, request_id = getattr(request, "param")
+    payload_url, request_id = request.param
     return NexusDefaultArguments(sas_uri=payload_url, request_id=request_id)
 
 

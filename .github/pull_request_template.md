@@ -14,5 +14,5 @@ Additional changes:
 
 - [ ] GitHub issue exists for this change.
 - [ ] Unit tests added and they pass.
-- [ ] Pylint 10.0/10.0 without bloating `.pylintrc` with exceptions.
+- [ ] `just lint` passes without bloating `[tool.ruff.lint]` with ignores.
 - [ ] Review requested on `latest` commit.

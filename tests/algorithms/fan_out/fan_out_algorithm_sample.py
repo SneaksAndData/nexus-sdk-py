@@ -1,22 +1,22 @@
+from dataclasses import dataclass
 from typing import Any
 
 import pandas
 from adapta.metrics import MetricsProvider
 from injector import inject, singleton
-from dataclasses import dataclass
 
-from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
+from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.algorithms import FanOutAlgorithm, RemoteAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
 from tests.algorithms.fan_out.fan_out_configuration import TestFanOutAlgorithmConfiguration
 from tests.algorithms.fan_out.fan_out_inputs import (
     TestFanOutAlgorithmPayload,
-    ZProcessor,
-    XYProcessor,
-    ZZProcessor,
     TestFanOutChildPayload,
+    XYProcessor,
+    ZProcessor,
+    ZZProcessor,
 )
 from tests.algorithms.shared import (
     TestDirectedGraphResult,
@@ -100,9 +100,9 @@ class TestFanOutAlgorithm(FanOutAlgorithm[TestFanOutAlgorithmPayload, TestFanOut
     async def _run(
         self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs
     ) -> TestDirectedGraphResult:
-        assert (
-            self._configuration.extra_parameters.parameter_y == "test"
-        ), "Unexpected or missing value of extra_parameters.parameter_y"
+        assert self._configuration.extra_parameters.parameter_y == "test", (
+            "Unexpected or missing value of extra_parameters.parameter_y"
+        )
 
         return TestDirectedGraphResult(xy, z, self._cache.total_evaluated_inputs())
 

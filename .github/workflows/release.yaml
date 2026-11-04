@@ -6,12 +6,26 @@ on: workflow_dispatch
 permissions: {}
 
 jobs:
-  macos:
-    name: Create a MacOS Release
-    runs-on: macos-latest
+  wheels:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
     if: startsWith(github.ref, 'refs/tags')
     permissions:
       contents: write # upload release assets
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Create a MacOS Release
+            runner: macos-latest
+            platform-tag: macosx_13_0_arm64
+          - name: Create ARM64 Release
+            runner: ubuntu-24.04-arm
+            platform-tag: manylinux_2_28_aarch64
+          - name: Create AMD64 Release
+            runner: ubuntu-latest
+            platform-tag: manylinux_2_28_x86_64
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -19,9 +33,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      - name: Install uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          enable-cache: false
+
+      - name: Set up Python
+        run: uv python install
 
       - name: Get project version
         uses: SneaksAndData/github-actions/generate_version@42d1e71a9297cc52e824d9405604073a1da7a5cf # v0.1.13
@@ -30,152 +48,39 @@ jobs:
       - name: Setup just
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
 
-      - name: Install, Configure Poetry and Build
+      - name: Build wheel
+        shell: bash
         env:
-          VERSION: ${{steps.version.outputs.version}}
+          VERSION: ${{ steps.version.outputs.version }}
+          PLATFORM_TAG: ${{ matrix.platform-tag }}
         run: |
-          set -e
+          set -euo pipefail
 
-          curl -sSL https://install.python-poetry.org | python3 -
-          
-          export PATH="/Users/runner/.local/bin:$PATH"
-          
-          poetry install --all-extras
+          # generate_version emits a leading "v" that is not part of the PEP 440 version.
+          version="${VERSION:1}"
 
-          sed -i '' "s/version = \"0.0.0\"/version = \"${VERSION:1}\"/" pyproject.toml
-          echo "__version__ = '${VERSION:1}'" > ./nexus_client_sdk/_version.py
-          
+          uv version --no-sync "$version"
+          echo "__version__ = \"$version\"" > ./src/nexus_client_sdk/_version.py
+
+          # The .so is gitignored, so it has to be fetched before the wheel is built.
           just cext
-          
-          poetry build --format wheel \
-           && poetry run wheel tags \
-            --platform-tag=macosx_13_0_arm64 \
+
+          uv build --wheel
+
+          # The wheel embeds a platform-specific .so, so it must not stay py3-none-any.
+          uv run wheel tags \
+            --platform-tag="$PLATFORM_TAG" \
             --python-tag=cp311 \
             --abi-tag=cp311 \
             --remove \
-            dist/nexus_client_sdk-"${VERSION:1}"-py3-none-any.whl
-          
-          tar -czf wheel_macosx_13_0_arm64.tar.gz dist/
-          mkdir release && mv wheel_macosx_13_0_arm64.tar.gz release/
+            dist/nexus_client_sdk-"$version"-py3-none-any.whl
+
+          tar -czf "wheel_$PLATFORM_TAG.tar.gz" dist/
+          mkdir release && mv "wheel_$PLATFORM_TAG.tar.gz" release/
 
       - name: Upload asset to Release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{steps.version.outputs.version}}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          gh release upload $VERSION release/*.*
-
-  linux_arm64:
-    name: Create ARM64 Release
-    runs-on: ubuntu-24.04-arm
-    if: startsWith(github.ref, 'refs/tags')
-    permissions:
-      contents: write # upload release assets
-
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-
-      - name: Get project version
-        uses: SneaksAndData/github-actions/generate_version@42d1e71a9297cc52e824d9405604073a1da7a5cf # v0.1.13
-        id: version
-
-      - name: Setup just
-        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
-
-      - name: Install, Configure Poetry and Build
-        shell: bash
-        env:
-          VERSION: ${{steps.version.outputs.version}}
-        run: |
-          set -euo pipefail
-
-          curl -sSL https://install.python-poetry.org | python3 -
-          
-          poetry install --all-extras
-
-          sed -i "s/version = \"0.0.0\"/version = \"${VERSION:1}\"/" pyproject.toml
-          echo "__version__ = '${VERSION:1}'" > ./nexus_client_sdk/_version.py
-          
-          just cext
-          
-          poetry build --format wheel \
-          && poetry run wheel tags \
-            --platform-tag=manylinux_2_28_aarch64 \
-            --python-tag=cp311 \
-            --abi-tag=cp311 \
-            --remove dist/nexus_client_sdk-"${VERSION:1}"-py3-none-any.whl
-          
-          tar -czf wheel_manylinux_2_28_aarch64.tar.gz dist/
-          mkdir release && mv wheel_manylinux_2_28_aarch64.tar.gz release/
-
-      - name: Upload asset to Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{steps.version.outputs.version}}
-        run: |
-          gh release upload $VERSION release/*.*
-
-  linux_amd64:
-    name: Create AMD64 Release
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags')
-    permissions:
-      contents: write # upload release assets
-
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.11.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-          architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
-
-      - name: Get project version
-        uses: SneaksAndData/github-actions/generate_version@42d1e71a9297cc52e824d9405604073a1da7a5cf # v0.1.13
-        id: version
-
-      - name: Setup just
-        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
-
-      - name: Install, Configure Poetry and Build
-        shell: bash
-        env:
-          VERSION: ${{steps.version.outputs.version}}
-        run: |
-          set -euo pipefail
-
-          curl -sSL https://install.python-poetry.org | python3 -
-          
-          poetry install --all-extras
-
-          sed -i "s/version = \"0.0.0\"/version = \"${VERSION:1}\"/" pyproject.toml
-          echo "__version__ = '${VERSION:1}'" > ./nexus_client_sdk/_version.py
-          
-          just cext
-          
-          poetry build --format wheel \
-          && poetry run wheel tags \
-            --platform-tag=manylinux_2_28_x86_64 \
-            --python-tag=cp311 \
-            --abi-tag=cp311 \
-            --remove dist/nexus_client_sdk-"${VERSION:1}"-py3-none-any.whl
-          
-          tar -czf wheel_manylinux_2_28_x86_64.tar.gz dist/
-          mkdir release && mv wheel_manylinux_2_28_x86_64.tar.gz release/
-
-      - name: Upload asset to Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{steps.version.outputs.version}}
-        run: |
-          gh release upload $VERSION release/*.*          
+          gh release upload "$VERSION" release/*.*

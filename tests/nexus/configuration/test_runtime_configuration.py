@@ -1,18 +1,17 @@
 import os
 from pathlib import Path
-from pydantic.dataclasses import dataclass
 
 import pytest
-
+from pydantic.dataclasses import dataclass
 
 from nexus_client_sdk.nexus.configurations.configuration_model import (
-    NexusConfigurationModel,
-    NexusClientSettings,
-    ResultSettings,
-    TelemetrySettings,
     LoggingSettings,
     MetricsSettings,
+    NexusClientSettings,
+    NexusConfigurationModel,
+    ResultSettings,
     RuntimeSettings,
+    TelemetrySettings,
 )
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
 
@@ -105,9 +104,9 @@ def test_custom_runtime_configuration(set_config_extension_path_override) -> Non
 
 
 def test_inputs_sockets() -> None:
-    os.environ[
-        "NEXUS__INPUTS__SOCKETS"
-    ] = """@json [{"alias": "localfile1", "data_path": "local+file:///tmp/file1.json", "data_format": "text"}, {"alias": "localfile2", "data_path": "local+file:///tmp/file2.json","data_format": "text"}]"""
+    os.environ["NEXUS__INPUTS__SOCKETS"] = (
+        """@json [{"alias": "localfile1", "data_path": "local+file:///tmp/file1.json", "data_format": "text"}, {"alias": "localfile2", "data_path": "local+file:///tmp/file2.json","data_format": "text"}]"""
+    )
     config = NexusRuntimeConfiguration()
     config.load()
     model: NexusConfigurationModel = NexusConfigurationModel.from_runtime_configuration(config)
