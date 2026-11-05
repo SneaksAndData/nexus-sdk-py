@@ -8,6 +8,10 @@ c2 = "def"
 # bootstrap payload type to parse initial payload before algorithm resolution
 bootstrap_type_name = "tests.algorithms.minimalistic_bootstrap_payload.minimalistic_bootstrap_payload_inputs.BootstrapAlgorithmPayload"
 
+[[runtime.additional_factories]]
+factory_class = "tests.algorithms.minimalistic_bootstrap_payload.minimalistic_bootstrap_payload_client.TestMinimalisticBootstrapPayloadClientFactory"
+client_class = "tests.algorithms.minimalistic_bootstrap_payload.minimalistic_bootstrap_payload_client.TestMinimalisticBootstrapPayloadClient"
+
 [services]
     [services.query_enabled_store]
     enabled = false

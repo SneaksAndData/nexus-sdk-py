@@ -17,6 +17,7 @@
 Trino Client module that provides the trino client to the Nexus framework.
 """
 
+from types import NoneType
 from typing import final
 
 try:
@@ -29,13 +30,13 @@ from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfi
 
 
 @final
-class TrinoClientFactory(ClientFactory["TrinoClient"]):
+class TrinoClientFactory(ClientFactory["TrinoClient", NoneType]):
     """
     Trino Client module.
     """
 
     @classmethod
-    def get_client(cls, model: NexusConfigurationModel) -> "TrinoClient":
+    def get_client(cls, model: NexusConfigurationModel, payload: NoneType | None = None) -> "TrinoClient":
         """Provision a Trino client instance."""
         if model.services.trino_client.enabled:
             return TrinoClient(

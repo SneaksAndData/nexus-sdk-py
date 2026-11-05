@@ -20,6 +20,7 @@ import os
 import re
 from collections.abc import Callable
 from pydoc import locate
+from types import NoneType
 from typing import Any, Self, final
 
 from adapta.storage.blob.base import StorageClient
@@ -62,13 +63,13 @@ class QueryEnabledStoreCollectionFactory:
 
 
 @final
-class StorageClientFactory(ClientFactory[StorageClient]):
+class StorageClientFactory(ClientFactory[StorageClient, NoneType]):
     """
     Storage client factory
     """
 
     @classmethod
-    def get_client(cls, model: NexusConfigurationModel) -> StorageClient:
+    def get_client(cls, model: NexusConfigurationModel, payload: NoneType | None = None) -> StorageClient:
         """
         DI factory method.
         """

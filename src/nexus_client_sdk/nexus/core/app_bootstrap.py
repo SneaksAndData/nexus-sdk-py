@@ -66,6 +66,24 @@ class NexusBootstrapper:
             type(f"{TelemetryRecorder.__name__}Module", (Module,), {})(),
         ]
         self._run_args = run_args
+        # built-in client factories, user-provided ones are added from configuration at bootstrap
+        self._client_factories: list[tuple[type, type[ClientFactory[Any, Any]]]] = [
+            (StorageClient, StorageClientFactory),
+        ]
+        try:
+            from adapta.storage.database.v3.trino_sql import TrinoClient
+
+            self._client_factories.append((TrinoClient, TrinoClientFactory))
+        except ModuleNotFoundError:
+            pass
+
+        try:
+            from adapta.ml.mlflow import MlflowBasicClient
+
+            self._client_factories.append((MlflowBasicClient, MlflowClientFactory))
+        except ModuleNotFoundError:
+            pass
+
         # payload processing
         self._payload_type: type[AlgorithmPayload] | None = None
         self._bootstrap_payload_type: type[AlgorithmPayload] | None = None
@@ -231,6 +249,36 @@ class NexusBootstrapper:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self._logger.stop()
 
+    def _bind_clients(
+        self, injector: Injector, model: NexusConfigurationModel, payload: AlgorithmPayload | None = None
+    ) -> None:
+        client_factories = list(self._client_factories)
+
+        for additional_factory in model.runtime.additional_factories:
+            factory_class = locate(additional_factory.factory_class)
+            if factory_class is None:
+                raise FatalStartupConfigurationError(
+                    f"Failed to locate required factory: {additional_factory.factory_class}"
+                )
+
+            client_class = locate(additional_factory.client_class)
+            if client_class is None:
+                raise FatalStartupConfigurationError(
+                    f"Failed to locate required client class: {additional_factory.client_class}"
+                )
+
+            client_factories.append((client_class, factory_class))
+
+        for client_class, factory_class in client_factories:
+            try:
+                injector.binder.bind(client_class, to=factory_class.get_client(model, payload), scope=singleton)
+            except FatalStartupConfigurationError:
+                raise
+            except BaseException as error:
+                raise FatalStartupConfigurationError(
+                    f"Failed to activate required client factory: {factory_class.__module__}.{factory_class.__name__}"
+                ) from error
+
     async def bootstrap(self) -> Injector:
         """
          Bootstrapping logic. Returns an instance of Injector ready to be used for algorithm launch.
@@ -246,11 +294,6 @@ class NexusBootstrapper:
             app_injector.binder.install(bound_module)
 
         # bind services provided via factories
-        app_injector.binder.bind(
-            StorageClient,
-            to=StorageClientFactory.get_client(bootstrap_model),
-            scope=singleton,
-        )
         app_injector.binder.bind(
             QueryEnabledStoreCollection,
             to=QueryEnabledStoreCollectionFactory.get_collection(bootstrap_model),
@@ -271,52 +314,6 @@ class NexusBootstrapper:
             to=CacheFactory.get_cache(bootstrap_model),
             scope=singleton,
         )
-        try:
-            from adapta.storage.database.v3.trino_sql import TrinoClient
-
-            app_injector.binder.bind(
-                TrinoClient,
-                to=TrinoClientFactory.get_client(bootstrap_model),
-                scope=singleton,
-            )
-        except ModuleNotFoundError:
-            pass
-
-        try:
-            from adapta.ml.mlflow import MlflowBasicClient
-
-            app_injector.binder.bind(
-                MlflowBasicClient,
-                to=MlflowClientFactory.get_client(bootstrap_model),
-                scope=singleton,
-            )
-        except ModuleNotFoundError:
-            pass
-
-        # bind user-provided client factories
-        for additional_factory in bootstrap_model.runtime.additional_factories:
-            factory_class: type[ClientFactory[Any]] = locate(additional_factory.factory_class)
-            if factory_class is None:
-                raise FatalStartupConfigurationError(
-                    f"Failed to locate required factory: {additional_factory.factory_class}"
-                )
-
-            client_class = locate(additional_factory.client_class)
-            if client_class is None:
-                raise FatalStartupConfigurationError(
-                    f"Failed to locate required client class: {additional_factory.client_class}"
-                )
-
-            try:
-                app_injector.binder.bind(
-                    client_class,
-                    to=factory_class.get_client(bootstrap_model),
-                    scope=singleton,
-                )
-            except BaseException as error:
-                raise FatalStartupConfigurationError(
-                    f"Failed to activate required client factory: {additional_factory.factory_class}"
-                ) from error
 
         # load additional services
         for additional_module in bootstrap_model.runtime.additional_modules:
@@ -383,6 +380,10 @@ class NexusBootstrapper:
                 ) from payload_reader.read_exception
 
         app_injector.binder.bind(payload.__class__, to=payload, scope=singleton)
+
+        # clients are bound only now, when algorithm class and payload are fully resolved
+        self._bind_clients(app_injector, bootstrap_model, payload)
+
         logger_fixed_template |= (
             self._log_enricher(payload, bootstrap_model, self._run_args) if self._log_enricher else {}
         )

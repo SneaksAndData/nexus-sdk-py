@@ -5,6 +5,9 @@ from injector import inject, singleton
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
 from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.algorithms import MinimalisticAlgorithm
+from tests.algorithms.minimalistic_bootstrap_payload.minimalistic_bootstrap_payload_client import (
+    TestMinimalisticBootstrapPayloadClient,
+)
 from tests.algorithms.minimalistic_bootstrap_payload.minimalistic_bootstrap_payload_configuration import (
     TestMinimalisticBootstrapPayloadAlgorithmConfiguration,
 )
@@ -46,6 +49,8 @@ class TestMinimalisticBootstrapPayloadAlgorithm(
         zz_processor: ZZProcessor,
         cache: InputCache,
         configuration: TestMinimalisticBootstrapPayloadAlgorithmConfiguration,
+        client: TestMinimalisticBootstrapPayloadClient,
+        payload: TestMinimalisticBootstrapPayloadAlgorithmPayload,
     ):
         super().__init__(
             metrics_provider,
@@ -56,10 +61,15 @@ class TestMinimalisticBootstrapPayloadAlgorithm(
             cache=cache,
             configuration=configuration,
         )
+        self._client = client
+        self._payload = payload
 
     async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
         assert self._configuration.extra_parameters.parameter_y == "test", (
             "Unexpected or missing value of extra_parameters.parameter_y"
+        )
+        assert self._client.payload is self._payload, (
+            "Client from additional factory did not receive the morphed payload"
         )
 
         return TestResult(xy, z, self._cache.total_evaluated_inputs())

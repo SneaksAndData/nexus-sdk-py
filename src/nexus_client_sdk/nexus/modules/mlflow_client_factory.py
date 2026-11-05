@@ -17,6 +17,7 @@
 MLFlow module that provides the MLFlow client to the Nexus framework.
 """
 
+from types import NoneType
 from typing import final
 
 try:
@@ -29,13 +30,13 @@ from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfi
 
 
 @final
-class MlflowClientFactory(ClientFactory["MlflowBasicClient"]):
+class MlflowClientFactory(ClientFactory["MlflowBasicClient", NoneType]):
     """
     MLFlow module.
     """
 
     @classmethod
-    def get_client(cls, model: NexusConfigurationModel) -> "MlflowBasicClient":
+    def get_client(cls, model: NexusConfigurationModel, payload: NoneType | None = None) -> "MlflowBasicClient":
         """
         DI factory method.
         """

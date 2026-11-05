@@ -26,6 +26,7 @@ additional_modules = [
 #                   nexus_client_sdk.nexus.abstractions.client_factory.ClientFactory
 #   client_class  - fully qualified import path to the type returned by factory_class.get_client(),
 #                   used as the DI binding key
+# factories are activated after the algorithm class and payload are fully resolved and receive the final payload
 #
 # [[runtime.additional_factories]]
 # factory_class = "my_module.MyClientFactory"
