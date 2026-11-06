@@ -22,10 +22,6 @@ try:
 except ModuleNotFoundError:
     pass
 try:
-    from nexus_client_sdk.nexus.modules.astra_client_factory import AstraClientFactory
-except ModuleNotFoundError:
-    pass
-try:
     from nexus_client_sdk.nexus.modules.trino_client_factory import TrinoClientFactory
 except ModuleNotFoundError:
     pass

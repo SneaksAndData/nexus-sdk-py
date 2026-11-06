@@ -24,11 +24,12 @@ try:
 except ModuleNotFoundError:
     pass
 
+from nexus_client_sdk.nexus.abstractions.client_factory import ClientFactory
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 
 
 @final
-class TrinoClientFactory:
+class TrinoClientFactory(ClientFactory["TrinoClient"]):
     """
     Trino Client module.
     """

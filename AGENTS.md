@@ -91,7 +91,7 @@ Execution flow for an algorithm: `Nexus.create()` → `NexusBootstrapper` builds
 
 `TransientNexusError` vs `FatalNexusError` is load-bearing: transient exits with code 1 so the scheduler retries, fatal reports failure to the receiver. Error remapping is config-driven under `[runtime.exceptions]`.
 
-`nexus/modules/*` is excluded from coverage (optional integrations: Astra, MLflow, Trino).
+`nexus/modules/*` is excluded from coverage (optional integrations: MLflow, Trino).
 
 Copy `tests/algorithms/minimalistic/` when adding a framework feature — it is the canonical reference (payload, config, inputs, telemetry, `main`, test).
 

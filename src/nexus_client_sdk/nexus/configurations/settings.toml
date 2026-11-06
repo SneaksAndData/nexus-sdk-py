@@ -18,6 +18,20 @@ additional_modules = [
     "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
 ]
 
+# additional client factories for the DI container.
+# use these to provide custom clients without writing a full DI module, following the same pattern as
+# built-in factories (TrinoClientFactory, MlflowClientFactory, ...).
+# each entry must declare:
+#   factory_class - fully qualified import path to a class extending
+#                   nexus_client_sdk.nexus.abstractions.client_factory.ClientFactory
+#   client_class  - fully qualified import path to the type returned by factory_class.get_client(),
+#                   used as the DI binding key
+#
+# [[runtime.additional_factories]]
+# factory_class = "my_module.MyClientFactory"
+# client_class = "my_module.MyClient"
+additional_factories = []
+
 # optional function that applies additional context to all logs emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
 log_enrichment_function = ""
@@ -166,19 +180,6 @@ serializers = [
 
     # Connection strings for all supported QES instances
     store_connections = ["qes://engine=LOCAL;plaintext_credentials={};settings={}"]
-
-    [services.astra_client]
-
-    enabled = false
-
-    # Cassandra keyspace
-    keyspace = ""
-    # AstraDB ssl bundle
-    secure_connect_bundle_bytes = ""
-    # AstraDB role client id
-    client_id = ""
-    # AstraDB role client secret
-    client_secret = ""
 
     [services.trino_client]
     enabled = false

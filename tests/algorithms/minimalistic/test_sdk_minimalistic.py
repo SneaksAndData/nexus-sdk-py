@@ -16,6 +16,7 @@ from nexus_client_sdk.nexus.abstractions.socket_provider import InputSocket
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.testing import generate_payload_url
 from tests.algorithms.e2e_helpers import RUNTIME_CONFIG_STUB, get_config_extension_path_override
+from tests.algorithms.minimalistic.minimalistic_client import TestMinimalisticClient, TestMinimalisticClientFactory
 from tests.algorithms.minimalistic.minimalistic_inputs import NegativeZError, TestMinimalisticAlgorithmPayload
 from tests.algorithms.minimalistic.minimalistic_main import main as sample_algorithm_main
 from tests.algorithms.shared import TestEnum, find_telemetry_objects, generate_payloads, get_alg_name, rand_range
@@ -171,4 +172,54 @@ async def test_failing_reader(scheduler: NexusSchedulerClient, cql_session: Sess
         and scheduler.is_finished(run_result)
         and not scheduler.has_succeeded(run_result)
         and str(NegativeZError()) in run_details.algorithm_failure_details
+    )
+
+
+FACTORY_PATH = f"{TestMinimalisticClientFactory.__module__}.{TestMinimalisticClientFactory.__name__}"
+CLIENT_PATH = f"{TestMinimalisticClient.__module__}.{TestMinimalisticClient.__name__}"
+MISSING_PATH = "tests.algorithms.minimalistic.minimalistic_client.DoesNotExist"
+
+
+@pytest.mark.parametrize(
+    ("factory_class", "client_class", "expected_error"),
+    [
+        (MISSING_PATH, CLIENT_PATH, f"Failed to locate required factory: {MISSING_PATH}"),
+        (FACTORY_PATH, MISSING_PATH, f"Failed to locate required client class: {MISSING_PATH}"),
+    ],
+    ids=["factory_not_found", "client_not_found"],
+)
+@pytest.mark.asyncio(loop_scope="package")
+async def test_unlocatable_additional_factory_fails_run(
+    factory_class: str,
+    client_class: str,
+    expected_error: str,
+    scheduler: NexusSchedulerClient,
+    cql_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "NEXUS__RUNTIME__ADDITIONAL_FACTORIES",
+        f'[{{factory_class = "{factory_class}", client_class = "{client_class}"}}]',
+    )
+    algorithm = get_alg_name()
+    payload_url, request_id = negative_z_payload()
+    cql_session.execute(
+        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{request_id}', 'RUNNING', '{payload_url}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
+    )
+    sys.argv = ["", "--sas-uri", payload_url, "--request-id", request_id]
+
+    # fatal startup errors complete the run as failed and exit with 0, so the scheduler does not retry
+    with pytest.raises(SystemExit) as exit_info:
+        await sample_algorithm_main()
+    assert exit_info.value.code == 0
+
+    await asyncio.sleep(1)
+    run_details = scheduler.get_request_metadata(request_id, algorithm)
+    run_result = scheduler.get_run_result(request_id, algorithm)
+
+    assert (
+        run_details.lifecycle_stage == RequestLifeCycleStage.FAILED.value
+        and scheduler.is_finished(run_result)
+        and not scheduler.has_succeeded(run_result)
+        and expected_error in run_details.algorithm_failure_details
     )

@@ -14,12 +14,6 @@ additional_modules = [
     "nexus_client_sdk.nexus.core.app_dependencies.CompressorModule",
 ]
 
-# Settings for AstraClientModule
-[services.astra_client]
-
-# Enabled injection of AstraClientModule
-enabled = false
-
 # optional function that applies additional context to all logs emitted by Nexus.
 # accepts p: AlgorithmPayload and n: NexusDefaultArguments parameters
 log_enrichment_function = "tests.algorithms.minimalistic.minimalistic_telemetry.enrich_from_payload"

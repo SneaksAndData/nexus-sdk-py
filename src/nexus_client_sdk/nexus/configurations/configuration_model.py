@@ -109,17 +109,6 @@ class TrinoClientSettings:
 
 
 @dataclass
-class AstraClientSettings:
-    """Astra Client configuration settings."""
-
-    enabled: bool
-    keyspace: str
-    secure_connect_bundle_bytes: str
-    client_id: str
-    client_secret: str
-
-
-@dataclass
 class MlflowClientSettings:
     """Mlflow Client configuration settings."""
 
@@ -135,7 +124,6 @@ class AdditionalServicesSettings:
 
     query_enabled_store: QueryEnabledStoreSettings
     trino_client: TrinoClientSettings
-    astra_client: AstraClientSettings
     mlflow_client: MlflowClientSettings
 
 
@@ -209,11 +197,20 @@ class FanOutSettings:
 
 
 @dataclass
+class AdditionalFactorySettings:
+    """Additional (user-provided) client factory configuration settings."""
+
+    factory_class: str
+    client_class: str
+
+
+@dataclass
 class RuntimeSettings:
     """Runtime configuration settings."""
 
     algorithm: str
     additional_modules: list[str]
+    additional_factories: list[AdditionalFactorySettings]
     log_enrichment_function: str
     log_tagging_function: str
     metric_tagging_function: str

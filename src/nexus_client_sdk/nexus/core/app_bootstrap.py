@@ -2,7 +2,7 @@ from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
 from pydoc import locate
-from typing import final
+from typing import Any, final
 
 from adapta.logs import LoggerInterface
 from adapta.metrics import MetricsProvider
@@ -12,6 +12,7 @@ from injector import Injector, Module, singleton
 
 from nexus_client_sdk.models.access_token import AccessToken
 from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.client_factory import ClientFactory
 from nexus_client_sdk.nexus.abstractions.logger_factory import BootstrapLoggerFactory, LoggerFactory
 from nexus_client_sdk.nexus.abstractions.metrics_provider_factory import MetricsProviderFactory
 from nexus_client_sdk.nexus.abstractions.qes_factory import QueryEnabledStoreCollection
@@ -32,7 +33,7 @@ from nexus_client_sdk.nexus.core.serializers import ResultSerializer, TelemetryS
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload, AlgorithmPayloadReader, SocketOverridePayload
-from nexus_client_sdk.nexus.modules import AstraClientFactory, MlflowClientFactory, TrinoClientFactory
+from nexus_client_sdk.nexus.modules import MlflowClientFactory, TrinoClientFactory
 from nexus_client_sdk.nexus.telemetry.payload_recorder import (
     FailedPayloadRecorder,
     PayloadResult,
@@ -282,16 +283,6 @@ class NexusBootstrapper:
             pass
 
         try:
-            from adapta.storage.distributed_object_store.v3.datastax_astra import AstraClient
-
-            app_injector.binder.bind(
-                AstraClient,
-                to=AstraClientFactory.get_client(bootstrap_model),
-                scope=singleton,
-            )
-        except ModuleNotFoundError:
-            pass
-        try:
             from adapta.ml.mlflow import MlflowBasicClient
 
             app_injector.binder.bind(
@@ -301,6 +292,31 @@ class NexusBootstrapper:
             )
         except ModuleNotFoundError:
             pass
+
+        # bind user-provided client factories
+        for additional_factory in bootstrap_model.runtime.additional_factories:
+            factory_class: type[ClientFactory[Any]] = locate(additional_factory.factory_class)
+            if factory_class is None:
+                raise FatalStartupConfigurationError(
+                    f"Failed to locate required factory: {additional_factory.factory_class}"
+                )
+
+            client_class = locate(additional_factory.client_class)
+            if client_class is None:
+                raise FatalStartupConfigurationError(
+                    f"Failed to locate required client class: {additional_factory.client_class}"
+                )
+
+            try:
+                app_injector.binder.bind(
+                    client_class,
+                    to=factory_class.get_client(bootstrap_model),
+                    scope=singleton,
+                )
+            except BaseException as error:
+                raise FatalStartupConfigurationError(
+                    f"Failed to activate required client factory: {additional_factory.factory_class}"
+                ) from error
 
         # load additional services
         for additional_module in bootstrap_model.runtime.additional_modules:
