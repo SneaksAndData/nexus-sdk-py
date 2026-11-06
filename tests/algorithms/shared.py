@@ -33,16 +33,18 @@ def find_telemetry_objects(request_id: str) -> tuple[list[str], list[str]]:
     input_prefix = "telemetry/telemetry_group=inputs/"
     user_prefix = "telemetry/telemetry_group=user/"
 
-    input_objects = [
-        item["Key"]
-        for item in s3_client.list_objects_v2(Bucket="nexus-sdk-tests", Prefix=input_prefix).get("Contents", [])
-        if request_id in item["Key"]
-    ]
-    user_objects = [
-        item["Key"]
-        for item in s3_client.list_objects_v2(Bucket="nexus-sdk-tests", Prefix=user_prefix).get("Contents", [])
-        if request_id in item["Key"]
-    ]
+    paginator = s3_client.get_paginator("list_objects_v2")
+
+    def list_keys(prefix: str) -> list[str]:
+        return [
+            item["Key"]
+            for page in paginator.paginate(Bucket="nexus-sdk-tests", Prefix=prefix)
+            for item in page.get("Contents", [])
+            if request_id in item["Key"]
+        ]
+
+    input_objects = list_keys(input_prefix)
+    user_objects = list_keys(user_prefix)
 
     return input_objects, user_objects
 

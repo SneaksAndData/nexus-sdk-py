@@ -26,16 +26,17 @@ except ModuleNotFoundError:
 
 from nexus_client_sdk.nexus.abstractions.client_factory import ClientFactory
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 
 
 @final
-class TrinoClientFactory(ClientFactory["TrinoClient"]):
+class TrinoClientFactory(ClientFactory["TrinoClient", AlgorithmPayload]):
     """
     Trino Client module.
     """
 
     @classmethod
-    def get_client(cls, model: NexusConfigurationModel) -> "TrinoClient":
+    def get_client(cls, model: NexusConfigurationModel, payload: AlgorithmPayload) -> "TrinoClient":
         """Provision a Trino client instance."""
         if model.services.trino_client.enabled:
             return TrinoClient(

@@ -20,23 +20,33 @@ Base class for user-provided client factories.
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
+from nexus_client_sdk.nexus.abstractions.nexus_object import TPayload
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 
 TClient = TypeVar("TClient")
 
 
-class ClientFactory(ABC, Generic[TClient]):
+class ClientFactory(ABC, Generic[TClient, TPayload]):
     """
-    Base class for user-provided client factories, registered via `[[runtime.additional_factories]]` configuration.
+    Base class for client factories. User-provided factories are registered via `[[runtime.additional_factories]]`
+    configuration.
 
-    Implementations are located and activated by `NexusBootstrapper` alongside the built-in factories
-    (`TrinoClientFactory`, `MlflowClientFactory`, ...) and the resulting client instance
+    Implementations are located and activated by `NexusBootstrapper` and the resulting client instance
     is bound into the DI container using the `client_class` declared next to the factory in configuration.
+
+    All factories, built-in (`StorageClientFactory`, `TrinoClientFactory`, `MlflowClientFactory`) and user-provided,
+    are activated together, only after the algorithm class and the payload are fully resolved (including bootstrap
+    payload morphing), so they receive the final payload. Built-in factories ignore it.
+
+    The configuration model passed to factories is the bare `NexusConfigurationModel` that bootstrap uses for all
+    other factory-provided services. It is not the custom configuration model set via `set_configuration_model`.
     """
 
     @classmethod
     @abstractmethod
-    def get_client(cls, model: NexusConfigurationModel) -> TClient:
+    def get_client(cls, model: NexusConfigurationModel, payload: TPayload) -> TClient:
         """
-        Creates a client instance from the resolved `NexusConfigurationModel`.
+        Creates a client instance from the bare `NexusConfigurationModel`.
+
+        `payload` is the resolved algorithm payload. Factories that do not need it to initialize can ignore it.
         """

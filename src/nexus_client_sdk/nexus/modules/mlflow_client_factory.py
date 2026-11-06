@@ -26,16 +26,17 @@ except ModuleNotFoundError:
 
 from nexus_client_sdk.nexus.abstractions.client_factory import ClientFactory
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 
 
 @final
-class MlflowClientFactory(ClientFactory["MlflowBasicClient"]):
+class MlflowClientFactory(ClientFactory["MlflowBasicClient", AlgorithmPayload]):
     """
     MLFlow module.
     """
 
     @classmethod
-    def get_client(cls, model: NexusConfigurationModel) -> "MlflowBasicClient":
+    def get_client(cls, model: NexusConfigurationModel, payload: AlgorithmPayload) -> "MlflowBasicClient":
         """
         DI factory method.
         """

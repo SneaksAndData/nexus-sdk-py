@@ -39,6 +39,7 @@ class TestMinimalisticAlgorithm(
         cache: InputCache,
         configuration: TestMinimalisticAlgorithmConfiguration,
         client: TestMinimalisticClient,
+        payload: TestMinimalisticAlgorithmPayload,
     ):
         super().__init__(
             metrics_provider,
@@ -50,6 +51,7 @@ class TestMinimalisticAlgorithm(
             configuration=configuration,
         )
         self._client = client
+        self._payload = payload
 
     async def _run(self, xy: pandas.DataFrame, z: pandas.DataFrame, zz: pandas.DataFrame, **kwargs) -> TestResult:
         assert self._configuration.extra_parameters.parameter_y == "test", (
@@ -57,6 +59,9 @@ class TestMinimalisticAlgorithm(
         )
         assert self._client.algorithm_name == self._configuration.algorithm_name, (
             "Client from additional factory was not built from the resolved configuration"
+        )
+        assert self._client.payload is self._payload, (
+            "Client from additional factory did not receive the resolved payload"
         )
 
         return TestResult(xy, z, self._cache.total_evaluated_inputs())
