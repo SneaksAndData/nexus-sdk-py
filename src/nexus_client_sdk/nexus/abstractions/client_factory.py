@@ -44,9 +44,9 @@ class ClientFactory(ABC, Generic[TClient, TPayload]):
 
     @classmethod
     @abstractmethod
-    def get_client(cls, model: NexusConfigurationModel, payload: TPayload | None = None) -> TClient:
+    def get_client(cls, model: NexusConfigurationModel, payload: TPayload) -> TClient:
         """
         Creates a client instance from the bare `NexusConfigurationModel`.
 
-        `payload` is the resolved algorithm payload. It is optional because not every client needs it to initialize.
+        `payload` is the resolved algorithm payload. Factories that do not need it to initialize can ignore it.
         """

@@ -172,8 +172,8 @@ class MyClient:
 
 class MyClientFactory(ClientFactory[MyClient, MyPayload]):
     @classmethod
-    def get_client(cls, model: NexusConfigurationModel, payload: MyPayload | None = None) -> MyClient:
-        return MyClient(host=payload.host if payload else model.algorithm_name)
+    def get_client(cls, model: NexusConfigurationModel, payload: MyPayload) -> MyClient:
+        return MyClient(host=payload.host)
 ```
 
 ### Step 2: Register the factory in configuration
@@ -186,4 +186,4 @@ factory_class = "my_module.MyClientFactory"
 client_class = "my_module.MyClient"
 ```
 
-Factories are activated only after the algorithm class and the payload are fully resolved. This includes payload types coming from `[runtime.payload]`, from a bootstrap payload (`bootstrap_type_name`) that is morphed into the runtime payload, and from an algorithm resolver. `get_client` therefore receives the final payload instance. The configuration model it receives is the bare `NexusConfigurationModel`, the same one used by the other built-in factories, and not a custom model set via `set_configuration_model`. `payload` is optional in the signature because not every client needs it to initialize.
+Factories are activated only after the algorithm class and the payload are fully resolved. This includes payload types coming from `[runtime.payload]`, from a bootstrap payload (`bootstrap_type_name`) that is morphed into the runtime payload, and from an algorithm resolver. `get_client` therefore receives the final payload instance. The configuration model it receives is the bare `NexusConfigurationModel`, the same one used by the other built-in factories, and not a custom model set via `set_configuration_model`. Factories that do not need the payload can ignore it.

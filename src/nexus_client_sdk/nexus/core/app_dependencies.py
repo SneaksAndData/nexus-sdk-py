@@ -20,7 +20,6 @@ import os
 import re
 from collections.abc import Callable
 from pydoc import locate
-from types import NoneType
 from typing import Any, Self, final
 
 from adapta.storage.blob.base import StorageClient
@@ -38,6 +37,7 @@ from nexus_client_sdk.nexus.exceptions.error_map import NexusErrorMap, NexusErro
 from nexus_client_sdk.nexus.exceptions.startup_error import (
     FatalStartupConfigurationError,
 )
+from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 
 
 @final
@@ -63,13 +63,13 @@ class QueryEnabledStoreCollectionFactory:
 
 
 @final
-class StorageClientFactory(ClientFactory[StorageClient, NoneType]):
+class StorageClientFactory(ClientFactory[StorageClient, AlgorithmPayload]):
     """
     Storage client factory
     """
 
     @classmethod
-    def get_client(cls, model: NexusConfigurationModel, payload: NoneType | None = None) -> StorageClient:
+    def get_client(cls, model: NexusConfigurationModel, payload: AlgorithmPayload) -> StorageClient:
         """
         DI factory method.
         """

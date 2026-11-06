@@ -249,9 +249,7 @@ class NexusBootstrapper:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self._logger.stop()
 
-    def _bind_clients(
-        self, injector: Injector, model: NexusConfigurationModel, payload: AlgorithmPayload | None = None
-    ) -> None:
+    def _bind_clients(self, injector: Injector, model: NexusConfigurationModel, payload: AlgorithmPayload) -> None:
         client_factories = list(self._client_factories)
 
         for additional_factory in model.runtime.additional_factories:

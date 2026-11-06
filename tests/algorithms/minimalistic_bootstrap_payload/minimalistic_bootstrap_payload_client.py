@@ -17,7 +17,7 @@ class TestMinimalisticBootstrapPayloadClientFactory(
     def get_client(
         cls,
         model: NexusConfigurationModel,
-        payload: TestMinimalisticBootstrapPayloadAlgorithmPayload | None = None,
+        payload: TestMinimalisticBootstrapPayloadAlgorithmPayload,
     ) -> TestMinimalisticBootstrapPayloadClient:
         # registered from the start, but must only be activated once the bootstrap payload has been morphed
         assert isinstance(payload, TestMinimalisticBootstrapPayloadAlgorithmPayload), (

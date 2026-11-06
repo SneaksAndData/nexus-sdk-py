@@ -16,7 +16,7 @@ class TestMinimalisticClient:
 class TestMinimalisticClientFactory(ClientFactory[TestMinimalisticClient, TestMinimalisticAlgorithmPayload]):
     @classmethod
     def get_client(
-        cls, model: NexusConfigurationModel, payload: TestMinimalisticAlgorithmPayload | None = None
+        cls, model: NexusConfigurationModel, payload: TestMinimalisticAlgorithmPayload
     ) -> TestMinimalisticClient:
         assert isinstance(payload, TestMinimalisticAlgorithmPayload), (
             f"Factory must receive the resolved algorithm payload, got: {type(payload)}"
