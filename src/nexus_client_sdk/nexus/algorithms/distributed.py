@@ -50,8 +50,13 @@ class DistributedAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
 
     async def _run(self, **kwargs) -> AlgorithmResult:
         splits = await self._split(**kwargs)
-        tasks = [asyncio.create_task(split.run(**kwargs)) for split in splits]
 
-        await asyncio.wait(*tasks)
+        async def _run_split(split: BaselineAlgorithm) -> AlgorithmResult:
+            async with split as instance:
+                return await instance.run(**kwargs)
+
+        tasks = [asyncio.create_task(_run_split(split)) for split in splits]
+
+        await asyncio.wait(tasks)
 
         return await self._fold(*tasks)

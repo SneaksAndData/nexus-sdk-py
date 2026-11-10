@@ -62,7 +62,11 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
                 self._logger.info("Spawning remote algorithm in {jitter:.2f}s", jitter=jitter)
                 await asyncio.sleep(jitter)
 
-            return asyncio.create_task(remote_algorithm.run(**remote_args))
+            async def _run() -> AlgorithmResult:
+                async with remote_algorithm as instance:
+                    return await instance.run(**remote_args)
+
+            return asyncio.create_task(_run())
 
         async def _spawn_all(
             algorithms: list[RemoteAlgorithm],
