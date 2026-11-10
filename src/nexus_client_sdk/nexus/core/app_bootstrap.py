@@ -40,6 +40,7 @@ from nexus_client_sdk.nexus.telemetry.payload_recorder import (
     PayloadTelemetry,
 )
 from nexus_client_sdk.nexus.telemetry.recorder import TelemetryRecorder
+from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import UserTelemetryRecorder
 
 
 class _PayloadSerializationMode(Enum):
@@ -118,6 +119,7 @@ class NexusBootstrapper:
         # algorithm loading
         self._algorithm_class: type[BaselineAlgorithm] | None = None
         self._algorithm_resolver: Callable[[AlgorithmPayload], tuple[str, str]] | None = None
+        self._telemetry_recorders: list[type[UserTelemetryRecorder]] = []
         self._bootstrap_config = bootstrap_config
 
     async def _get_payload(
@@ -139,6 +141,14 @@ class NexusBootstrapper:
         """
         assert self._algorithm_class is not None, "Algorithm class not set or resolved!"
         return self._algorithm_class
+
+    @property
+    def telemetry_recorders(self) -> list[type[UserTelemetryRecorder]]:
+        """
+         Bootstrapped telemetry recorder classes.
+        :return:
+        """
+        return self._telemetry_recorders
 
     @property
     def logger(self) -> LoggerInterface:
@@ -190,6 +200,16 @@ class NexusBootstrapper:
                 )
 
         return self
+
+    def _load_telemetry_recorders(self, config_model: NexusConfigurationModel) -> None:
+        self._telemetry_recorders = []
+        for recorder_path in config_model.telemetry.user.recorders:
+            recorder_class: type[UserTelemetryRecorder] = locate(recorder_path)
+            if recorder_class is None:
+                raise FatalStartupConfigurationError(
+                    f"Failed to locate a provided telemetry recorder class: {recorder_path}"
+                )
+            self._telemetry_recorders.append(recorder_class)
 
     def _load_algorithm(self, algorithm: str, config_model: str | None) -> None:
         algorithm_class: type[BaselineAlgorithm] = locate(algorithm)
@@ -365,10 +385,11 @@ class NexusBootstrapper:
         else:
             self._load_algorithm(bootstrap_model.runtime.algorithm, None)
 
-        # at this point runtime configuration is fully resolved, which includes payload type overrides
+        # at this point runtime configuration is fully resolved, which includes algorithm and payload config extensions
+        bootstrap_model = NexusConfigurationModel.from_runtime_configuration(self._bootstrap_config)
+
         # if bootstrap payload type is provided, morph it into the target type that should now be available
         if self._bootstrap_payload_type:
-            bootstrap_model = NexusConfigurationModel.from_runtime_configuration(self._bootstrap_config)
             self._payload_type = self._load_payload_type(bootstrap_model.runtime.payload.type_name)
             payload = payload_reader.morph(self._payload_type)
 
@@ -376,6 +397,8 @@ class NexusBootstrapper:
                 raise FatalStartupConfigurationError(
                     f"Failed to morph bootstrap payload of class {self._bootstrap_payload_type.__name__} into runtime payload of class {self._payload_type.__name__}"
                 ) from payload_reader.read_exception
+
+        self._load_telemetry_recorders(bootstrap_model)
 
         app_injector.binder.bind(payload.__class__, to=payload, scope=singleton)
 

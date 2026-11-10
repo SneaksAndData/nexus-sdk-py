@@ -168,9 +168,8 @@ serializers = [
       # Control whether user telemetry recording is enabled
       enabled = true
 
-      # Provide a list of user telemetry classes to execute. If empty, all user telemetry will be recorded
-      # THIS IS A RESERVATION FOR https://github.com/SneaksAndData/nexus-sdk-py/issues/126
-      classes = []
+      # Provide a list of user telemetry classes to execute.
+      recorders = []
 
 # ADDITIONAL SERVICES
 [services]

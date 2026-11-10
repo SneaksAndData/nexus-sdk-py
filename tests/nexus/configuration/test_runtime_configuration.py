@@ -48,6 +48,7 @@ def _check_base_model(model_instance: NexusConfigurationModel) -> None:
     assert isinstance(model_instance.telemetry, TelemetrySettings)
     assert model_instance.telemetry.input.enabled is True
     assert model_instance.telemetry.user.enabled is True
+    assert model_instance.telemetry.user.recorders == []
 
     assert isinstance(model_instance.logging, LoggingSettings)
     assert model_instance.logging.datadog.enabled is False
