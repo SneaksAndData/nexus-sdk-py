@@ -3,3 +3,6 @@ dynaconf_merge = true
 [extra_parameters]
 parameter_x = 1
 parameter_y = "test"
+
+[telemetry.user]
+recorders = ["tests.algorithms.minimalistic.minimalistic_telemetry.TestUserAnalyticsTelemetry"]

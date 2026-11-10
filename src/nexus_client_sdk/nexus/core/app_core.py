@@ -58,9 +58,6 @@ from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigur
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
 from nexus_client_sdk.nexus.input.payload_reader import AlgorithmPayload
 from nexus_client_sdk.nexus.telemetry.recorder import TelemetryRecorder
-from nexus_client_sdk.nexus.telemetry.user_telemetry_recorder import (
-    UserTelemetryRecorder,
-)
 
 
 def is_transient_exception(exception: BaseException | None) -> bool | None:
@@ -108,7 +105,6 @@ class Nexus:
         self._injector: Injector | None = None
         self._run_args = args
         self._algorithm_run_task: asyncio.Task | None = None
-        self._on_complete_tasks: list[type[UserTelemetryRecorder]] = []
         self._base_configuration = NexusRuntimeConfiguration()
         self._bootstrapper = NexusBootstrapper(args, self._base_configuration)
 
@@ -129,13 +125,6 @@ class Nexus:
         Specify a custom configuration model to use. If omitted, with use default NexusConfigurationModel.
         """
         self._bootstrapper.set_configuration_model(model)
-        return self
-
-    def on_complete(self, *post_processors: type[UserTelemetryRecorder]) -> Self:
-        """
-        Attaches a coroutine to run on algorithm completion.
-        """
-        self._on_complete_tasks.extend(post_processors)
         return self
 
     def with_config_validators(self, *validators: Validator) -> Self:
@@ -333,12 +322,12 @@ class Nexus:
                 if ex is None and self._base_configuration.default.telemetry.user.enabled:
                     on_complete_tasks = [
                         recorder.record_user_telemetry(
-                            user_recorder=self._injector.get(on_complete_task_class),
+                            user_recorder=self._injector.get(recorder_class),
                             run_id=self._run_args.request_id,
                             result=self._algorithm_run_task.result(),
                             **algorithm.inputs,
                         )
-                        for on_complete_task_class in self._on_complete_tasks
+                        for recorder_class in self._bootstrapper.telemetry_recorders
                     ]
                     if len(on_complete_tasks) > 0:
                         done, pending = await asyncio.wait(on_complete_tasks, return_when=asyncio.FIRST_EXCEPTION)

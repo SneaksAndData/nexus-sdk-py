@@ -35,7 +35,7 @@ class UserTelemetrySettings:
     """User telemetry configuration settings."""
 
     enabled: bool
-    classes: list[str]
+    recorders: list[str]
 
 
 @dataclass

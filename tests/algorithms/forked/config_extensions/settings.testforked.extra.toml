@@ -6,3 +6,6 @@ parameter_y = "test"
 
 [remote_algorithm]
 dry_run = "1"
+
+[telemetry.user]
+recorders = ["tests.algorithms.forked.forked_telemetry.TestUserAnalyticsTelemetry"]

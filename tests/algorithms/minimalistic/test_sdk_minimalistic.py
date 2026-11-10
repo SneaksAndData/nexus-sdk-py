@@ -223,3 +223,39 @@ async def test_unlocatable_additional_factory_fails_run(
         and not scheduler.has_succeeded(run_result)
         and expected_error in run_details.algorithm_failure_details
     )
+
+
+@pytest.mark.asyncio(loop_scope="package")
+async def test_unlocatable_telemetry_recorder_fails_run(
+    scheduler: NexusSchedulerClient,
+    cql_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bad_recorder = "tests.algorithms.minimalistic.minimalistic_telemetry.DoesNotExist"
+    monkeypatch.setenv(
+        "NEXUS__TELEMETRY__USER__RECORDERS",
+        f'["{bad_recorder}"]',
+    )
+    algorithm = get_alg_name()
+    payload_url, request_id = negative_z_payload()
+    cql_session.execute(
+        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{request_id}', 'RUNNING', '{payload_url}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
+    )
+    sys.argv = ["", "--sas-uri", payload_url, "--request-id", request_id]
+
+    # fatal startup errors complete the run as failed and exit with 0, so the scheduler does not retry
+    with pytest.raises(SystemExit) as exit_info:
+        await sample_algorithm_main()
+    assert exit_info.value.code == 0
+
+    await asyncio.sleep(1)
+    run_details = scheduler.get_request_metadata(request_id, algorithm)
+    run_result = scheduler.get_run_result(request_id, algorithm)
+
+    assert (
+        run_details.lifecycle_stage == RequestLifeCycleStage.FAILED.value
+        and scheduler.is_finished(run_result)
+        and not scheduler.has_succeeded(run_result)
+        and f"Failed to locate a provided telemetry recorder class: {bad_recorder}"
+        in run_details.algorithm_failure_details
+    )
