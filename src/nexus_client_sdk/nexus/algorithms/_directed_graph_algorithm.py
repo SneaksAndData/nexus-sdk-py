@@ -21,6 +21,11 @@ import asyncio
 import random
 from abc import ABC
 
+from adapta.metrics import MetricsProvider
+from injector import inject
+
+from nexus_client_sdk.nexus.abstractions.algorithm_cache import InputCache
+from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import (
     AlgorithmResult,
     DirectedGraphResult,
@@ -29,12 +34,30 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
 )
 from nexus_client_sdk.nexus.algorithms._baseline_algorithm import BaselineAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
+from nexus_client_sdk.nexus.core.background_tasks import BackgroundTaskManager
+from nexus_client_sdk.nexus.input.input_processor import InputProcessor
 
 
 class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
     """
     Base class for all algorithm implementations which spawns remote algorithms.
     """
+
+    @inject
+    def __init__(
+        self,
+        metrics_provider: MetricsProvider,
+        logger_factory: LoggerFactory,
+        *input_processors: InputProcessor,
+        cache: InputCache,
+        configuration: TConfiguration,
+        background_task_manager: BackgroundTaskManager | None = None,
+    ):
+        super().__init__(metrics_provider, logger_factory, *input_processors, cache=cache, configuration=configuration)
+        self._background_task_manager = background_task_manager or BackgroundTaskManager(
+            logger_factory=logger_factory,
+            metrics_provider=metrics_provider,
+        )
 
     async def _spawn_remote_algorithms(
         self,
@@ -109,7 +132,10 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
 
         if remote_algorithms:
             if async_spawn_enabled:
-                asyncio.create_task(_spawn_all(remote_algorithms))
+                self._background_task_manager.add_task(
+                    _spawn_all(remote_algorithms),
+                    name=f"spawn_remote_algorithms_{self.__class__.alias()}",
+                )
                 self._logger.warning(
                     "Async spawn enabled, so remote algorithm results will not be available in the DirectedGraphResult."
                 )

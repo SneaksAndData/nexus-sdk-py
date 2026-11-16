@@ -116,3 +116,44 @@ async def test_sdk_run_fan_out(
     for remote_request_id in result["remote_algorithm_request_ids"]:
         remote_result = scheduler.get_run_result(remote_request_id, algorithm)
         assert remote_result.request_id == remote_request_id
+
+
+@pytest.mark.asyncio(loop_scope="package")
+async def test_sdk_run_fan_out_async_spawn(
+    fan_out_test_args: NexusDefaultArguments,
+    scheduler: NexusSchedulerClient,
+    cql_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("NEXUS__FAN_OUT__ASYNC_SPAWN_ENABLED", "true")
+    algorithm = get_alg_name()
+    # create initial fake record
+    cql_session.execute(
+        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{fan_out_test_args.request_id}', 'RUNNING', '{fan_out_test_args.sas_uri}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
+    )
+    sys.argv = ["", "--sas-uri", fan_out_test_args.sas_uri, "--request-id", fan_out_test_args.request_id]
+    await sample_algorithm_main()
+    await asyncio.sleep(1)
+
+    ## Assert children spawned even though async_spawn_enabled was True
+    parent_filter = "b64__" + b64encode(
+        json.dumps(
+            {
+                "requestId": fan_out_test_args.request_id,
+                "algorithmName": algorithm,
+            },
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).decode("utf-8")
+
+    child_rows = list(
+        cql_session.execute(
+            f"SELECT id, payload_uri FROM nexus.checkpoints WHERE parent = '{parent_filter}' ALLOW FILTERING"
+        )
+    )
+
+    assert len(child_rows) == 5
+
+    ## Assert that DirectedGraphResult returned immediately without remote_algorithm_request_ids
+    result = json.loads(requests.get(scheduler.get_run_result(fan_out_test_args.request_id, algorithm).result_uri).text)
+    assert result["remote_algorithm_request_ids"] is None

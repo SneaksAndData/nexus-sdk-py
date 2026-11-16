@@ -50,6 +50,7 @@ from nexus_client_sdk.nexus.async_extensions.nexus_receiver_async_client import 
 from nexus_client_sdk.nexus.configurations.configuration_model import NexusConfigurationModel
 from nexus_client_sdk.nexus.configurations.runtime_configuration import NexusRuntimeConfiguration
 from nexus_client_sdk.nexus.core.app_bootstrap import NexusBootstrapper
+from nexus_client_sdk.nexus.core.background_tasks import BackgroundTaskManager
 from nexus_client_sdk.nexus.core.serializers import (
     ResultSerializer,
 )
@@ -294,6 +295,9 @@ class Nexus:
             version=__version__,
         )
 
+        background_task_manager = self._injector.get(BackgroundTaskManager)
+        background_task_manager.activate()
+
         async with algorithm as instance:
             self._algorithm_run_task = asyncio.create_task(instance.run(**self._run_args.__dict__))
 
@@ -358,6 +362,10 @@ class Nexus:
             # dispose of QES instance gracefully as it might hold open connections
             qes = self._injector.get(QueryEnabledStoreCollection)
             qes.close()
+
+            # await any background tasks spawned during algorithm run
+            await background_task_manager.drain()
+            background_task_manager.shutdown()
 
         root_logger.stop()
 
