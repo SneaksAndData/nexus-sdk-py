@@ -311,28 +311,6 @@ class NexusBootstrapper:
         for bound_module in self._injection_binds:
             app_injector.binder.install(bound_module)
 
-        # bind services provided via factories
-        app_injector.binder.bind(
-            QueryEnabledStoreCollection,
-            to=QueryEnabledStoreCollectionFactory.get_collection(bootstrap_model),
-            scope=singleton,
-        )
-        app_injector.binder.bind(
-            ResultSerializer,
-            to=ResultSerializerFactory.get_serializer(bootstrap_model),
-            scope=singleton,
-        )
-        app_injector.binder.bind(
-            TelemetrySerializer,
-            to=TelemetrySerializerFactory.get_serializer(bootstrap_model),
-            scope=singleton,
-        )
-        app_injector.binder.bind(
-            InputCache,
-            to=CacheFactory.get_cache(bootstrap_model),
-            scope=singleton,
-        )
-
         # load additional services
         for additional_module in bootstrap_model.runtime.additional_modules:
             module_class = locate(additional_module)
@@ -387,6 +365,29 @@ class NexusBootstrapper:
 
         # at this point runtime configuration is fully resolved, which includes algorithm and payload config extensions
         bootstrap_model = NexusConfigurationModel.from_runtime_configuration(self._bootstrap_config)
+
+        # bind services provided via factories; must happen after algorithm/payload config extensions are loaded,
+        # so that algorithm-specific configuration overrides are respected
+        app_injector.binder.bind(
+            QueryEnabledStoreCollection,
+            to=QueryEnabledStoreCollectionFactory.get_collection(bootstrap_model),
+            scope=singleton,
+        )
+        app_injector.binder.bind(
+            ResultSerializer,
+            to=ResultSerializerFactory.get_serializer(bootstrap_model),
+            scope=singleton,
+        )
+        app_injector.binder.bind(
+            TelemetrySerializer,
+            to=TelemetrySerializerFactory.get_serializer(bootstrap_model),
+            scope=singleton,
+        )
+        app_injector.binder.bind(
+            InputCache,
+            to=CacheFactory.get_cache(bootstrap_model),
+            scope=singleton,
+        )
 
         # if bootstrap payload type is provided, morph it into the target type that should now be available
         if self._bootstrap_payload_type:
