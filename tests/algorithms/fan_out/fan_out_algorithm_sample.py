@@ -10,6 +10,7 @@ from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.algorithms import FanOutAlgorithm, RemoteAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
+from nexus_client_sdk.nexus.core.background_tasks import BackgroundTaskManager
 from tests.algorithms.fan_out.fan_out_configuration import TestFanOutAlgorithmConfiguration
 from tests.algorithms.fan_out.fan_out_inputs import (
     TestFanOutAlgorithmPayload,
@@ -84,6 +85,7 @@ class TestFanOutAlgorithm(FanOutAlgorithm[TestFanOutAlgorithmPayload, TestFanOut
         cache: InputCache,
         remote_client: NexusSchedulerAsyncClient,
         configuration: TestFanOutAlgorithmConfiguration,
+        background_task_manager: BackgroundTaskManager,
     ):
         super().__init__(
             metrics_provider,
@@ -93,6 +95,7 @@ class TestFanOutAlgorithm(FanOutAlgorithm[TestFanOutAlgorithmPayload, TestFanOut
             zz_processor,
             cache=cache,
             configuration=configuration,
+            background_task_manager=background_task_manager,
         )
         self._remote_client = remote_client
         self._logger_factory = logger_factory

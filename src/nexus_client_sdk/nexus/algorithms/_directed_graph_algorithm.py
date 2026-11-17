@@ -51,13 +51,10 @@ class DirectedGraphAlgorithm(BaselineAlgorithm[TPayload, TConfiguration], ABC):
         *input_processors: InputProcessor,
         cache: InputCache,
         configuration: TConfiguration,
-        background_task_manager: BackgroundTaskManager | None = None,
+        background_task_manager: BackgroundTaskManager,
     ):
         super().__init__(metrics_provider, logger_factory, *input_processors, cache=cache, configuration=configuration)
-        self._background_task_manager = background_task_manager or BackgroundTaskManager(
-            logger_factory=logger_factory,
-            metrics_provider=metrics_provider,
-        )
+        self._background_task_manager = background_task_manager
 
     async def _spawn_remote_algorithms(
         self,

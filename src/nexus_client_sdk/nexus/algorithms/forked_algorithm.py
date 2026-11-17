@@ -71,7 +71,7 @@ class ForkedAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
         *input_processors: InputProcessor,
         cache: InputCache,
         configuration: TConfiguration,
-        background_task_manager: BackgroundTaskManager | None = None,
+        background_task_manager: BackgroundTaskManager,
     ):
         super().__init__(
             metrics_provider,
