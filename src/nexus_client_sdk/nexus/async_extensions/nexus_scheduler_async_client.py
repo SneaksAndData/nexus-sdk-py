@@ -258,3 +258,15 @@ class NexusSchedulerAsyncClient:
             f"Fatal error when awaiting tagged runs with tags {tags} for algorithm {algorithm}",
             method_alias="await_tagged",
         )
+
+    def is_finished(self, result: RunResult) -> bool:
+        """
+        Check if a run has finished.
+        """
+        return self._sync_client.is_finished(result)
+
+    def has_succeeded(self, result: RunResult) -> bool | None:
+        """
+        Check if a run has succeeded. Returns None if the run is not finished yet.
+        """
+        return self._sync_client.has_succeeded(result)
