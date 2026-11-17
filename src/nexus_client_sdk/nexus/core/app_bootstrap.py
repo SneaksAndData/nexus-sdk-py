@@ -29,6 +29,7 @@ from nexus_client_sdk.nexus.core.app_dependencies import (
     StorageClientFactory,
     TelemetrySerializerFactory,
 )
+from nexus_client_sdk.nexus.core.background_tasks import BackgroundTaskManager
 from nexus_client_sdk.nexus.core.serializers import ResultSerializer, TelemetrySerializer
 from nexus_client_sdk.nexus.exceptions.startup_error import FatalStartupConfigurationError
 from nexus_client_sdk.nexus.input.command_line import NexusDefaultArguments
@@ -446,6 +447,15 @@ class NexusBootstrapper:
         app_injector.binder.bind(
             MetricsProvider,
             to=metrics_provider,
+            scope=singleton,
+        )
+
+        app_injector.binder.bind(
+            BackgroundTaskManager,
+            to=BackgroundTaskManager(
+                logger_factory=logger_factory,
+                metrics_provider=metrics_provider,
+            ),
             scope=singleton,
         )
 

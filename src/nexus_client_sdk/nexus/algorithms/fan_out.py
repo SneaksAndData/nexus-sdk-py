@@ -34,6 +34,7 @@ from nexus_client_sdk.nexus.abstractions.nexus_object import (
 )
 from nexus_client_sdk.nexus.algorithms._directed_graph_algorithm import DirectedGraphAlgorithm
 from nexus_client_sdk.nexus.algorithms._remote_algorithm import RemoteAlgorithm
+from nexus_client_sdk.nexus.core.background_tasks import BackgroundTaskManager
 from nexus_client_sdk.nexus.input.input_processor import InputProcessor
 
 
@@ -52,8 +53,16 @@ class FanOutAlgorithm(DirectedGraphAlgorithm[TPayload, TConfiguration], ABC):
         *input_processors: InputProcessor,
         cache: InputCache,
         configuration: TConfiguration,
+        background_task_manager: BackgroundTaskManager,
     ):
-        super().__init__(metrics_provider, logger_factory, *input_processors, cache=cache, configuration=configuration)
+        super().__init__(
+            metrics_provider,
+            logger_factory,
+            *input_processors,
+            cache=cache,
+            configuration=configuration,
+            background_task_manager=background_task_manager,
+        )
 
     @abstractmethod
     async def _get_branches(self, **kwargs) -> list[RemoteAlgorithm]:

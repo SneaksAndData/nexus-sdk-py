@@ -10,6 +10,7 @@ from nexus_client_sdk.nexus.abstractions.logger_factory import LoggerFactory
 from nexus_client_sdk.nexus.abstractions.nexus_object import AlgorithmResult
 from nexus_client_sdk.nexus.algorithms import ForkedAlgorithm, RemoteAlgorithm
 from nexus_client_sdk.nexus.async_extensions.nexus_scheduler_async_client import NexusSchedulerAsyncClient
+from nexus_client_sdk.nexus.core.background_tasks import BackgroundTaskManager
 from tests.algorithms.forked.forked_configuration import TestForkedAlgorithmConfiguration
 from tests.algorithms.forked.forked_inputs import (
     TestForkedAlgorithmPayload,
@@ -85,6 +86,7 @@ class TestForkedAlgorithm(ForkedAlgorithm[TestForkedAlgorithmPayload, TestForked
         remote_client: NexusSchedulerAsyncClient,
         configuration: TestForkedAlgorithmConfiguration,
         payload: TestForkedAlgorithmPayload,
+        background_task_manager: BackgroundTaskManager,
     ):
         super().__init__(
             metrics_provider,
@@ -94,6 +96,7 @@ class TestForkedAlgorithm(ForkedAlgorithm[TestForkedAlgorithmPayload, TestForked
             zz_processor,
             cache=cache,
             configuration=configuration,
+            background_task_manager=background_task_manager,
         )
         self._remote_client = remote_client
         self._logger_factory = logger_factory
