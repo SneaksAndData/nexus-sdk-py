@@ -213,10 +213,10 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult, TConfiguration]):
 
             if run_metadata:
                 self._logger.info(
-                    "Found existing runs with tag {tag} for remote algorithm {remote_algorithm}, reusing the latest "
+                    "Found existing runs with tag {fork_tag} for remote algorithm {remote_algorithm}, reusing the latest "
                     "received one with request_id: {old_request_id}."
                     "\npayload for this request is: {algorithm_parameters}",
-                    tag=tag,
+                    fork_tag=tag,
                     remote_algorithm=self._remote_name,
                     old_request_id=run_metadata[-1].id,
                     algorithm_parameters=json.dumps(algorithm_parameters),
@@ -239,11 +239,11 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult, TConfiguration]):
         )
 
         self._logger.info(
-            "Fork '{fork_algorithm_name}' to remote algorithm '{remote_algorithm}' successfully created with request id '{request_id}' and tag '{tag}'",
+            "Fork '{fork_algorithm_name}' to remote algorithm '{remote_algorithm}' successfully created with request id '{fork_request_id}' and tag '{fork_tag}'",
             fork_algorithm_name=self.__class__.alias(),
             remote_algorithm=self._remote_name,
-            request_id=request_id,
-            tag=tag,
+            fork_request_id=request_id,
+            fork_tag=tag,
         )
 
         return request_id
