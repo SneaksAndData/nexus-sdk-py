@@ -176,8 +176,8 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult, TConfiguration]):
                     request_ids.append(request_id)
 
                     self._logger.info(
-                        "Awaiting remote run {request_id} for remote algorithm {remote_algorithm}",
-                        request_id=request_id,
+                        "Awaiting remote run {remote_request_id} for remote algorithm {remote_algorithm}",
+                        remote_request_id=request_id,
                         remote_algorithm=self._remote_name,
                     )
                     run_result = await self._remote_client.await_run(
@@ -190,9 +190,9 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult, TConfiguration]):
                     has_succeeded = self._remote_client.has_succeeded(run_result) if run_result else None
                     if not has_succeeded:
                         self._logger.error(
-                            "Remote algorithm {remote_algorithm} run {request_id} did not succeed. Status: {status}, Error: {error}",
+                            "Remote algorithm {remote_algorithm} run {remote_request_id} did not succeed. Status: {status}, Error: {error}",
                             remote_algorithm=self._remote_name,
-                            request_id=request_id,
+                            remote_request_id=request_id,
                             status=run_result.status if run_result else "None",
                             error=run_result.run_error_message if run_result else "None",
                         )
