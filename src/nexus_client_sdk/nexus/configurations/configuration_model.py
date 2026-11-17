@@ -12,6 +12,10 @@ class RemoteAlgorithmSettings:
     dry_run: bool
     compression_import_path: str
     decompression_import_path: str
+    await_execution: bool
+    raise_on_remote_failure: bool
+    await_poll_interval_seconds: int
+    await_timeout_seconds: int
 
 
 @dataclass

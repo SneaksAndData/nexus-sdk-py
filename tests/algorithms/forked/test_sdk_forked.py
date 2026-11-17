@@ -189,6 +189,57 @@ async def test_sdk_run_forked_main_run_async_spawn(
 
 
 @pytest.mark.asyncio(loop_scope="package")
+async def test_sdk_run_forked_main_run_await_execution(
+    forked_main_run_test_args: NexusDefaultArguments,
+    scheduler: NexusSchedulerClient,
+    cql_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("NEXUS__REMOTE_ALGORITHM__AWAIT_EXECUTION", "true")
+    monkeypatch.setenv("NEXUS__REMOTE_ALGORITHM__AWAIT_POLL_INTERVAL_SECONDS", "1")
+    algorithm = get_alg_name()
+    # create initial fake record
+    cql_session.execute(
+        f"INSERT INTO nexus.checkpoints (algorithm, id, lifecycle_stage, payload_uri, applied_configuration, configuration_overrides, parent) VALUES ('{algorithm}', '{forked_main_run_test_args.request_id}', 'RUNNING', '{forked_main_run_test_args.sas_uri}', '{RUNTIME_CONFIG_STUB}', '{{}}', '{{}}')"
+    )
+    sys.argv = [
+        "",
+        "--sas-uri",
+        forked_main_run_test_args.sas_uri,
+        "--request-id",
+        forked_main_run_test_args.request_id,
+    ]
+    await sample_algorithm_main()
+    await asyncio.sleep(1)
+
+    parent_filter = "b64__" + b64encode(
+        json.dumps(
+            {
+                "requestId": forked_main_run_test_args.request_id,
+                "algorithmName": algorithm,
+            },
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).decode("utf-8")
+
+    child_rows = list(
+        cql_session.execute(
+            f"SELECT id, payload_uri FROM nexus.checkpoints WHERE parent = '{parent_filter}' ALLOW FILTERING"
+        )
+    )
+
+    assert len(child_rows) == 5
+
+    result = json.loads(
+        requests.get(scheduler.get_run_result(forked_main_run_test_args.request_id, algorithm).result_uri).text
+    )
+    assert len(result["remote_algorithm_request_ids"]) == 5
+    for remote_request_id in result["remote_algorithm_request_ids"]:
+        remote_result = scheduler.get_run_result(remote_request_id, algorithm)
+        assert remote_result.request_id == remote_request_id
+
+
+@pytest.mark.asyncio(loop_scope="package")
 async def test_sdk_run_forked_fork_run(
     forked_fork_run_test_args: NexusDefaultArguments,
     scheduler: NexusSchedulerClient,

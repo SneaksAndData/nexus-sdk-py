@@ -165,14 +165,56 @@ class RemoteAlgorithm(NexusObject[TPayload, AlgorithmResult, TConfiguration]):
             payloads = await self._run(**run_args)
             tag = self._generate_tag(**run_args)
 
-            request_ids = [
-                await self._create_remote_run(
-                    payload=payload,
-                    tag=self._generate_tag_from_remote_payload(payload=payload, **run_args) or tag,
-                    **run_args,
-                )
-                for payload in payloads
-            ]
+            request_ids = []
+            if self._configuration.remote_algorithm.await_execution:
+                for payload in payloads:
+                    request_id = await self._create_remote_run(
+                        payload=payload,
+                        tag=self._generate_tag_from_remote_payload(payload=payload, **run_args) or tag,
+                        **run_args,
+                    )
+                    request_ids.append(request_id)
+
+                    self._logger.info(
+                        "Awaiting remote run {remote_request_id} for remote algorithm {remote_algorithm}",
+                        remote_request_id=request_id,
+                        remote_algorithm=self._remote_name,
+                    )
+                    run_result = await self._remote_client.await_run(
+                        request_id=request_id,
+                        algorithm=self._remote_name,
+                        poll_interval_seconds=self._configuration.remote_algorithm.await_poll_interval_seconds,
+                        wait_timeout_seconds=self._configuration.remote_algorithm.await_timeout_seconds,
+                    )
+
+                    has_succeeded = self._remote_client.has_succeeded(run_result) if run_result else None
+                    if not has_succeeded:
+                        self._logger.error(
+                            "Remote algorithm {remote_algorithm} run {remote_request_id} did not succeed. Status: {status}, Error: {error}",
+                            remote_algorithm=self._remote_name,
+                            remote_request_id=request_id,
+                            status=run_result.status if run_result else "None",
+                            error=run_result.run_error_message if run_result else "None",
+                        )
+                        if self._configuration.remote_algorithm.raise_on_remote_failure:
+                            raise FatalNexusError(
+                                f"Remote algorithm {self._remote_name} run {request_id} did not succeed"
+                            )
+                    else:
+                        self._logger.info(
+                            "Remote run {request_id} for algorithm {remote_algorithm} completed successfully",
+                            request_id=request_id,
+                            remote_algorithm=self._remote_name,
+                        )
+            else:
+                request_ids = [
+                    await self._create_remote_run(
+                        payload=payload,
+                        tag=self._generate_tag_from_remote_payload(payload=payload, **run_args) or tag,
+                        **run_args,
+                    )
+                    for payload in payloads
+                ]
 
             return self._transform_submission_result(request_ids, tag)
 

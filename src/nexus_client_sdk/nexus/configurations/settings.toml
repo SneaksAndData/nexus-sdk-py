@@ -134,6 +134,18 @@ compression_import_path = ""
 # Import path to a decompression method to require on the receiving end, if remote payload is compressed
 decompression_import_path = ""
 
+# Whether to await remote algorithm execution to finish
+await_execution = false
+
+# Whether to raise an error if remote algorithm execution fails
+raise_on_remote_failure = false
+
+# Time in seconds between status polls when awaiting remote execution
+await_poll_interval_seconds = 5
+
+# Timeout in seconds for awaiting remote execution (0 stands for no timeout)
+await_timeout_seconds = 0
+
 # Result processing and serialization
 [result]
 # Storage client to use when saving serialized result and generating pre-signed URL for it
